@@ -100,6 +100,14 @@ namespace DOL.GS.PacketHandler.Client.v168
 				return;
 			}
 
+			if (client.Player.InCombatPvPInLast(30000))
+			{
+				var time = 30000 + client.Player.LastCombatTickPvP - GameLoop.GameLoopTime;
+				client.Out.SendMessage($"You have been in pvp combat recently and are unable to teleport for {time/1000} seconds!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				if (client.Account.PrivLevel == 1)
+					return;
+			}
+
 			//check caps for battleground
 			Battleground bg = GameServer.KeepManager.GetBattleground(zonePoint.TargetRegion);
 			if (bg != null)
