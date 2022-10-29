@@ -304,8 +304,7 @@ namespace DOL.GS
                     {
                         GameLiving living = target as GameLiving;
                         if (RangedAttackType == eRangedAttackType.Critical && living != null
-                            && (living.CurrentSpeed > 90 //walk speed == 85, hope that's what they mean
-                                || (living.attackComponent.AttackState && living.InCombat) //maybe not 100% correct
+                            && ((living.attackComponent.AttackState && living.InCombat) //maybe not 100% correct
                                 || EffectListService.GetEffectOnTarget(living, eEffect.Mez) /*SpellHandler.FindEffectOnTarget(living, "Mesmerize")*/ != null
                                ))
                         {
