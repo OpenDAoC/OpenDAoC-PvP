@@ -583,7 +583,7 @@ namespace DOL.GS
 								      + empower);
 								return true;
 							case "abomination":
-								SayTo(owner, "As one of the chosen warriors of Arawn, I have a mighty arsenal of [weapons] at your disposal. If you wish it, I am able to [taunt] your enemies so that they will focus on me instead of you. "
+								SayTo(owner, "As one of the chosen warriors of Arawn, I am able to [taunt] your enemies so that they will focus on me instead of you. "
 								      + empower);
 								return true;
 							default:
@@ -622,22 +622,7 @@ namespace DOL.GS
 						SayTo(owner, "What weapon do you command me to wield? A [fiery sword], [icy sword], [poisonous sword] or a [flaming mace], [frozen mace], [venomous mace]?");
 						return true;
 					}
-				case "fiery sword":
-				case "icy sword":
-				case "poisonous sword":
-				case "flaming mace":
-				case "frozen mace":
-				case "venomous mace":
-					{
-						if (Name != "abomination")
-							return false;
-
-						String templateID = String.Format("{0}_{1}", Name, text.Replace(" ", "_"));
-						if (LoadEquipmentTemplate(templateID))
-							SayTo(owner, eChatLoc.CL_SystemWindow, "As you command.");
-						return true;
-					}
-					default: return false;
+				default: return false;
 			}
 		}
 		
