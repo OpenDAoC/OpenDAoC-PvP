@@ -551,6 +551,145 @@ namespace DOL.GS
 		{
 			return WhisperReceive(player, "arawn");
 		}
+		
+		/// <summary>
+		/// Actions to be taken when the pet receives a whisper.
+		/// </summary>
+		/// <param name="source">Source of the whisper.</param>
+		/// <param name="text">"Text that was whispered</param>
+		/// <returns>True if whisper was handled, false otherwise.</returns>
+		public override bool WhisperReceive(GameLiving source, string text)
+		{
+			GamePlayer owner = ((Brain as IControlledBrain).Owner) as GamePlayer;
+			if (source == null || source != owner) return false;
+
+			switch (text.ToLower())
+			{
+				case "arawn":
+					{
+						String taunt = "As one of the many cadaverous servants of Arawn, I am able to [taunt] your enemies so that they will focus on me instead of you.";
+						String empower = "You may also [empower] me with just a word.";
+						switch (Name.ToLower())
+						{
+							case "minor zombie servant":
+							case "lesser zombie servant":
+							case "zombie servant":
+							case "reanimated servant":
+							case "necroservant":
+								SayTo(owner, taunt);
+								return true;
+							case "greater necroservant":
+								SayTo(owner, taunt + " I can also inflict [poison] or [disease] on your enemies. "
+								      + empower);
+								return true;
+							case "abomination":
+								SayTo(owner, "As one of the chosen warriors of Arawn, I have a mighty arsenal of [weapons] at your disposal. If you wish it, I am able to [taunt] your enemies so that they will focus on me instead of you. "
+								      + empower);
+								return true;
+							default:
+								return false;
+						}
+					}
+				case "disease":
+					InventoryItem item;
+					if (Inventory != null &&
+					    (item = Inventory.GetItem(eInventorySlot.RightHandWeapon)) != null)
+					{
+						item.ProcSpellID = (int)Procs.Disease;
+						SayTo(owner, eChatLoc.CL_SystemWindow, "As you command.");
+					}
+					return true;
+				case "empower":
+					SayTo(owner, eChatLoc.CL_SystemWindow, "As you command.");
+					Empower();
+					return true;
+				case "poison":
+					if (Inventory != null &&
+					    (item = Inventory.GetItem(eInventorySlot.RightHandWeapon)) != null)
+					{
+						item.ProcSpellID = (int)Procs.Poison;
+						SayTo(owner, eChatLoc.CL_SystemWindow, "As you command.");
+					}
+					return true;
+				case "taunt":
+					ToggleTauntMode();
+					return true;
+				case "weapons":
+					{
+						if (Name != "abomination")
+							return false;
+
+						SayTo(owner, "What weapon do you command me to wield? A [fiery sword], [icy sword], [poisonous sword] or a [flaming mace], [frozen mace], [venomous mace]?");
+						return true;
+					}
+				case "fiery sword":
+				case "icy sword":
+				case "poisonous sword":
+				case "flaming mace":
+				case "frozen mace":
+				case "venomous mace":
+					{
+						if (Name != "abomination")
+							return false;
+
+						String templateID = String.Format("{0}_{1}", Name, text.Replace(" ", "_"));
+						if (LoadEquipmentTemplate(templateID))
+							SayTo(owner, eChatLoc.CL_SystemWindow, "As you command.");
+						return true;
+					}
+					default: return false;
+			}
+		}
+		
+		private void Empower()
+		{
+			if (attackComponent.AttackState) return;
+
+			SpellLine buffLine = SkillBase.GetSpellLine(PetInstaSpellLine);
+			if (buffLine == null)
+				return;
+
+			List<Spell> buffList = SkillBase.GetSpellList(PetInstaSpellLine);
+			if (buffList.Count == 0)
+				return;
+
+			// Find the best baseline buffs for this level.
+
+			int maxLevel = Level;
+			Spell strBuff = null, dexBuff = null;
+			foreach (Spell spell in buffList)
+			{
+				if (spell.Level <= maxLevel)
+				{
+					switch (spell.SpellType)
+					{
+						case (byte)eSpellType.StrengthBuff:
+						{
+							if (strBuff == null)
+								strBuff = spell;
+							else
+								strBuff = (strBuff.Level < spell.Level) ? spell : strBuff;
+						}
+							break;
+						case (byte)eSpellType.DexterityBuff:
+						{
+							if (dexBuff == null)
+								dexBuff = spell;
+							else
+								dexBuff = (dexBuff.Level < spell.Level) ? spell : dexBuff;
+						}
+							break;
+					}
+				}
+			}
+
+			// Insta buff.
+
+			if (strBuff != null)
+				CastSpell(strBuff, buffLine);
+			if (dexBuff != null)
+				CastSpell(dexBuff, buffLine);
+		}
 
         public override void TakeDamage(GameObject source, eDamageType damageType, int damageAmount, int criticalAmount)
         {
