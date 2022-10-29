@@ -20,12 +20,12 @@ namespace DOL.GS.RealmAbilities
 
         public override int CostForUpgrade(int level)
         {
-            return 14;
+            return 10;
         }
 
         public override int GetReUseDelay(int level)
         {
-            return 1800; // 30 mins
+            return 900; // 15 mins
         } 
 
         public override ushort Icon => 4261;

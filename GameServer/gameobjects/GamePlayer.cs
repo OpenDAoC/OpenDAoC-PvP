@@ -85,6 +85,8 @@ namespace DOL.GS
         protected ECSGameTimer m_predatortimer;
         private PlayerDeck _randomNumberDeck;
 
+        public Dictionary<GameLiving, long> PlayerAttackImmunityDict = new Dictionary<GameLiving, long>();
+
         #region Client/Character/VariousFlags
 
         /// <summary>
@@ -1735,6 +1737,13 @@ namespace DOL.GS
                     }
                     break;
                 }
+                case eReleaseType.Random:
+                    var randomStone = BindstoneManager.BindstoneList.GetRandomBindstone();
+                    relRegion = (ushort) randomStone.Region;
+                    relX = randomStone.X;
+                    relY = randomStone.Y;
+                    relZ = randomStone.Z;
+                    break;
                 default:
                 {
                     if (!ServerProperties.Properties.DISABLE_TUTORIAL)
@@ -2860,7 +2869,9 @@ namespace DOL.GS
         {
             constitution -= 50;
             if (constitution < 0) constitution *= 2;
-			
+
+            constitution += (int) Math.Round(26 * (level/50.0)); //free toa con boost at max level
+            
             // hp1 : from level
             // hp2 : from constitution
             // hp3 : from champions level
@@ -5423,6 +5434,7 @@ namespace DOL.GS
                 return;
             }
 
+            #region Realm Loyalty
             int numCurrentLoyalDays = this.TempProperties.getProperty<int>(CURRENT_LOYALTY_KEY);
             //check for cached loyalty days, and grab value if needed
             if (numCurrentLoyalDays == null || numCurrentLoyalDays == 0)
@@ -5445,7 +5457,7 @@ namespace DOL.GS
                 
                 this.TempProperties.setProperty(CURRENT_LOYALTY_KEY, numCurrentLoyalDays);
             }
-            
+
             //check for realm loyalty
             var loyaltyCheck = this.TempProperties.getProperty<DateTime>(REALM_LOYALTY_KEY);
             if (loyaltyCheck == null)
@@ -5503,9 +5515,12 @@ namespace DOL.GS
             {
                LoyaltyManager.HandlePVPKill(this);
             }
+            #endregion
 
             long RealmLoyaltyBonus = 0;
             long baseXp = 0;
+            
+            #region Exp Modification
             //xp rate modifier
             if (allowMultiply)
             {
@@ -5557,6 +5572,7 @@ namespace DOL.GS
                 expTotal += atlasBonus;
                 expTotal += RealmLoyaltyBonus;
             }
+            #endregion Exp Modification
             
             double loyaltyPercent = ((double)RealmLoyaltyBonus / (baseXp)) * 100.0;
             if (RealmLoyaltyBonus > 0 && XPLogState == eXPLogState.Verbose)
@@ -8480,8 +8496,8 @@ namespace DOL.GS
                         publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
                     }
 
-                    if(ConquestService.ConquestManager.IsPlayerInConquestArea(this) && killer.Realm != this.Realm && killer is GamePlayer && killer != this.DuelTarget)
-                        ConquestService.ConquestManager.AddContributor(this);
+                    //if(ConquestService.ConquestManager.IsPlayerInConquestArea(this) && killer.Realm != this.Realm && killer is GamePlayer && killer != this.DuelTarget)
+                        //ConquestService.ConquestManager.AddContributor(this);
                 }
             }
 
@@ -8620,6 +8636,19 @@ namespace DOL.GS
                     xpLossPercent = MaxLevel - 40;
                 }
 
+                List<InventoryItem> itemsToRemove = new List<InventoryItem>();
+                foreach (InventoryItem item in this.Inventory.AllItems)
+                {
+                    if (item is GameInventoryItemLootable lootable)
+                    {
+                        Out.SendMessage($"The {lootable.Name} slips from your grasp as your vision darkens.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                        Inventory.RemoveItem(lootable);
+                        lootable.Drop(this);
+                        itemsToRemove.Add(lootable); 
+                    }
+                }
+                Out.SendInventoryItemsUpdate(itemsToRemove); //batch our item updates so we only have to send packets once, instead of once each in the foreach
+
                 if (realmDeath || killer?.Realm == Realm) //Live PvP servers have 3 con loss on pvp death, can be turned off in server properties -Unty
                 {
                     int conpenalty = 0;
@@ -8756,6 +8785,7 @@ namespace DOL.GS
             if (ControlledBrain != null && ControlledBrain.Body.attackComponent.Attackers.Contains(enemy))
                 ControlledBrain.Body.attackComponent.RemoveAttacker(enemy);
 
+            /*
             if (CurrentZone.IsRvR)
             {
                 var activeConquest = ConquestService.ConquestManager.ActiveObjective;
@@ -8774,10 +8804,7 @@ namespace DOL.GS
                         //activeConquest.Contribute(this, baseContribution); 
                     }
                 }
-                        
-                    
-                
-            }
+            }*/
 
             base.EnemyKilled(enemy);
         }
@@ -11244,6 +11271,20 @@ namespace DOL.GS
                 // CancelAllConcentrationEffects(true);
                 if (ControlledBrain != null)
                     CommandNpcRelease();
+
+                if (!rgn.IsDungeon)
+                {
+                    List<InventoryItem> itemsToSave = Inventory.AllItems.Where(item => item is GameInventoryItemLootable).ToList();
+                    for (int i = 0; i < itemsToSave.Count(); i++)
+                    {
+                        var inventoryItem = itemsToSave[i];
+                        if (inventoryItem == null) continue;
+                    
+                        Inventory.RemoveItem(inventoryItem);
+                        GameInventoryItem safeItem = GameInventoryItem.Create(inventoryItem);
+                        Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, safeItem);
+                    }
+                }
             }
             else
             {
@@ -13092,51 +13133,66 @@ namespace DOL.GS
             return gameItem;
         }
         /// <summary>
-        /// Called when the player tries to pick up an object
+        /// Called when the player picks up an item from the ground
         /// </summary>
         /// <param name="floorObject"></param>
         /// <param name="checkRange"></param>
         /// <returns></returns>
-        public virtual void PickupObject(GameObject floorObject, bool checkRange)
+        public virtual bool PickupObject(GameObject floorObject, bool checkRange)
         {
             if (floorObject == null)
             {
                 Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.MustHaveTarget"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                return;
+                return false;
             }
-
             if (floorObject.ObjectState != eObjectState.Active)
-                return;
+                return false;
 
-            if (floorObject is GameStaticItemTimed staticItem && !staticItem.IsOwner(this) && Client.Account.PrivLevel == (uint)ePrivLevel.Player)
+            if (floorObject is GameStaticItemTimed && ((GameStaticItemTimed)floorObject).IsOwner(this) == false && Client.Account.PrivLevel == (int)ePrivLevel.Player)
             {
                 Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.LootDoesntBelongYou"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                return;
+                return false;
             }
 
-            if (floorObject is not GameBoat && !checkRange && !floorObject.IsWithinRadius(this, Properties.WORLD_PICKUP_DISTANCE, true))
+            if ((floorObject is GameBoat == false) && !checkRange && !floorObject.IsWithinRadius(this, GS.ServerProperties.Properties.WORLD_PICKUP_DISTANCE, true))
             {
                 Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.ObjectTooFarAway", floorObject.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                return;
+                try
+                {
+                    log.DebugFormat("Pickup error: {0}  object x{1}, y{2}, z{3}, r{4} - player x{5}, y{6}, z{7}, r{8}",
+                        Name,
+                        floorObject.X, floorObject.Y, floorObject.Z, floorObject.CurrentRegionID,
+                        X, Y, Z, CurrentRegionID);
+                }
+                catch
+                {
+                }
+                return false;
             }
-
+            
             if (floorObject is WorldInventoryItem)
             {
                 WorldInventoryItem floorItem = floorObject as WorldInventoryItem;
+                if (floorObject is WorldInventoryItemLootable lootable)
+                {
+                    floorItem = lootable;
+                    floorItem.OwnerID ??= this.InternalID;
+                }
+
                 lock (floorItem)
                 {
                     if (floorItem.ObjectState != eObjectState.Active)
-                        return;
+                        return false;
 
                     if (floorItem.Item == null || floorItem.Item.IsPickable == false)
                     {
                         Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.CantGetThat"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                        return;
+                        return false;
                     }
                     if (floorItem.GetPickupTime > 0)
                     {
                         Out.SendMessage("You must wait another " + floorItem.GetPickupTime / 1000 + " seconds to pick up " + floorItem.Name + "!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                        return;
+                        return false;
                     }
 
                     Group group = Group;
@@ -13155,7 +13211,7 @@ namespace DOL.GS
                             if (!good)
                             {
                                 theTreasurer.Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.BackpackFull"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                                return;
+                                return false;
                             }
                             theTreasurer.Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YouGet", floorItem.Item.GetName(1, false)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                             Message.SystemToOthers(this, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, floorItem.Item.GetName(1, false)), eChatType.CT_System);
@@ -13187,7 +13243,7 @@ namespace DOL.GS
                         if (eligibleMembers.Count <= 0)
                         {
                             Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.NoOneWantsThis", floorObject.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                            return;
+                            return false;
                         }
 
                         int i = Util.Random(0, eligibleMembers.Count - 1);
@@ -13203,7 +13259,7 @@ namespace DOL.GS
                             if (!good)
                             {
                                 eligibleMember.Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.BackpackFull"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                                return;
+                                return false;
                             }
                             Message.SystemToOthers(this, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, floorItem.Item.GetName(1, false)), eChatType.CT_System);
                             group.SendMessageToGroupMembers(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.Autosplit", floorItem.Item.GetName(1, true), eligibleMember.Name), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -13214,14 +13270,22 @@ namespace DOL.GS
                     {
                         bool good = false;
                         if (floorItem.Item.IsStackable)
-                            good = Inventory.AddTemplate(GameInventoryItem.Create(floorItem.Item), floorItem.Item.Count, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
+                        {
+                            if (floorItem.Item is GameInventoryItemLootable)
+                            {
+                                floorItem.Item.OwnerID = this.InternalID;
+                                good = Inventory.AddTemplate(GameInventoryItemLootable.Create(floorItem.Item), floorItem.Item.Count, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
+                            }
+                            else
+                                good = Inventory.AddTemplate(GameInventoryItem.Create(floorItem.Item), floorItem.Item.Count, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
+                        }
                         else
                             good = Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, floorItem.Item);
 
                         if (!good)
                         {
                             Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.BackpackFull"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                            return;
+                            return false;
                         }
                         Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.YouGet", floorItem.Item.GetName(1, false)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                         Message.SystemToOthers(this, LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.GroupMemberPicksUp", Name, floorItem.Item.GetName(1, false)), eChatType.CT_System);
@@ -13229,16 +13293,15 @@ namespace DOL.GS
                     }
                     floorItem.RemoveFromWorld();
                 }
-                return;
+                return true;
             }
-
-            if (floorObject is GameMoney)
+            else if (floorObject is GameMoney)
             {
                 GameMoney moneyObject = floorObject as GameMoney;
                 lock (moneyObject)
                 {
                     if (moneyObject.ObjectState != eObjectState.Active)
-                        return;
+                        return false;
 
                     if (Group != null && Group.AutosplitCoins)
                     {
@@ -13250,7 +13313,7 @@ namespace DOL.GS
                         if (!gamePlayers.Any())
                         {
                             Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.NoOneGroupWantsMoney"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                            return;
+                            return false;
                         }
 
                         long moneyToPlayer = moneyObject.TotalCopper / gamePlayers.Count();
@@ -13298,31 +13361,23 @@ namespace DOL.GS
                         }
                     }
                     moneyObject.Delete();
+                    return true;
                 }
-                return;
             }
-
-            if (floorObject is GameBoat)
+            else if (floorObject is GameBoat)
             {
-                if (!IsWithinRadius(floorObject, 1000))
+                if (!this.IsWithinRadius(floorObject, 1000))
                 {
                     Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.TooFarFromBoat"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                    return;
+                    return false;
                 }
 
                 if (!InCombat)
                     MountSteed(floorObject as GameBoat, false);
 
-                return;
+                return true;
             }
-            
-            if (floorObject is GameConsignmentMerchant)
-            {
-                floorObject.CurrentHouse.PickUpConsignmentMerchant(this);
-                return;
-            }
-            
-            if (floorObject is GameHouseVault && floorObject.CurrentHouse != null)
+            else if (floorObject is GameHouseVault && floorObject.CurrentHouse != null)
             {
                 GameHouseVault houseVault = floorObject as GameHouseVault;
                 if (houseVault.Detach(this))
@@ -13331,17 +13386,18 @@ namespace DOL.GS
                     Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, GameInventoryItem.Create(template));
                     InventoryLogging.LogInventoryAction("(HOUSE;" + floorObject.CurrentHouse.HouseNumber + ")", this, eInventoryActionType.Other, template);
                 }
-                return;
+                return true;
             }
-            
-            if ((floorObject is GameNPC || floorObject is GameStaticItem) && floorObject.CurrentHouse != null)
+            else if ((floorObject is GameNPC || floorObject is GameStaticItem) && floorObject.CurrentHouse != null)
             {
                 floorObject.CurrentHouse.EmptyHookpoint(this, floorObject);
-                return;
+                return true;
             }
-
-            Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.CantGetThat"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-            return;
+            else
+            {
+                Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.PickupObject.CantGetThat"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                return false;
+            }
         }
 
         /// <summary>
@@ -14616,10 +14672,11 @@ namespace DOL.GS
                 range = levelDiff * 20 + 125; 
             }
 
+            /*
             if (ConquestService.ConquestManager.IsPlayerNearFlag(this))
             {
                 range += 50;
-            }
+            }*/
 
             // Mastery of Stealth Bonus
             /*

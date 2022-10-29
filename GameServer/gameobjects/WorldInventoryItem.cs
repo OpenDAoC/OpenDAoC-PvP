@@ -36,7 +36,7 @@ namespace DOL.GS
 		/// <summary>
 		/// The InventoryItem that is contained within
 		/// </summary>
-		private InventoryItem m_item;
+		protected InventoryItem m_item;
 
 		/// <summary>
 		/// Has this item been removed from the world?

@@ -40,6 +40,7 @@ public class PredatorService
                 AbstractArea area = activePlayer.CurrentZone?.GetAreasOfSpot(activePlayer.X, activePlayer.Y, activePlayer.Z)
                     .FirstOrDefault() as AbstractArea;
                 
+                /*
                 //if user is not in an RvR zone, or is in DF
                 if (ConquestService.ConquestManager.IsPlayerInSafeZone(activePlayer))
                 {
@@ -49,7 +50,7 @@ public class PredatorService
                 else if(activePlayer.PredatorTimeoutTimer.IsAlive)
                 {
                     PredatorManager.StopTimeoutCountdownFor(activePlayer);
-                }
+                }*/
             }
         }
         

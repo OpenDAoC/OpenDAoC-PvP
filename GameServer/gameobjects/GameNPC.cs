@@ -4985,6 +4985,28 @@ namespace DOL.GS
 					loot.Name = lootTemplate.Name;
 					loot.Model = (ushort)lootTemplate.Model;
 				}
+				else if (lootTemplate.PackageID.ToLower().Contains("titan"))
+				{
+					InventoryItem invitem = GameInventoryItemLootable.Create(lootTemplate);
+
+					loot = new WorldInventoryItemLootable(invitem);
+					loot.X = X;
+					loot.Y = Y;
+					loot.Z = Z;
+					loot.Heading = Heading;
+					loot.CurrentRegion = CurrentRegion;
+					(loot as WorldInventoryItemLootable).Item.IsCrafted = false;
+					(loot as WorldInventoryItemLootable).Item.Creator = Name;
+
+					// This may seem like an odd place for this code, but loot-generating code further up the line
+					// is dealing strictly with ItemTemplate objects, while you need the InventoryItem in order
+					// to be able to set the Count property.
+					// Converts single drops of loot with PackSize > 1 (and MaxCount >= PackSize) to stacks of Count = PackSize
+					if (loot is WorldInventoryItemLootable worldLootable && worldLootable.Item.PackSize > 1 && worldLootable.Item.MaxCount >= worldLootable.Item.PackSize)
+					{
+						worldLootable.Item.Count = worldLootable.Item.PackSize;
+					}
+				}
 				else
 				{
 					InventoryItem invitem;

@@ -71,8 +71,8 @@ namespace DOL.GS
             DailyQuestService.Tick(GameLoopTime);
             currentServiceTick = "WeeklyQuestService";
             WeeklyQuestService.Tick(GameLoopTime);
-            currentServiceTick = "ConquestService";
-            ConquestService.Tick(GameLoopTime);
+            //currentServiceTick = "ConquestService";
+            //ConquestService.Tick(GameLoopTime);
             currentServiceTick = "BountyService";
             BountyService.Tick(GameLoopTime);
             currentServiceTick = "PredatorService";

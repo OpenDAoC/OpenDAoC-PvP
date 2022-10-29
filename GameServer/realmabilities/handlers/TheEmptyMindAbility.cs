@@ -40,8 +40,14 @@ namespace DOL.GS.RealmAbilities
 
 		public override int GetReUseDelay(int level)
 		{
-			return 600;
-		}
+			switch (level)
+			{
+				case 1: return 1800;
+				case 2: return 1200;
+				case 3: return 900;
+				default: return 1800;
+			}
+		} 
 
         protected virtual int GetDuration()
         {

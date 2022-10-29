@@ -16,8 +16,8 @@ public class AtlasOF_BrilliantAura : TimedRealmAbility, ISpellCastingAbilityHand
     public Ability Ability { get { return this; } }
 
     public override int MaxLevel { get { return 1; } }
-    public override int GetReUseDelay(int level) { return 1800; } // 30 min
-    public override int CostForUpgrade(int level) { return 14; }
+    public override int GetReUseDelay(int level) { return 900; } // 30 min
+    public override int CostForUpgrade(int level) { return 10; }
 
     int m_range = 1500;
 

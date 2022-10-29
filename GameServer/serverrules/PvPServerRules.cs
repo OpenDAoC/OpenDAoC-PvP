@@ -27,6 +27,7 @@ using DOL.GS;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
 using System.Collections.Generic;
+using DOL.GS.Scripts;
 
 namespace DOL.GS.ServerRules
 {
@@ -134,7 +135,7 @@ namespace DOL.GS.ServerRules
 
 			//No PVP Dungeons: http://support.darkageofcamelot.com/cgi-bin/support.cfg/php/enduser/std_adp.php?p_sid=frxnPUjg&p_lva=&p_refno=020709-000000&p_created=1026248996&p_sp=cF9ncmlkc29ydD0mcF9yb3dfY250PTE0JnBfc2VhcmNoX3RleHQ9JnBfc2VhcmNoX3R5cGU9MyZwX2NhdF9sdmwxPTI2JnBfY2F0X2x2bDI9fmFueX4mcF9zb3J0X2J5PWRmbHQmcF9wYWdlPTE*&p_li
 			21,  //Tomb of Mithra
-			129, //Nisse’s Lair (Nisee's Lair in regions.ini)
+			129, //Nisseï¿½s Lair (Nisee's Lair in regions.ini)
 			221, //Muire Tomb (Undead in regions.ini)
 
 		};
@@ -244,6 +245,24 @@ namespace DOL.GS.ServerRules
 							return false;
 						}
 					}
+					
+					//if(playerAttacker.CurrentZone != null && ZoneBonusRotator.GetCurrentSafetyZones().Contains(playerAttacker.CurrentZone.ID))
+					//{
+					//	if (quiet == false) MessageToLiving(attacker, "You are in a temporarily safe realm-task zone, and cannot attack this target.");
+					//	return false;
+					//}
+					
+					if(playerAttacker.PlayerAttackImmunityDict.ContainsKey(playerDefender))
+					{
+						if (playerAttacker.PlayerAttackImmunityDict[playerDefender] + 600000 > GameLoop.GameLoopTime)
+						{
+							var seconds = (playerAttacker.PlayerAttackImmunityDict[playerDefender] + 600000 - GameLoop.GameLoopTime) / 1000;
+							if (quiet == false) MessageToLiving(attacker, $"You have recently grouped with this player and cannot attack them for another {seconds} seconds.");
+							return false;	
+						}
+						
+						playerAttacker.PlayerAttackImmunityDict.Remove(playerDefender);
+					} 
 				}
 			}
 

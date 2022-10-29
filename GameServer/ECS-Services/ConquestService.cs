@@ -17,11 +17,12 @@ public class ConquestService
     private static long lastCheckTick;
 
 
+    
     static ConquestService()
     {
-        EntityManager.AddService(typeof(ConquestService));
+        //EntityManager.AddService(typeof(ConquestService));
         ConquestManager = new ConquestManager();
-        ConquestManager.StartConquest();
+        //ConquestManager.StartConquest();
     }
 
     public static void Tick(long tick)

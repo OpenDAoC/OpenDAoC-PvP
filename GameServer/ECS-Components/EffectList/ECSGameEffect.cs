@@ -79,7 +79,7 @@ namespace DOL.GS
         public bool TriggersImmunity = false;
 
         /// Duration of the immunity effect, in milliseconds. Defaults to 60s.
-        public int ImmunityDuration = 60000;
+        public int ImmunityDuration => (int)Duration * 5;
 
         public ECSGameEffect() { }
 

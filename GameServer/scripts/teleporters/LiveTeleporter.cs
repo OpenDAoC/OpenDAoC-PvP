@@ -102,12 +102,37 @@ namespace DOL.GS.Scripts
         {
             if (!base.Interact(player) || GameRelic.IsPlayerCarryingRelic(player)) return false;
 
-            if (player.Realm != this.Realm && player.Client.Account.PrivLevel == 1) return false;
+            //if (player.Realm != this.Realm && player.Client.Account.PrivLevel == 1) return false;
+
+            if (player.LastCombatTickPvP + 30000 > GameLoop.GameLoopTime)
+            {
+                SayTo(player, $"You have been in pvp combat recently and are unable to use the teleporter for another {(player.LastCombatTickPvP + 30000 - GameLoop.GameLoopTime)/1000} seconds");
+                return false; 
+            }
 
             TurnTo(player, 10000);
             
             var message = "";
 
+            message = "Greetings, " + player.Name +
+                      " I am able to channel energy to transport you to distant lands. I can send you to the following locations:\n\n" +
+                      "Albion:\n" +
+                      "[Castle Sauvage] in Camelot Hills or \n" +
+                      "[Snowdonia Fortress] in Black Mtns. North\n" +
+                      "[Avalon Marsh] wharf\n" +
+                      "Midgard:\n" +
+                      "[Svasud Faste] in Mularn or \n" +
+                      "[Vindsaul Faste] in West Svealand,\n" +
+                      "[Gotar] beach near Nailiten\n" +
+                      "Hibernia: \n" +
+                      "[Druim Ligen] in Connacht or \n" +
+                      "[Druim Cain] in Bri Leith\n" +
+                      "[Shannon Estuary] watchtower\n\n" +
+                      "[Gothwaite Harbor]  [Aegirhamn]  or [Domnann] in the [Shrouded Isles]\n" +
+                      "[Camelot], [Jordheim], or [Tir na Nog], our glorious cities\n" +
+                      "The [entrance] to the areas of [Housing]\n" +
+                      "or one of the many [towns] throughout the realms.";
+            /*
             switch (Realm)
             {
                 case eRealm.Albion:
@@ -150,10 +175,10 @@ namespace DOL.GS.Scripts
                 default:
                     SayTo(player, "I have no Realm set, so don't know what locations to offer..");
                     break;
-            }
+            }*/
             
-            message += "\n\n" +
-                       "Perhaps you would like the challenge of the [Epic Dungeon]?";
+                      message += "\n\n" +
+                                 "Perhaps you would like the challenge of the epic dungeons, [Caer Sidi], [Tuscarian Glacier], or [Galladoria]?";
 
             SayTo(player, message);
 
@@ -177,121 +202,52 @@ namespace DOL.GS.Scripts
 
         protected virtual bool GetTeleportLocation(GamePlayer player, string text)
         {
-            switch (Realm) // Only offer locations based on what realm i am set at.
+            if (text.ToLower() == "shrouded isles")
             {
-                case eRealm.Albion:
-                    
-                    if (text.ToLower() == "shrouded isles")
-                    {
-                        String reply = String.Format("The isles of Avalon are an excellent choice. {0} {1}",
-                            "Would you prefer [Gothwaite] or perhaps one of the outlying towns",
-                            "like [Wearyall Village], Fort [Gwyntell], or [Caer Diogel]?");
-                        SayTo(player, reply);
-                        return false;
-                    }
-                    
-                    if (text.ToLower() == "housing")
-                    {
-                        SayTo(player,
-                            "I can send you to your [personal] or [guild] house. If you do not have a personal house, I can teleport you to the housing [entrance] or your housing [hearth] bindstone.");
-                        return false;
-                    }
-                    
-                    if (text.ToLower() == "towns")
-                    {
-                        SayTo(player, "I can send you to:\n" +
-                                      "[Cotswold Village]\n" +
-                                      "[Prydwen Keep]\n" +
-                                      "[Caer Ulfwych]\n" +
-                                      "[Campacorentin Station]\n" +
-                                      "[Adribard's Retreat]\n" +
-                                      "[Yarley's Farm]");
-                        return false;
-                    }
-
-                    /*
-                    if (text.ToLower() == "darkness falls")
-                    {
-                        IGameLocation location = new GameLocation("df", 249, 249, 23122, 19634, 22897, 3074);
-                        
-                        Teleport teleport = new Teleport();
-                        teleport.TeleportID = "Darkness Falls";
-                        teleport.Realm = (int) DestinationRealm;
-                        teleport.RegionID = location.RegionID;
-                        teleport.X = location.X;
-                        teleport.Y = location.Y;
-                        teleport.Z = location.Z;
-                        teleport.Heading = location.Heading;
-                        OnDestinationPicked(player, teleport);
-                        return true;
-                    }*/
-                    
-                    break;
+                String reply = "Would you prefer\n\n" +
+                    "Albion:\n" +
+                    "[Gothwaite], [Wearyall Village], Fort [Gwyntell], [Caer Diogel]\n\n" +
+                    "Midgard:\n" +
+                    "[Aegirhamn], [Bjarken], [Hagall], [Knarr]\n\n" +
+                    "Hibernia:\n" +
+                    "[Domnann],[Droighaid], [Aalid Feie], [Necht]?";
                 
-                case eRealm.Midgard:
+                SayTo(player, reply);
+                return false;
+            }
                     
-                    if (text.ToLower() == "shrouded isles")
-                    {
-                        String reply = String.Format("The isles of Aegir are an excellent choice. {0} {1}",
-                            "Would you prefer the city of [Aegirhamn] or perhaps one of the outlying towns",
-                            "like [Bjarken], [Hagall], or [Knarr]?");
-                        SayTo(player, reply);
-                        
-                        return false;
-                    }
-
-                    if (text.ToLower() == "housing")
-                    {
-                        SayTo(player,
-                            "I can send you to your [personal] or [guild] house. If you do not have a personal house, I can teleport you to the housing [entrance] or your housing [hearth] bindstone.");
-                        return false;
-                    }
-
-                    if (text.ToLower() == "towns")
-                    {
-                        SayTo(player,
-                            "I can send you to:\n" +
-                            "[Mularn]\n" +
-                            "[Fort Veldon]\n" +
-                            "[Audliten]\n" +
-                            "[Huginfell]\n" +
-                            "[Fort Atla]\n" +
-                            "[West Skona]");
-                        return false;
-                    }
+            if (text.ToLower() == "housing")
+            {
+                SayTo(player,
+                    "I can send you to your [personal] or [guild] house. If you do not have a personal house, I can teleport you to the housing [entrance] or your housing [hearth] bindstone.");
+                return false;
+            }
                     
-                    break;
-                
-                case eRealm.Hibernia:
-                    
-                    if (text.ToLower() == "shrouded isles")
-                    {
-                        SayTo(player,
-                            "The isles of Hy Brasil are an excellent choice. Would you prefer the grove of [Domnann] or perhaps one of the outlying towns like [Droighaid], [Aalid Feie], or [Necht]?");
-                        return false;
-                    }
-
-                    if (text.ToLower() == "housing")
-                    {
-                        SayTo(player,
-                            "I can send you to your [personal] or [guild] house. If you do not have a personal house, I can teleport you to the housing [entrance] or your housing [hearth] bindstone.");
-                        return false;
-                    }
-
-                    if (text.ToLower() == "towns")
-                    {
-                        SayTo(player,
-                            "I can send you to:\n" +
-                            "[Mag Mell]\n" +
-                            "[Tir na mBeo]\n" +
-                            "[Ardagh]\n" +
-                            "[Howth]\n" +
-                            "[Connla]\n" +
-                            "[Innis Carthaig]");
-                        return false;
-                    }
-
-                    break;
+            if (text.ToLower() == "towns")
+            {
+                SayTo(player, "I can send you to:\n" +
+                              "Albion:\n" +
+                              "[Cotswold Village]\n" +
+                              "[Prydwen Keep]\n" +
+                              "[Caer Ulfwych]\n" +
+                              "[Campacorentin Station]\n" +
+                              "[Adribard's Retreat]\n" +
+                              "[Yarley's Farm]\n\n" +
+                              "Midgard:\n" +
+                              "[Mularn]\n" +
+                              "[Fort Veldon]\n" +
+                              "[Audliten]\n" +
+                              "[Huginfell]\n" +
+                              "[Fort Atla]\n" +
+                              "[West Skona]\n\n"+
+                              "Hibernia:\n"+ 
+                              "[Mag Mell]\n" +
+                              "[Tir na mBeo]\n" +
+                              "[Ardagh]\n" +
+                              "[Howth]\n" +
+                              "[Connla]\n" +
+                              "[Innis Carthaig]");
+                return false;
             }
 
             // Another special case is personal house, as there is no location
@@ -410,25 +366,27 @@ namespace DOL.GS.Scripts
                     return true;
                 }
             }
-
-            if (text.ToLower() == "epic dungeon")
+            
+            if (text.ToLower() == "caer sidi")
             {
-                switch (player.Realm)
-                {
-                    case eRealm.Albion:
-                        GetTeleportLocation(player, "Caer Sidi");
-                        return true;
-                    case eRealm.Midgard:
-                        GetTeleportLocation(player, "Tuscaran Glacier");
-                        return true;
-                    case eRealm.Hibernia:
-                        GetTeleportLocation(player, "Galladoria");
-                        return false;
-                }
+                GetTeleportLocation(player, "Caer Sidi");
+                return true;
+            }
+            
+            if (text.ToLower() == "tuscaran glacier")
+            {
+                GetTeleportLocation(player, "Tuscaran Glacier");
+                return true;
+            }
+            
+            if (text.ToLower() == "galladoria")
+            {
+                GetTeleportLocation(player, "Galladoria");
+                return true;
             }
 
             // Find the teleport location in the database.
-            Teleport port = WorldMgr.GetTeleportLocation(DestinationRealm, String.Format("{0}:{1}", Type, text));
+            Teleport port = WorldMgr.GetTeleportLocation((eRealm)GetRealmForSelection(text), String.Format("{0}:{1}", Type, text));
             if (port != null)
             {
                 if (port.RegionID == 0 && port.X == 0 && port.Y == 0 && port.Z == 0)
@@ -444,6 +402,57 @@ namespace DOL.GS.Scripts
             }
 
             return true; // Needs further processing.
+        }
+
+        private int GetRealmForSelection(String text)
+        {
+            switch (text.ToLower())
+            {
+                case "snowdonia fortress":
+                case "castle sauvage":
+                case "avalon marsh":
+                case "cotswold village":
+                case "prydwen keep":
+                case "caer ulfwych":
+                case "campacorentin station":
+                case "adribard's retreat":
+                case "yarley's farm":
+                case "gothwaite":
+                case "wearyall village":
+                case "gwyntell":
+                case "caer diogel":
+                    return 1;
+                case "mularn":
+                case "fort veldon":
+                case "audliten":
+                case "huginfell":
+                case "fort atla":
+                case "west skona":
+                case "aegirhamn":
+                case "bjarken":
+                case "hagall":
+                case "knarr":
+                case "svasud faste":
+                case "vindsaul faste":
+                case "gotar":
+                    return 2;
+                case "mag mell":
+                case "tir na mbeo":
+                case "ardagh":
+                case "howth":
+                case "connla":
+                case "innis carthaig":
+                case "domnann":
+                case "droighaid":
+                case "aalid feie":
+                case "necht":
+                case "druim ligen":
+                case "druim cain":
+                case "shannon estuary":
+                    return 3;
+                    break;
+                default: return 0;
+            }
         }
 
         /// <summary>

@@ -19,7 +19,24 @@ namespace DOL.GS
             m_ownBrain.Body = this;
         }
 
+        /*
+        public override void ProcessDeath(GameObject killer)
+        {
+            if (killer is GamePlayer p && ConquestService.ConquestManager.IsPlayerNearConquestObjective(p))
+            {
+                ConquestService.ConquestManager.AddContributors(this.XPGainers.Keys.OfType<GamePlayer>().ToList());
+            }
+
+            base.ProcessDeath(killer);
+        }*/
+
+        public override void DropLoot(GameObject killer)
+        {
+            //Guards dont drop loot when they die
+        }
+
         public override bool IsStealthed => (Flags & eFlags.STEALTH) != 0;
+
 
         public override IList GetExamineMessages(GamePlayer player)
         {

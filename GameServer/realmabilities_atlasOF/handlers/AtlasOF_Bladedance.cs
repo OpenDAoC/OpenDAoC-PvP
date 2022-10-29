@@ -28,8 +28,8 @@ namespace DOL.GS.RealmAbilities
         private SpellLine m_spellline;
 
         public override int MaxLevel { get { return 1; } }
-		public override int CostForUpgrade(int level) { return 14; }
-		public override int GetReUseDelay(int level) { return 900; } // 15 mins
+		public override int CostForUpgrade(int level) { return 10; }
+		public override int GetReUseDelay(int level) { return 600; } // 10 mins
 		
 		public override bool CheckRequirement(GamePlayer player) { return AtlasRAHelpers.GetAugDexLevel(player) >= 3; }
 

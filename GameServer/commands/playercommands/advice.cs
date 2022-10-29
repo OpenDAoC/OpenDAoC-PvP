@@ -87,7 +87,7 @@ namespace DOL.GS.Commands
 					if (playerClient.Player == null) continue;
 					if (playerClient.Player.Advisor &&
 					   ((playerClient.Player.Realm == client.Player.Realm && playerClient.Player.IsAnonymous == false) ||
-					   client.Account.PrivLevel > 1))
+					   client.Account.PrivLevel > 1) || GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP)
 					{
 						total++;
 						if (playerClient.Player.ClassNameFlag == false && playerClient.Player.CraftTitle.GetValue(playerClient.Player, client.Player).StartsWith("Legendary"))
@@ -115,6 +115,7 @@ namespace DOL.GS.Commands
 				if (playerClient.Player == null) continue;
 				if (playerClient.Player.IsIgnoring(client.Player)) continue;
 				if (playerClient.Player.Realm == client.Player.Realm ||
+				    GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP ||
 				    playerClient.Account.PrivLevel > 1)
 				{
 					// Message: [ADVICE {0}] {1}: {2}

@@ -314,6 +314,7 @@ namespace DOL.GS
 
 			bool canPersist = true;
 			GameInventoryItem gameItem = item as GameInventoryItem;
+			if (item is GameInventoryItemLootable lootable) gameItem = lootable;
 			if (gameItem != null)
 			{
 				canPersist = gameItem.CanPersist;
@@ -378,7 +379,7 @@ namespace DOL.GS
 			if (item == null)
 				return false;
 
-			if (item.OwnerID != m_player.InternalID)
+			if (item.OwnerID != m_player.InternalID && item is not GameInventoryItemLootable)
 			{
 				if (Log.IsErrorEnabled)
 					Log.Error(m_player.Name + ": PlayerInventory -> tried to remove item with wrong owner (" + (item.OwnerID ?? "null") +

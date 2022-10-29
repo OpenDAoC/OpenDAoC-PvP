@@ -15,7 +15,16 @@ namespace DOL.GS.RealmAbilities
         public AtlasOF_EmptyMind(DBAbility dba, int level) : base(dba, level) { }
 
         public override int MaxLevel { get { return 3; } }
-        public override int GetReUseDelay(int level) { return 1800; } // 30 mins
+        public override int GetReUseDelay(int level)
+        {
+            switch (level)
+            {
+                case 1: return 1800;
+                case 2: return 1200;
+                case 3: return 900;
+                default: return 1800;
+            }
+        }
         protected override int GetDuration() { return 60000; }
         public override int CostForUpgrade(int currentLevel) { return AtlasRAHelpers.GetCommonUpgradeCostFor3LevelsRA(currentLevel); }
 

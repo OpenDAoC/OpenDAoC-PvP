@@ -126,11 +126,12 @@ public class PredatorManager
             DisqualifiedPlayers.Remove(player);
         }
 
+        /*
         if (!ConquestService.ConquestManager.IsPlayerInConquestArea(player))
         {
             player.Out.SendMessage($"You must hunt within the active conquest zone. Try again after entering the active frontier.", eChatType.CT_ScreenCenterSmaller_And_CT_System, eChatLoc.CL_SystemWindow);
             return;
-        }
+        }*/
         
         player.Out.SendMessage($"You tune your senses to the pulse of nature. New prey is sure to arrive soon.", eChatType.CT_ScreenCenterSmaller_And_CT_System, eChatLoc.CL_SystemWindow);
         QueuedPlayers.Add(player);

@@ -1243,6 +1243,26 @@ namespace DOL.GS.ServerRules
 			Diagnostics.StopPerfCounter("ReaperService-NPC-OnNPCKilled-XP-NPC("+killedNPC.GetHashCode()+")");
 		}
 
+		private double GetGroupModification(Group group, GamePlayer player)
+		{
+			if (group == null) return 1;
+			
+			GamePlayer highestMember = player;
+			foreach (GamePlayer member in group.GetPlayersInTheGroup())
+			{
+				if (member.Level > highestMember.Level) highestMember = member;
+			}
+			
+			switch (player.GetConLevel(highestMember))
+			{
+				case >=10: return .05; //really deep purple
+				case >7: return .15; //deep purple
+				case >3: return .50; //purple
+				case >2: return .75; //red
+				default: return 1.0;
+			}
+		}
+
 		private void AwardExperience(DictionaryEntry de, GameNPC killedNPC, GameObject killer, float totalDamage, Dictionary<Group, int> plrGrpExp, bool isGroupInRange)
 		{
 			System.Globalization.NumberFormatInfo format = System.Globalization.NumberFormatInfo.InvariantInfo;
@@ -1353,7 +1373,8 @@ namespace DOL.GS.ServerRules
 			{
 				int scalingFactor = (int) Math.Ceiling((decimal) player.Group.MemberCount);
 				long tmpxp = (long) (xpReward * (1 + 0.125 * GetUniqueClassCount(player.Group)));
-				xpReward = tmpxp / scalingFactor;
+				Console.WriteLine($"GroupMod {GetGroupModification(player.Group, player)}");
+				xpReward = (long) (tmpxp / scalingFactor * GetGroupModification(player.Group, player));
 				//xpReward /= scalingFactor;
 			}
 
@@ -1849,6 +1870,7 @@ namespace DOL.GS.ServerRules
 				playerBPValue = killedPlayer.BountyPointsValue;
 			long playerMoneyValue = killedPlayer.MoneyValue;
 			
+			/*
 			//check for conquest activity
 			if (killer is GamePlayer kp)
 			{
@@ -1858,7 +1880,7 @@ namespace DOL.GS.ServerRules
 					playerRPValue = (int)(playerRPValue * 1.10); //10% more RPs while defending the keep
 					ConquestService.ConquestManager.AwardDefenders(playerRPValue, kp);
 				}
-			}
+			}*/
 
 			List<KeyValuePair<GamePlayer, int>> playerKillers = new List<KeyValuePair<GamePlayer, int>>();
             List<Group> groupsToAward = new List<Group>();
@@ -1871,6 +1893,7 @@ namespace DOL.GS.ServerRules
 				GamePlayer expGainPlayer = living as GamePlayer;
 				if (living == null) continue;
 				if (living.ObjectState != GameObject.eObjectState.Active) continue;
+				if (expGainPlayer == null) continue;
 				/*
 				 * http://www.camelotherald.com/more/2289.shtml
 				 * Dead players will now continue to retain and receive their realm point credit
@@ -1881,12 +1904,13 @@ namespace DOL.GS.ServerRules
 				//if (!living.Alive) continue;
 				if (!living.IsWithinRadius(killedPlayer, WorldMgr.MAX_EXPFORKILL_DISTANCE)) continue;
 				
+				/*
 				//check for conquest activity
 				if (living is GamePlayer lp)
 				{
 					if(ConquestService.ConquestManager.IsPlayerInConquestArea(lp) && lp.Realm != killedPlayer.Realm)
 						ConquestService.ConquestManager.AddContributor(lp);
-				}
+				}*/
 
 				if (PredatorManager.PlayerIsActive(killedPlayer))
 				{

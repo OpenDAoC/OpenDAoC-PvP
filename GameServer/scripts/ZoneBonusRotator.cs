@@ -154,6 +154,19 @@ namespace DOL.GS.Scripts
                 hiberniaSIZones.Add(zone.ZoneID);
             }
         }
+
+        public static List<int> GetCurrentSafetyZones()
+        {
+            List<int> currentZones = new List<int>();
+            currentZones.Add(currentAlbionZone);
+            currentZones.Add(currentAlbionZoneSI);
+            currentZones.Add(currentHiberniaZone);
+            currentZones.Add(currentHiberniaZoneSI);
+            currentZones.Add(currentMidgardZone);
+            currentZones.Add(currentMidgardZoneSI);
+            return currentZones;
+        }
+        
         public static void PlayerEntered(DOLEvent e, object sender, EventArgs arguments)
         {
             GamePlayer player = sender as GamePlayer;

@@ -245,6 +245,19 @@ namespace DOL.GS
 		{
 			if (!m_groupMembers.TryRemove(living))
 				return false;
+			
+			foreach (var oldMember in m_groupMembers.ToList())
+			{
+				if (oldMember is GamePlayer oldPlayer && !oldPlayer.PlayerAttackImmunityDict.ContainsKey(living))
+				{
+					oldPlayer.PlayerAttackImmunityDict.Add(living, GameLoop.GameLoopTime);
+				}
+
+				if (living is GamePlayer leaver && !leaver.PlayerAttackImmunityDict.ContainsKey(oldMember))
+				{
+					leaver.PlayerAttackImmunityDict.Add(oldMember, GameLoop.GameLoopTime);
+				}
+			}
 
 			if (MemberCount < 1)
 				DisbandGroup();

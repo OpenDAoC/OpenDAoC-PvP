@@ -21,9 +21,29 @@ namespace DOL.GS.RealmAbilities
         private SpellLine m_spellline;
         private int m_tauntValue = 0;
 
-        public override int MaxLevel { get { return 1; } }
-		public override int CostForUpgrade(int level) { return 14; }
-		public override int GetReUseDelay(int level) { return 900; } // 15 mins
+        public override int MaxLevel { get { return 3; } }
+
+        public override int CostForUpgrade(int level)
+        {
+	        switch(level)
+	        {
+		        case 0: return 3;
+		        case 1: return 6;
+		        case 2: return 9;
+		        default: return 3;
+	        }
+        }
+
+		public override int GetReUseDelay(int level)
+		{
+			switch (level)
+			{
+				case 1: return 900;
+				case 2: return 600;
+				case 3: return 300;
+				default: return 900;
+			}
+		} 
 		
 		public override bool CheckRequirement(GamePlayer player) { return AtlasRAHelpers.GetAugConLevel(player) >= 3; }
 

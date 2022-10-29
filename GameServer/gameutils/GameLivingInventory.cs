@@ -890,6 +890,10 @@ namespace DOL.GS
 					if (curItem.Id_nb != sourceItem.Id_nb)
 						continue;
 
+					//if we are comparing a GameInventory and a GameInventoryLootable, don't stack them
+					if (curItem.GetType() != sourceItem.GetType())
+						continue;
+
 					// Can't add to an already maxed-out stack.
 					if (curItem.Count >= curItem.MaxCount)
 						continue;
@@ -994,11 +998,17 @@ namespace DOL.GS
 						{
 							if (sourceItem.Template is ItemUnique)
 							{
-								item = GameInventoryItem.Create(sourceItem);
+								if (sourceItem.Template.PackageID.ToLower().Contains("titan"))
+									item = GameInventoryItemLootable.Create(sourceItem);
+								else
+									item = GameInventoryItem.Create(sourceItem);
 							}
 							else
 							{
-								item = GameInventoryItem.Create(sourceItem.Template);
+								if (sourceItem.Template.PackageID.ToLower().Contains("titan"))
+									item = GameInventoryItemLootable.Create(sourceItem.Template);
+								else
+									item = GameInventoryItem.Create(sourceItem.Template);
 							}
 
 							item.Count = -itemCount;

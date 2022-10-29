@@ -407,6 +407,11 @@ namespace DOL.GS {
                 delve.Add(" ");
             }
 
+            if (this is GameInventoryItemLootable)
+            {
+                delve.Add("This item shimmers ethereally, and is difficult to grasp. Dying with this item will cause it to fall to the ground at your death location. Leaving the dungeon will solidify the otherworldly magicks, and allow you to keep it permanently.");
+            }
+
             if ((Object_Type >= (int)eObjectType.GenericWeapon) && (Object_Type <= (int)eObjectType._LastWeapon) ||
                 Object_Type == (int)eObjectType.Instrument)
             {

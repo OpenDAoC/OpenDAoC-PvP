@@ -1946,6 +1946,9 @@ namespace DOL.GS.Commands
 						// --------------------------------------------------------------------------------
 					case "alliance":
 						{
+							client.Out.SendMessage("You are unable to form alliances on a PvP server!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+							break;
+							
 							if (client.Player.Guild == null)
 							{
 								client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Player.Guild.NotMember"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -1985,6 +1988,9 @@ namespace DOL.GS.Commands
 						// --------------------------------------------------------------------------------
 					case "ainvite":
 						{
+							client.Out.SendMessage("You are unable to form alliances on a PvP server!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+							break;
+							
 							if (client.Player.Guild == null)
 							{
 								client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Player.Guild.NotMember"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -2035,6 +2041,8 @@ namespace DOL.GS.Commands
 						}
 						case "aleader":
 						{
+							client.Out.SendMessage("You are unable to form alliances on a PvP server!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+							break;
 							if (client.Player.Guild == null)
 							{
 								client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Player.Guild.NotMember"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -2084,6 +2092,8 @@ namespace DOL.GS.Commands
 						// --------------------------------------------------------------------------------
 					case "aaccept":
 						{
+							client.Out.SendMessage("You are unable to form alliances on a PvP server!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+							break;
 							AllianceInvite(client.Player, 0x01);
 							client.Player.Guild.UpdateGuildWindow();
 							return;
@@ -2095,6 +2105,9 @@ namespace DOL.GS.Commands
 						// --------------------------------------------------------------------------------
 					case "acancel":
 						{
+							client.Out.SendMessage("You are unable to form alliances on a PvP server!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+							break;
+							
 							if (client.Player.Guild == null)
 							{
 								client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Player.Guild.NotMember"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -2125,6 +2138,9 @@ namespace DOL.GS.Commands
 						// --------------------------------------------------------------------------------
 					case "adecline":
 						{
+							client.Out.SendMessage("You are unable to form alliances on a PvP server!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+							break;
+							
 							if (client.Player.Guild == null)
 							{
 								client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Player.Guild.NotMember"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -2148,6 +2164,9 @@ namespace DOL.GS.Commands
 						// --------------------------------------------------------------------------------
 					case "aremove":
 						{
+							client.Out.SendMessage("You are unable to form alliances on a PvP server!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+							break;
+							
 							if (client.Player.Guild == null)
 							{
 								client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Player.Guild.NotMember"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -2219,6 +2238,9 @@ namespace DOL.GS.Commands
 						// --------------------------------------------------------------------------------
 					case "aleave":
 						{
+							client.Out.SendMessage("You are unable to form alliances on a PvP server!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+							break;
+							
 							if (client.Player.Guild == null)
 							{
 								client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Player.Guild.NotMember"), eChatType.CT_System, eChatLoc.CL_SystemWindow);

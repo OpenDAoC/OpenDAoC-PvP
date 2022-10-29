@@ -51,7 +51,15 @@
                 client.Player.Release(eReleaseType.House, false);
                 return;
             }
-			client.Player.Release(eReleaseType.Normal, false);
+            
+            if (args.Length > 1 && args[1].ToLower() == "random")
+            {
+	           
+	            client.Player.Release(eReleaseType.Random, false);
+	            return;
+            }
+            
+			client.Player.Release(eReleaseType.City, false);
 		}
 	}
 }

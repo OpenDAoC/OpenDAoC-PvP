@@ -35,5 +35,7 @@ namespace DOL.GS
         /// Release to players house
         /// </summary>
         House,
+        //Release to a randomly selected bindstone
+        Random,
     }
 }

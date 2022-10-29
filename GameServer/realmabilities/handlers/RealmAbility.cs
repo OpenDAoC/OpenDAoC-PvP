@@ -390,7 +390,7 @@ namespace DOL.GS.RealmAbilities
 			return 10;
 		}
 		
-		public override int GetReUseDelay(int level) { return 600; } // 10 mins
+		public override int GetReUseDelay(int level) { return 300; } // 5 mins
 
 		protected abstract Style CreateStyle();
 
