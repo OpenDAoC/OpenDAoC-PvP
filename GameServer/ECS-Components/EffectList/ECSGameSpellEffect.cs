@@ -82,7 +82,7 @@ namespace DOL.GS
         {
             if (TriggersImmunity)
             {
-                if (OwnerPlayer != null)
+                if (OwnerPlayer != null || Owner is NecromancerPet)
                 {
                     if ((EffectType == eEffect.Stun && SpellHandler.Caster is GamePet) || SpellHandler is UnresistableStunSpellHandler)
                         return;
