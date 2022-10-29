@@ -739,16 +739,28 @@ namespace DOL.GS.ServerProperties
 		public static bool WEATHER_LOG_EVENTS;
 
 		/// <summary>
-		/// Perform checklos on client with each mob
+		/// Perform a LoS check on client with each mob
 		/// </summary>
 		[ServerProperty("world", "always_check_los", "Perform a LoS check before aggroing. This can involve a huge lag, handle with care!", false)]
 		public static bool ALWAYS_CHECK_LOS;
 
 		/// <summary>
-		/// Perform checklos on client with each mob
+		/// Perform a LoS check on client during cast
 		/// </summary>
-		[ServerProperty("world", "check_los_during_cast", "Perform a LOS check during a spell cast.", true)]
+		[ServerProperty("world", "check_los_during_cast", "Perform LOS checks during a spell cast.", true)]
 		public static bool CHECK_LOS_DURING_CAST;
+
+		/// <summary>
+		/// Minimum interval between two LoS checks during cast
+		/// </summary>
+		[ServerProperty("world", "check_los_during_cast_minimum_interval", "The minimum interval (milliseconds) between two LOS checks performed during a spell cast.", 200)]
+		public static int CHECK_LOS_DURING_CAST_MINIMUM_INTERVAL;
+
+		/// <summary>
+		/// Interrupt cast if a LoS check fails before end of cast
+		/// </summary>
+		[ServerProperty("world", "check_los_during_cast_interrupt", "Should the casting animation be interrupted if a during cast LOS checks fails.", false)]
+		public static bool CHECK_LOS_DURING_CAST_INTERRUPT;
 
 		/// <summary>
 		/// Perform LOS check between controlled NPC's and players
@@ -1320,6 +1332,18 @@ namespace DOL.GS.ServerProperties
 		public static double NECRO_PET_QUI_MULTIPLIER;
 
 		/// <summary>
+		/// Base value to use when setting intelligence for most necromancer pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_pet_int_base", "Base value to use when setting intelligence for most necromancer pets.", (short)60)]
+		public static short NECRO_PET_INT_BASE;
+
+		/// <summary>
+		/// Multiplier to use when setting intelligence for most necromancer pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_pet_int_multiplier", "Multiplier to use when setting intelligence for most necromancer pets.", 0.3333)]
+		public static double NECRO_PET_INT_MULTIPLIER;
+
+		/// <summary>
 		/// Base value to use when setting strength for greater necroservant pets.
 		/// </summary>
 		[ServerProperty("npc", "necro_greater_pet_str_base", "Base value to use when setting strength for greater necroservant pets.", (short)60)]
@@ -1367,6 +1391,17 @@ namespace DOL.GS.ServerProperties
 		[ServerProperty("npc", "necro_greater_pet_qui_multiplier", "Multiplier to use when setting quickness for greater necroservant pets.", 1.0)]
 		public static double NECRO_GREATER_PET_QUI_MULTIPLIER;
 
+		/// <summary>
+		/// Base value to use when setting intelligence for greater necroservant pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_greater_pet_int_base", "Base value to use when setting intelligence for greater necroservant pets.", (short)60)]
+		public static short NECRO_GREATER_PET_INT_BASE;
+
+		/// <summary>
+		/// Multiplier to use when setting intelligence for greater necroservant pets.
+		/// </summary>
+		[ServerProperty("npc", "necro_greater_pet_int_multiplier", "Multiplier to use when setting intelligence for greater necroservant pets.", 0.3333)]
+		public static double NECRO_GREATER_PET_INT_MULTIPLIER;
 
 		/// <summary>
 		/// How often should pets think?  Default 1500 or 1.5 seconds
@@ -2029,10 +2064,35 @@ namespace DOL.GS.ServerProperties
 		public static int GUARD_RESPAWN_VARIANCE;
 		
 		/// <summary>
+		/// Doors base health value.
+		/// </summary>
+		[ServerProperty("keeps", "keep_doors_base_health", "Keep doors base health. Will be multiplied by the keep's base level.", 200)]
+		public static int KEEP_DOORS_BASE_HEALTH;
+
+		/// <summary>
+		/// Doors health upgrade modifier.
+		/// </summary>
+		[ServerProperty("keeps", "keep_doors_health_upgrade_modifier", "The modifier used to calculate the extra amount of door health per upgrade.", 1.0)]
+		public static double KEEP_DOORS_HEALTH_UPGRADE_MODIFIER;
+
+		/// <summary>
+		/// Components base health value.
+		/// </summary>
+		[ServerProperty("keeps", "keep_components_base_health", "Keep components base health. Will be multiplied by the keep's base level.", 200)]
+		public static int KEEP_COMPONENTS_BASE_HEALTH;
+
+		/// <summary>
+		/// Components health upgrade modifier.
+		/// </summary>
+		[ServerProperty("keeps", "keep_components_health_upgrade_modifier", "The modifier used to calculate the extra amount of component health per upgrade.", 1.0)]
+		public static double KEEP_COMPONENTS_HEALTH_UPGRADE_MODIFIER;
+
+		/// <summary>
 		/// Relic gates health value.
 		/// </summary>
 		[ServerProperty("keeps", "relic_doors_health", "Relic gates health value", 180000)]
 		public static int RELIC_DOORS_HEALTH;
+
 		#endregion
 
 		#region PVE / TOA

@@ -45,7 +45,7 @@ namespace DOL.GS.RealmAbilities
 			}
 		} 
 		
-		public override bool CheckRequirement(GamePlayer player) { return AtlasRAHelpers.HasAugConLevel(player, 3); }
+		public override bool CheckRequirement(GamePlayer player) { return AtlasRAHelpers.GetAugConLevel(player) >= 3; }
 
         private void CreateSpell(GamePlayer caster)
         {

@@ -25,9 +25,8 @@ namespace DOL.GS.RealmAbilities
                 case 3: return 600;
                 default: return 900;
             }
-        } 
-        
-        public override bool CheckRequirement(GamePlayer player) { return AtlasRAHelpers.HasAugConLevel(player, 3); }
+        }       
+        public override bool CheckRequirement(GamePlayer player) { return AtlasRAHelpers.GetAugConLevel(player) >= 3; }
         public override int CostForUpgrade(int currentLevel) { return AtlasRAHelpers.GetCommonUpgradeCostFor3LevelsRA(currentLevel); } 
         public override void AddEffectsInfo(IList<string> list)
         {

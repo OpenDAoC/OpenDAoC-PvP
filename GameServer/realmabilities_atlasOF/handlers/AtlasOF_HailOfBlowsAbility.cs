@@ -26,8 +26,7 @@ namespace DOL.GS.RealmAbilities
                 default: return 900;
             }
         } 
-        
-        public override bool CheckRequirement(GamePlayer player) { return AtlasRAHelpers.HasAugDexLevel(player, 3); }
+        public override bool CheckRequirement(GamePlayer player) { return AtlasRAHelpers.GetAugDexLevel(player) >= 3; }
         public override int CostForUpgrade(int currentLevel) { return AtlasRAHelpers.GetCommonUpgradeCostFor3LevelsRA(currentLevel); }
         
         private DBSpell m_dbspell;

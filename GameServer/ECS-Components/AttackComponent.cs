@@ -57,8 +57,7 @@ namespace DOL.GS
                 if (m_attackers.Contains(attacker)) return;
                 m_attackers.Add(attacker);
 
-                if (m_attackers.Count() > 0 &&
-                    !EntityManager.GetLivingByComponent(typeof(AttackComponent)).Contains(owner))
+                if (m_attackers.Count() > 0)
                     EntityManager.AddComponent(typeof(AttackComponent), owner);
             }
         }
@@ -101,8 +100,7 @@ namespace DOL.GS
 
             if (weaponAction is null && attackAction is null && !owner.InCombat)
             {
-                if (EntityManager.GetLivingByComponent(typeof(AttackComponent)).ToArray().Contains(owner))
-                    EntityManager.RemoveComponent(typeof(AttackComponent), owner);
+                EntityManager.RemoveComponent(typeof(AttackComponent), owner);
             }
         }
 
@@ -616,15 +614,17 @@ namespace DOL.GS
                 //double effectiveness = Effectiveness;
                 double damage = (1.0 + owner.Level / Properties.PVE_MOB_DAMAGE_F1 + owner.Level * owner.Level / Properties.PVE_MOB_DAMAGE_F2) * AttackSpeed(weapon) *
                                 0.001;
-                if (weapon == null || weapon.Item_Type == Slot.RIGHTHAND || weapon.Item_Type == Slot.LEFTHAND ||
-                    weapon.Item_Type == Slot.TWOHAND)
+                if (weapon == null
+                    || weapon.SlotPosition == Slot.RIGHTHAND
+                    || weapon.SlotPosition == Slot.LEFTHAND
+                    || weapon.SlotPosition == Slot.TWOHAND)
                 {
                     //Melee damage buff,debuff,RA
                     effectiveness += owner.GetModified(eProperty.MeleeDamage) * 0.01;
                 }
-                else if (weapon.Item_Type == Slot.RANGED && (weapon.Object_Type == (int) eObjectType.Longbow ||
-                                                             weapon.Object_Type == (int) eObjectType.RecurvedBow ||
-                                                             weapon.Object_Type == (int) eObjectType.CompositeBow))
+                else if (weapon.SlotPosition == Slot.RANGED && (weapon.Object_Type == (int) eObjectType.Longbow
+                                                                || weapon.Object_Type == (int) eObjectType.RecurvedBow
+                                                                || weapon.Object_Type == (int) eObjectType.CompositeBow))
                 {
                     // RDSandersJR: Check to see if we are using old archery if so, use RangedDamge
                     if (ServerProperties.Properties.ALLOW_OLD_ARCHERY == true)
@@ -637,7 +637,7 @@ namespace DOL.GS
                         effectiveness += owner.GetModified(eProperty.SpellDamage) * 0.01;
                     }
                 }
-                else if (weapon.Item_Type == Slot.RANGED)
+                else if (weapon.SlotPosition == Slot.RANGED)
                 {
                     effectiveness += owner.GetModified(eProperty.RangedDamage) * 0.01;
                 }
@@ -654,8 +654,7 @@ namespace DOL.GS
         /// <param name="attackTarget">the target to attack</param>
         public void StartAttack(GameObject attackTarget)
         {
-            if (!EntityManager.GetLivingByComponent(typeof(AttackComponent)).ToArray().Contains(owner))
-                EntityManager.AddComponent(typeof(AttackComponent), owner);
+            EntityManager.AddComponent(typeof(AttackComponent), owner);
 
             var p = owner as GamePlayer;
 
@@ -1432,16 +1431,10 @@ namespace DOL.GS
 
                 return ad;
             }
-            else if (owner is NecromancerPet)
-            {
-                return (owner as NecromancerPet).MakeAttack(target, weapon, style, effectiveness, interruptDuration,
-                    dualWield, false);
-            }
+            else if (owner is NecromancerPet necromancerPet)
+                return necromancerPet.MakeAttack(target, weapon, style, effectiveness, interruptDuration, dualWield, false);
             else
-            {
-                effectiveness = 1;
-                return LivingMakeAttack(target, weapon, style, effectiveness, interruptDuration, dualWield);
-            }
+                return LivingMakeAttack(target, weapon, style, 1, interruptDuration, dualWield);
         }
 
         /// <summary>
@@ -1489,7 +1482,7 @@ namespace DOL.GS
             else if (weapon == null)
                 ad.AttackType = AttackData.eAttackType.MeleeOneHand;
             else
-                switch (weapon.Item_Type)
+                switch (weapon.SlotPosition)
                 {
                     default:
                     case Slot.RIGHTHAND:
@@ -1982,28 +1975,18 @@ namespace DOL.GS
                                 string.Format(
                                     LanguageMgr.GetTranslation(((GamePlayer) ad.Target).Client.Account.Language,
                                         "GameLiving.AttackData.YouBlock") +
-                                    " (" + /*(ad.Target as GamePlayer).GetBlockChance()*/
-                                    ad.BlockChance.ToString("0.0") + "%)", ad.Attacker.GetName(0, false),
+                                        $" ({ad.BlockChance:0.0}%)", ad.Attacker.GetName(0, false),
                                     target.GetName(0, false)), eChatType.CT_Missed, eChatLoc.CL_SystemWindow);
                             ((GamePlayer) ad.Target).Stealth(false);
                         }
                     }
                     else if (ad.Target is GamePlayer)
                     {
-                        // Added for Nature's Shield
-                        int percent = 0;
-                        if (ad.Target.styleComponent != null && (ad.Target.styleComponent.NextCombatStyle != null &&
-                                                                 ad.Target.styleComponent.NextCombatStyle.ID == 394) ||
-                            (ad.Target.styleComponent.NextCombatBackupStyle != null &&
-                             ad.Target.styleComponent.NextCombatBackupStyle.ID == 394))
-                            percent = 60;
-
                         ((GamePlayer) ad.Target).Out.SendMessage(
                             string.Format(
                                 LanguageMgr.GetTranslation(((GamePlayer) ad.Target).Client.Account.Language,
-                                    "GameLiving.AttackData.AttacksYou") + " (" + (percent > 0
-                                    ? percent.ToString("0.0") + "%)"
-                                    : ad.BlockChance.ToString("0.0") + "%)"), ad.Attacker.GetName(0, true)),
+                                    "GameLiving.AttackData.AttacksYou") +
+                                    $" ({ad.BlockChance:0.0}%)", ad.Attacker.GetName(0, true)),
                             eChatType.CT_Missed, eChatLoc.CL_SystemWindow);
                     }
 
@@ -2168,7 +2151,7 @@ namespace DOL.GS
                                         string.Format(
                                             LanguageMgr.GetTranslation(owner.Client.Account.Language,
                                                 "GameLiving.AttackData.YourCriticallyHits"), ad.Attacker.Name,
-                                            ad.Target.GetName(0, false), ad.CriticalDamage), eChatType.CT_YouHit,
+                                            ad.Target.GetName(0, false), ad.CriticalDamage) + $" ({AttackCriticalChance(ad.Weapon)}%)", eChatType.CT_YouHit,
                                         eChatLoc.CL_SystemWindow);
                                 }
 
@@ -2593,16 +2576,11 @@ namespace DOL.GS
 
             if (ad.Attacker.ActiveWeaponSlot == eActiveWeaponSlot.Distance)
             {
-                // Nature's shield 60% block
-                if (owner.IsObjectInFront(ad.Attacker, 180) && (owner.styleComponent.NextCombatStyle != null &&
-                                                                owner.styleComponent.NextCombatStyle.ID == 394) ||
-                    (owner.styleComponent.NextCombatBackupStyle != null &&
-                     owner.styleComponent.NextCombatBackupStyle.ID == 394))
+                // Nature's shield, 100% block chance, 120° frontal angle
+                if (owner.IsObjectInFront(ad.Attacker, 120) && (owner.styleComponent.NextCombatStyle?.ID == 394 || owner.styleComponent.NextCombatBackupStyle?.ID == 394))
                 {
-                    if (Util.Chance(60))
-                    {
-                        return eAttackResult.Blocked;
-                    }
+                    ad.BlockChance = 1;
+                    return eAttackResult.Blocked;
                 }
             }
 
@@ -3295,7 +3273,7 @@ namespace DOL.GS
                                 p.Out.SendMessage(LanguageMgr.GetTranslation(p.Client.Account.Language,
                                         "GamePlayer.Attack.Critical",
                                         ad.Target.GetName(0, false, p.Client.Account.Language, (ad.Target as GameNPC)),
-                                        ad.CriticalDamage) + " (" + AttackCriticalChance(ad.Weapon) + "%)",
+                                        ad.CriticalDamage) + $" ({AttackCriticalChance(ad.Weapon)}%)",
                                     eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
                             break;
                     }
@@ -3408,9 +3386,9 @@ namespace DOL.GS
                             // critical hit
                             if (ad.CriticalDamage > 0)
                                 p.Out.SendMessage(
-                                    LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.Critical",
-                                        ad.Target.GetName(0, false), ad.CriticalDamage) + " (" +
-                                    AttackCriticalChance(ad.Weapon) + "%)", eChatType.CT_YouHit,
+                                    LanguageMgr.GetTranslation(p.Client.Account.Language,
+                                        "GamePlayer.Attack.Critical", ad.Target.GetName(0, false),
+                                        ad.CriticalDamage) + $"({AttackCriticalChance(ad.Weapon)}%)", eChatType.CT_YouHit,
                                     eChatLoc.CL_SystemWindow);
                             break;
                     }
@@ -3428,7 +3406,7 @@ namespace DOL.GS
         {
             if (owner is GamePlayer)
             {
-                if (Util.Chance(AttackCriticalChance(weapon)))
+                    if (Util.Chance(AttackCriticalChance(weapon)))
                 {
                     // triple wield prevents critical hits
                     if (EffectListService.GetAbilityEffectOnTarget(ad.Target, eEffect.TripleWield) != null) return 0;

@@ -1106,28 +1106,6 @@ namespace DOL.GS
 			}
 		}
 
-		/// <summary>
-		/// The target object.
-		/// </summary>
-		public override GameObject TargetObject
-		{
-			get
-			{
-				return base.TargetObject;
-			}
-			set
-			{
-				GameObject previousTarget = TargetObject;
-				GameObject newTarget = value;
-
-				base.TargetObject = newTarget;
-
-				// if (previousTarget != null && newTarget != previousTarget)
-				// 	previousTarget.Notify(GameNPCEvent.SwitchedTarget, this,
-				// 						  new SwitchedTargetEventArgs(previousTarget, newTarget));
-			}
-		}
-
 		private GameObject m_cachedTarget;
 
 		public GameObject CachedTarget
@@ -4890,9 +4868,8 @@ namespace DOL.GS
 
         public override void OnAttackedByEnemy(AttackData ad)
         {
-			if(Brain is StandardMobBrain standardMobBrain && Brain is not NecromancerPetBrain)
+			if (Brain is StandardMobBrain standardMobBrain)
             {
-	           // Console.WriteLine($"dmg {ad.Damage} crit {ad.CriticalDamage} mod {Math.Abs(ad.Modifier)}");
 				standardMobBrain.AddToAggroList(ad.Attacker, ad.Damage + ad.CriticalDamage + Math.Abs(ad.Modifier));
 				standardMobBrain.OnAttackedByEnemy(ad);
             }
@@ -4907,21 +4884,18 @@ namespace DOL.GS
         {
 	        base.TakeDamage(ad);
 	        
-	        if(Brain is StandardMobBrain standardMobBrain && Brain is not NecromancerPetBrain)
+	        if (Brain is StandardMobBrain standardMobBrain)
 	        {
-		        // Console.WriteLine($"dmg {ad.Damage} crit {ad.CriticalDamage} mod {Math.Abs(ad.Modifier)}");
 		        var aggro = ad.Damage + ad.CriticalDamage + Math.Abs(ad.Modifier);
 
-		        if (ad.Attacker is GameNPC pet)
-		        {
-			        if (pet.Brain is IControlledBrain petBrain)
-			        {
-				        // owner gets 25% of aggro
-				        standardMobBrain.AddToAggroList(petBrain.Owner,(int)Math.Max(1, aggro * 0.25));
-				        // remaining of aggro is given to pet
-				        aggro = (int)Math.Max(1, aggro * 0.75);
-			        }
-		        }
+		        if (ad.Attacker is GameNPC attacker && attacker.Brain is IControlledBrain petBrain)
+			    {
+				    // Owner gets 25% of aggro
+				    standardMobBrain.AddToAggroList(petBrain.Owner, (int)Math.Max(1, aggro * 0.25));
+				    // Remaining of aggro is given to pet
+				    aggro = (int)Math.Max(1, aggro * 0.75);
+			    }
+
 		        standardMobBrain.AddToAggroList(ad.Attacker, aggro);
 		        standardMobBrain.OnAttackedByEnemy(ad);
 	        }
@@ -5186,7 +5160,7 @@ namespace DOL.GS
 			if (Brain is StandardMobBrain mobBrain)
 			{
 				// first check to see if the healer is in our aggrolist so we don't go attacking anyone who heals
-				if (mobBrain.m_aggroTable.ContainsKey(healSource as GameLiving))
+				if (mobBrain.AggroTable.ContainsKey(healSource as GameLiving))
 				{
 					if (healSource is GamePlayer || (healSource is GameNPC && (((GameNPC)healSource).Flags & eFlags.PEACE) == 0))
 					{
@@ -5920,7 +5894,7 @@ namespace DOL.GS
 		/// </summary>
 		/// <param name="trigger">The action triggering the message (e.g., aggroing, dying, roaming)</param>
 		/// <param name="living">The entity triggering the action (e.g., a player)</param>
-		public void FireAmbientSentence(eAmbientTrigger trigger, GameObject living)
+		public virtual void FireAmbientSentence(eAmbientTrigger trigger, GameObject living)
 		{
 			if (IsSilent || ambientTexts == null || ambientTexts.Count == 0) return;
 			if (trigger == eAmbientTrigger.interact && living == null) return; // Do not trigger interact messages with a corpse

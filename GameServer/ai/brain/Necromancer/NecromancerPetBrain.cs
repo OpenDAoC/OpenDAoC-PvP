@@ -17,13 +17,10 @@
  *
  */
 using System;
-using System.Collections.Generic;
-using System.Text;
-using DOL.GS;
 using System.Collections;
-using System.Reflection;
-using log4net;
+using System.Collections.Generic;
 using DOL.Events;
+using DOL.GS;
 using DOL.GS.PacketHandler;
 using DOL.GS.Effects;
 using DOL.Language;
@@ -36,11 +33,6 @@ namespace DOL.AI.Brain
 	/// <author>Aredhel</author>
 	public class NecromancerPetBrain : ControlledNpcBrain
 	{
-		/// <summary>
-		/// Defines a logger for this class.
-		/// </summary>
-		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-
 		public NecromancerPetBrain(GameLiving owner) 
 			: base(owner)
 		{
@@ -56,70 +48,17 @@ namespace DOL.AI.Brain
         }
 
 
-		public override int ThinkInterval
-		{
-			get { return 500; }
-		}
-
-
-		public override int CastInterval
-		{
-			get { return 500; }
-			set { }
-		}
+        public override int ThinkInterval => 500;
+        public override int CastInterval => 500;
 
 
         /// <summary>
         /// Brain main loop.
         /// </summary>
-		public override void Think()
+        public override void Think()
 		{
             CheckTether();
             FSM.Think();
-            /*
-			// Necro pets need there own think as they may need to cast a spell in any state
-			if (IsActive)
-			{
-				GamePlayer playerowner = GetPlayerOwner();
-
-                long lastUpdate = 0;
-                if (!playerowner.Client.GameObjectUpdateArray.TryGetValue(new Tuple<ushort, ushort>(Body.CurrentRegionID, (ushort)Body.ObjectID), out lastUpdate))
-                {
-                    playerowner.Client.GameObjectUpdateArray.Add(new Tuple<ushort, ushort>(Body.CurrentRegionID, (ushort)Body.ObjectID), lastUpdate);
-                }
-
-
-                if (playerowner != null && (GameTimer.GetTickCount() - playerowner.Client.GameObjectUpdateArray[new Tuple<ushort, ushort>(Body.CurrentRegionID, (ushort)Body.ObjectID)]) > ThinkInterval)
-				{
-					playerowner.Out.SendObjectUpdate(Body);
-				}
-
-				if (SpellsQueued)
-					// if spells are queued then handle them first
-					CheckSpellQueue();
-				else if (AggressionState == eAggressionState.Aggressive)
-				{
-					CheckPlayerAggro();
-					CheckNPCAggro();
-				}
-
-				AttackMostWanted();
-
-				// Do not discover stealthed players
-				if (Body.TargetObject != null)
-				{
-					if (Body.TargetObject is GamePlayer)
-					{
-						if (Body.IsAttacking && (Body.TargetObject as GamePlayer).IsStealthed)
-						{
-							Body.StopAttack();
-							FollowOwner();
-						}
-					}
-				}
-            }
-            */
-			
 		}
 
 		#region Events
@@ -249,7 +188,7 @@ namespace DOL.AI.Brain
                 // This message is for spells from the spell queue only, so suppress
                 // it for insta cast buffs coming from the pet itself.
 
-                if (spellLine.Name != (Body as NecromancerPet).PetInstaSpellLine)
+                if (spellLine.Name != NecromancerPet.PetInstaSpellLine)
                 {
                     Owner.Notify(GameLivingEvent.CastStarting, Body, new CastingEventArgs(Body.CurrentSpellHandler));
                     MessageToOwner(LanguageMgr.GetTranslation((Owner as GamePlayer).Client.Account.Language, "AI.Brain.Necromancer.PetCastingSpell", Body.Name), eChatType.CT_System, Owner as GamePlayer);
@@ -308,11 +247,10 @@ namespace DOL.AI.Brain
 			}
 		}
 
-
-
 		#endregion
 
 		#region Spell Queue
+
 		/// <summary>
         /// See if there are any spells queued up and if so, get the first one
         /// and cast it.

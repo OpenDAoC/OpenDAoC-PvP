@@ -35,8 +35,7 @@ namespace DOL.GS
                     if (!Owner.IsAlive || Owner.ObjectState != GameObject.eObjectState.Active)
                         return false;
 
-                    if (!EntityManager.GetLivingByComponent(typeof(EffectListComponent)).ToArray().Contains(Owner))
-                        EntityManager.AddComponent(typeof(EffectListComponent), Owner);
+                    EntityManager.AddComponent(typeof(EffectListComponent), Owner);
 
                     // Check to prevent crash from holding sprint button down.
                     if (effect is ECSGameAbilityEffect)
@@ -62,7 +61,7 @@ namespace DOL.GS
                             for (int i = 0; i < existingEffects.Count; i++)
                             {
                                 ECSGameSpellEffect existingEffect = existingEffects[i];
-                                ISpellHandler existingSpellHandler = existingEffects[i].SpellHandler;
+                                ISpellHandler existingSpellHandler = existingEffect.SpellHandler;
                                 Spell existingSpell = existingSpellHandler.Spell;
 
                                 // Console.WriteLine($"Effect found! Name: {existingEffect.Name}, Effectiveness: {existingEffect.Effectiveness}, Poison: {existingSpell.IsPoisonEffect}, ID: {existingSpell.ID}, EffectGroup: {existingSpell.EffectGroup}");
@@ -92,6 +91,7 @@ namespace DOL.GS
                                         newSpellEffect.IsBuffActive = existingEffect.IsBuffActive;
                                         newSpellEffect.PreviousPosition = GetAllEffects().IndexOf(existingEffect);
                                         Effects[newSpellEffect.EffectType][i] = newSpellEffect;
+                                        EffectIdToEffect[newSpellEffect.Icon] = newSpellEffect;
                                     }
                                     return true;
                                 }
@@ -137,7 +137,7 @@ namespace DOL.GS
                             for (int i = 0; i < existingEffects.Count; i++)
                             {
                                 ECSGameSpellEffect existingEffect = existingEffects[i];
-                                ISpellHandler existingSpellHandler = existingEffects[i].SpellHandler;
+                                ISpellHandler existingSpellHandler = existingEffect.SpellHandler;
                                 Spell existingSpell = existingSpellHandler.Spell;
 
                                 // Check if existingEffect is overwritable by new effect
@@ -146,21 +146,33 @@ namespace DOL.GS
                                     foundIsOverwriteableEffect = true;
                                     if (effect.EffectType != eEffect.Bladeturn)
                                     {
+                                        if (existingEffect.IsDisabled)
+                                            continue;
+
                                         // New Effect is better than the current enabled effect so disable the current Effect and add the new effect.
-                                        if ((newSpell.Value > existingSpell.Value || newSpell.Damage > existingSpell.Damage)
-                                            && !existingEffects[i].IsDisabled)
+                                        if (newSpell.Value > existingSpell.Value || newSpell.Damage > existingSpell.Damage)
+                                        {
+                                            if (newSpell.IsHelpful&& (newSpellHandler.Caster != existingSpellHandler.Caster
+                                                || newSpellHandler.SpellLine.KeyName == GlobalSpellsLines.Potions_Effects
+                                                || existingSpellHandler.SpellLine.KeyName == GlobalSpellsLines.Potions_Effects))
+                                                EffectService.RequestDisableEffect(existingEffect);
+                                            else
+                                                EffectService.RequestCancelEffect(existingEffect);
+                                            addEffect = true;
+                                            break;
+                                        }
+                                        // New Effect is not as good as current effect, but it can be added in a disabled state.
+                                        else
                                         {
                                             if (newSpell.IsHelpful && (newSpellHandler.Caster != existingSpellHandler.Caster
                                                 || newSpellHandler.SpellLine.KeyName == GlobalSpellsLines.Potions_Effects
                                                 || existingSpellHandler.SpellLine.KeyName == GlobalSpellsLines.Potions_Effects))
-                                                EffectService.RequestDisableEffect(existingEffects[i]);
-                                            else
-                                                EffectService.RequestCancelEffect(existingEffects[i]);
-                                            addEffect = true;
+                                            {
+                                                addEffect = true;
+                                                newSpellEffect.IsDisabled = true;
+                                                break;
+                                            }
                                         }
-                                        // New Effect is not as good as current effect.
-                                        else if (newSpell.Value < existingSpell.Value || newSpell.Damage < existingSpell.Damage)
-                                            addEffect = false;
                                     }
                                     else
                                     {
