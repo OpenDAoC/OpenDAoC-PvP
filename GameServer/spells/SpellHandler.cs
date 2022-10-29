@@ -53,7 +53,7 @@ namespace DOL.GS.Spells
         }
 
 		// Max number of Concentration spells that a single caster is allowed to cast.
-		public const int MAX_CONC_SPELLS = 20;
+		public const int MAX_CONC_SPELLS = 50;
 
 		/// <summary>
 		/// Maximum number of sub-spells to get delve info for.
