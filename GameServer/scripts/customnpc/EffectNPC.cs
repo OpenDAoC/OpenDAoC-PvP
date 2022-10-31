@@ -977,7 +977,7 @@ namespace DOL.GS {
             player.Out.SendMessage(msg, eChatType.CT_System, eChatLoc.CL_PopupWindow);
         }
         #region setcolor
-        public void SetColor(GamePlayer player, int color, int price)
+        public virtual void SetColor(GamePlayer player, int color, int price)
         {
             InventoryItem item = player.TempProperties.getProperty<InventoryItem>(EFFECTNPC_ITEM_WEAK);
 
@@ -1075,7 +1075,7 @@ namespace DOL.GS {
         }
 
         #region seteffect
-        public void SetEffect(GamePlayer player, int effect, int price)
+        public virtual void SetEffect(GamePlayer player, int effect, int price)
         {
             if (player == null)
                 return;

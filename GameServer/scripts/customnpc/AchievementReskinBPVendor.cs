@@ -8,16 +8,14 @@ using DOLDatabase.Tables;
 
 namespace DOL.GS;
 
-public class AchievementReskinVendor : GameNPC
+public class AchievementReskinBPVendor : GameNPC
 {
     public string TempProperty = "ItemModel";
     public string DisplayedItem = "ItemDisplay";
     public string TempModelID = "TempModelID";
     public string TempModelPrice = "TempModelPrice";
-    public string currencyName = "Orbs";
+    public string currencyName = "BPs";
     
-    private string _currencyID = ServerProperties.Properties.ALT_CURRENCY_ID;
-
     private int Chance;
     private Random rnd = new Random();
     private List<SkinVendorItem> VendorItemList = new List<SkinVendorItem>();
@@ -64,7 +62,7 @@ public class AchievementReskinVendor : GameNPC
     public override bool ReceiveItem(GameLiving source, InventoryItem item)
     {
         GamePlayer t = source as GamePlayer;
-        if (t == null || item == null || item.Template.Name.Equals(_currencyID)) return false;
+        if (t == null || item == null) return false;
         if (GetDistanceTo(t) > WorldMgr.INTERACT_DISTANCE)
         {
             t.Out.SendMessage("You are too far away to give anything to " + GetName(0, false) + ".",
@@ -83,7 +81,7 @@ public class AchievementReskinVendor : GameNPC
         int playerRealmRank = (int)Math.Floor((double)(t.RealmLevel + 10.0) / 10.0);
         int accountRealmRank = t.GetAchievementProgress(AchievementUtils.AchievementNames.Realm_Rank);
         int playerDragonKills = t.GetAchievementProgress(AchievementUtils.AchievementNames.Dragon_Kills);
-        int playerOrbs = t.GetAchievementProgress(AchievementUtils.AchievementNames.Orbs_Earned);
+        int playerBP = (int)t.BountyPoints;
         int epicBossPlayerKills = t.GetAchievementProgress(AchievementUtils.AchievementNames.Epic_Boss_Kills);
         int masteredCrafts = t.GetAchievementProgress(AchievementUtils.AchievementNames.Mastered_Crafts);
         int itemSlot = item.Item_Type;
@@ -95,14 +93,14 @@ public class AchievementReskinVendor : GameNPC
 
         if (item.Item_Type == Slot.RIGHTHAND || item.Item_Type == Slot.LEFTHAND)
         {
-            foundItems = FindAllAvailableOneHandedOptions(item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerOrbs, epicBossPlayerKills, masteredCrafts, isGM);
+            foundItems = FindAllAvailableOneHandedOptions(item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerBP, epicBossPlayerKills, masteredCrafts, isGM);
         }
         else if(item.Item_Type == Slot.RANGED || item.Object_Type == (int)eObjectType.Instrument)
         {
-            foundItems = FindAllAvailableOptionsInstruments(item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerOrbs, epicBossPlayerKills, masteredCrafts, isGM);
+            foundItems = FindAllAvailableOptionsInstruments(item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerBP, epicBossPlayerKills, masteredCrafts, isGM);
         }else
         {
-            foundItems = FindAllAvailableOtherItemOptions(item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerOrbs, epicBossPlayerKills, masteredCrafts, isGM);
+            foundItems = FindAllAvailableOtherItemOptions(item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerBP, epicBossPlayerKills, masteredCrafts, isGM);
         }
 
         if (foundItems.Count == 0)
@@ -143,7 +141,7 @@ public class AchievementReskinVendor : GameNPC
 
 
 
-    private List<SkinVendorItem> FindAllAvailableOptionsInstruments(InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerOrbs, int epicBossPlayerKills, int masteredCrafts, bool isGm)
+    private List<SkinVendorItem> FindAllAvailableOptionsInstruments(InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerBP, int epicBossPlayerKills, int masteredCrafts, bool isGm)
     {
         if (isGm)
         {
@@ -160,7 +158,7 @@ public class AchievementReskinVendor : GameNPC
                          && (x.CharacterClass == playerClass || x.CharacterClass == characterClassUnknown)
                          && x.PlayerRealmRank <= playerRealmRank
                          && x.AccountRealmRank <= accountRealmRank
-                         && x.Orbs <= playerOrbs
+                         && x.Orbs <= playerBP
                          && x.Drake <= playerDragonKills
                          && x.EpicBossKills <= epicBossPlayerKills
                          && x.MasteredCrafts <= masteredCrafts
@@ -169,7 +167,7 @@ public class AchievementReskinVendor : GameNPC
         }
     }
 
-    private List<SkinVendorItem> FindAllAvailableOtherItemOptions(InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerOrbs, int epicBossPlayerKills, int masteredCrafts, bool isGm)
+    private List<SkinVendorItem> FindAllAvailableOtherItemOptions(InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerBP, int epicBossPlayerKills, int masteredCrafts, bool isGm)
     {
         if (isGm)
         {
@@ -187,7 +185,7 @@ public class AchievementReskinVendor : GameNPC
                          && (x.CharacterClass == playerClass || x.CharacterClass == characterClassUnknown)
                          && x.PlayerRealmRank <= playerRealmRank
                          && x.AccountRealmRank <= accountRealmRank
-                         && x.Orbs <= playerOrbs
+                         && x.Orbs <= playerBP
                          && x.Drake <= playerDragonKills
                          && x.EpicBossKills <= epicBossPlayerKills
                          && x.MasteredCrafts <= masteredCrafts
@@ -197,7 +195,7 @@ public class AchievementReskinVendor : GameNPC
         }
     }
 
-    private List<SkinVendorItem> FindAllAvailableOneHandedOptions(InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerOrbs, int epicBossPlayerKills, int masteredCrafts,bool isGm)
+    private List<SkinVendorItem> FindAllAvailableOneHandedOptions(InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerBP, int epicBossPlayerKills, int masteredCrafts,bool isGm)
     {
         if (isGm)
         {
@@ -215,7 +213,7 @@ public class AchievementReskinVendor : GameNPC
                          && (x.CharacterClass == playerClass || x.CharacterClass == characterClassUnknown)
                          && x.PlayerRealmRank <= playerRealmRank
                          && x.AccountRealmRank <= accountRealmRank
-                         && x.Orbs <= playerOrbs
+                         && x.Orbs <= playerBP
                          && x.Drake <= playerDragonKills
                          && x.EpicBossKills <= epicBossPlayerKills
                          && x.MasteredCrafts <= masteredCrafts
@@ -239,11 +237,8 @@ public class AchievementReskinVendor : GameNPC
     {
         if (price > 0)
         {
-            int playerOrbs = player.Inventory.CountItemTemplate(_currencyID, eInventorySlot.FirstBackpack,
-                eInventorySlot.LastBackpack);
-            log.Info("Player Orbs:" + playerOrbs);
 
-            if (playerOrbs < price)
+            if (player.BountyPoints < price)
             {
                 SendReply(player, "I'm sorry, but you cannot afford my services currently.");
                 return false;
@@ -312,8 +307,9 @@ public class AchievementReskinVendor : GameNPC
             //player.RealmPoints -= price;
             //player.RespecRealm();
             //SetRealmLevel(player, (int)player.RealmPoints);
-            player.Inventory.RemoveTemplate(_currencyID, price, eInventorySlot.FirstBackpack,
-                eInventorySlot.LastBackpack);
+
+            player.BountyPoints -= price;
+            player.Out.SendUpdatePoints();
 
             player.SaveIntoDatabase();
             return true;
@@ -328,11 +324,8 @@ public class AchievementReskinVendor : GameNPC
     {
         if (price > 0)
         {
-            int playerOrbs = player.Inventory.CountItemTemplate(_currencyID, eInventorySlot.FirstBackpack,
-                eInventorySlot.LastBackpack);
-            //log.Info("Player Orbs:" + playerOrbs);
 
-            if (playerOrbs < price)
+            if (player.BountyPoints < price)
             {
                 SendReply(player, "I'm sorry, but you cannot afford my services currently.");
                 return;
@@ -389,8 +382,9 @@ public class AchievementReskinVendor : GameNPC
             //player.RealmPoints -= price;
             //player.RespecRealm();
             //SetRealmLevel(player, (int)player.RealmPoints);
-            player.Inventory.RemoveTemplate(_currencyID, price, eInventorySlot.FirstBackpack,
-                eInventorySlot.LastBackpack);
+            
+            player.BountyPoints -= price;
+            player.Out.SendUpdatePoints();
 
             player.SaveIntoDatabase();
 
@@ -536,7 +530,7 @@ public class AchievementReskinVendor : GameNPC
         int playerRealmRank = (int)Math.Floor((double)(player.RealmLevel + 10.0) / 10.0);
         int accountRealmRank = player.GetAchievementProgress(AchievementUtils.AchievementNames.Realm_Rank);
         int playerDragonKills = player.GetAchievementProgress(AchievementUtils.AchievementNames.Dragon_Kills);
-        int playerOrbs = player.GetAchievementProgress(AchievementUtils.AchievementNames.Orbs_Earned);
+        int playerBP = (int)player.BountyPoints;
         int epicBossPlayerKills = player.GetAchievementProgress(AchievementUtils.AchievementNames.Epic_Boss_Kills);
         int masteredCrafts = player.GetAchievementProgress(AchievementUtils.AchievementNames.Mastered_Crafts);
         bool isGM = player.Client.Account.PrivLevel != 1;
@@ -554,15 +548,15 @@ public class AchievementReskinVendor : GameNPC
 
         if (item.Item_Type == Slot.RIGHTHAND || item.Item_Type == Slot.LEFTHAND)
         {
-            foundItem = FindChoosenOptionOneHanded(str, item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerOrbs, epicBossPlayerKills, masteredCrafts, isGM);
+            foundItem = FindChoosenOptionOneHanded(str, item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerBP, epicBossPlayerKills, masteredCrafts, isGM);
         }
         else if(item.Item_Type == Slot.RANGED && item.Object_Type == (int) eObjectType.Instrument)
         {
-            foundItem = FindChoosenOptionInstrument(str, item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerOrbs, epicBossPlayerKills, masteredCrafts, isGM);
+            foundItem = FindChoosenOptionInstrument(str, item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerBP, epicBossPlayerKills, masteredCrafts, isGM);
         }
         else
         {
-            foundItem = FindChoosenOptionOtherItems(str, item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerOrbs, epicBossPlayerKills, masteredCrafts, isGM);
+            foundItem = FindChoosenOptionOtherItems(str, item, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerBP, epicBossPlayerKills, masteredCrafts, isGM);
         }
 
         Console.Write("Item Type is" + item.Item_Type + "name is" + str + "damagetype is" + damageType + "objectType is " + item.Object_Type);
@@ -574,14 +568,14 @@ public class AchievementReskinVendor : GameNPC
 
                 if (item.Item_Type == Slot.RIGHTHAND || item.Item_Type == Slot.LEFTHAND)
                 {
-                    foundItem = FindConfirmedOneHanded(item, cachedModelID, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerOrbs, epicBossPlayerKills, masteredCrafts, isGM);
+                    foundItem = FindConfirmedOneHanded(item, cachedModelID, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerBP, epicBossPlayerKills, masteredCrafts, isGM);
                 }
                 else if(item.Item_Type == Slot.RANGED && item.Object_Type == (int)eObjectType.Instrument)
                 {
-                    foundItem = FindConfirmedInstruments(item, cachedModelID, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerOrbs, epicBossPlayerKills, masteredCrafts, isGM);
+                    foundItem = FindConfirmedInstruments(item, cachedModelID, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerBP, epicBossPlayerKills, masteredCrafts, isGM);
                 }else
                 {
-                    foundItem = FindConfirmedOtherItems(item, cachedModelID, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerOrbs, epicBossPlayerKills, masteredCrafts, isGM);
+                    foundItem = FindConfirmedOtherItems(item, cachedModelID, playerRealm, noneRealm, damageType, characterClassUnknown, playerClass, playerRealmRank, accountRealmRank, playerDragonKills, playerBP, epicBossPlayerKills, masteredCrafts, isGM);
                 }
 
 
@@ -667,7 +661,7 @@ public class AchievementReskinVendor : GameNPC
         }
     }
 
-    private SkinVendorItem FindChoosenOptionInstrument(string str, InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerOrbs, int epicBossPlayerKills, int masteredCrafts, bool isGm)
+    private SkinVendorItem FindChoosenOptionInstrument(string str, InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerBP, int epicBossPlayerKills, int masteredCrafts, bool isGm)
     {
 
         if (isGm)
@@ -686,7 +680,7 @@ public class AchievementReskinVendor : GameNPC
                    && (x.CharacterClass == playerClass || x.CharacterClass == characterClassUnknown)
                    && x.PlayerRealmRank <= playerRealmRank
                    && x.AccountRealmRank <= accountRealmRank
-                   && x.Orbs <= playerOrbs
+                   && x.Orbs <= playerBP
                    && x.Drake <= playerDragonKills
                    && x.EpicBossKills <= epicBossPlayerKills
                    && x.MasteredCrafts <= masteredCrafts
@@ -695,7 +689,7 @@ public class AchievementReskinVendor : GameNPC
 
     }
 
-    private SkinVendorItem FindChoosenOptionOtherItems(string str, InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerOrbs, int epicBossPlayerKills, int masteredCrafts,bool isGm)
+    private SkinVendorItem FindChoosenOptionOtherItems(string str, InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerBP, int epicBossPlayerKills, int masteredCrafts,bool isGm)
     {
 
         if (isGm)
@@ -715,7 +709,7 @@ public class AchievementReskinVendor : GameNPC
                    && (x.CharacterClass == playerClass || x.CharacterClass == characterClassUnknown)
                    && x.PlayerRealmRank <= playerRealmRank
                    && x.AccountRealmRank <= accountRealmRank
-                   && x.Orbs <= playerOrbs
+                   && x.Orbs <= playerBP
                    && x.Drake <= playerDragonKills
                    && x.EpicBossKills <= epicBossPlayerKills
                    && x.MasteredCrafts <= masteredCrafts
@@ -725,7 +719,7 @@ public class AchievementReskinVendor : GameNPC
 
     }
 
-    private SkinVendorItem FindConfirmedOneHanded(InventoryItem item, int cachedModelID, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerOrbs, int epicBossPlayerKills, int masteredCrafts,bool isGm)
+    private SkinVendorItem FindConfirmedOneHanded(InventoryItem item, int cachedModelID, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerBP, int epicBossPlayerKills, int masteredCrafts,bool isGm)
     {
 
         if (isGm)
@@ -743,7 +737,7 @@ public class AchievementReskinVendor : GameNPC
        && (x.ItemType == item.Item_Type || x.ItemType == Slot.RIGHTHAND)
        && x.PlayerRealmRank <= playerRealmRank
        && x.AccountRealmRank <= accountRealmRank
-       && x.Orbs <= playerOrbs
+       && x.Orbs <= playerBP
        && x.Drake <= playerDragonKills
        && x.EpicBossKills <= epicBossPlayerKills
        && x.MasteredCrafts <= masteredCrafts
@@ -755,7 +749,7 @@ public class AchievementReskinVendor : GameNPC
 
     }
 
-    private SkinVendorItem FindConfirmedInstruments(InventoryItem item, int cachedModelID, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerOrbs, int epicBossPlayerKills, int masteredCrafts, bool isGm)
+    private SkinVendorItem FindConfirmedInstruments(InventoryItem item, int cachedModelID, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerBP, int epicBossPlayerKills, int masteredCrafts, bool isGm)
     {
 
         if (isGm)
@@ -772,7 +766,7 @@ public class AchievementReskinVendor : GameNPC
        && x.ItemType == item.Item_Type
        && x.PlayerRealmRank <= playerRealmRank
        && x.AccountRealmRank <= accountRealmRank
-       && x.Orbs <= playerOrbs
+       && x.Orbs <= playerBP
        && x.Drake <= playerDragonKills
        && x.EpicBossKills <= epicBossPlayerKills
        && x.MasteredCrafts <= masteredCrafts
@@ -783,7 +777,7 @@ public class AchievementReskinVendor : GameNPC
 
     }
 
-    private SkinVendorItem FindConfirmedOtherItems(InventoryItem item, int cachedModelID, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerOrbs, int epicBossPlayerKills, int masteredCrafts, bool isGm)
+    private SkinVendorItem FindConfirmedOtherItems(InventoryItem item, int cachedModelID, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerBP, int epicBossPlayerKills, int masteredCrafts, bool isGm)
     {
 
         if (isGm)
@@ -801,7 +795,7 @@ public class AchievementReskinVendor : GameNPC
        && x.ItemType == item.Item_Type
        && x.PlayerRealmRank <= playerRealmRank
        && x.AccountRealmRank <= accountRealmRank
-       && x.Orbs <= playerOrbs
+       && x.Orbs <= playerBP
        && x.Drake <= playerDragonKills
        && x.EpicBossKills <= epicBossPlayerKills
        && x.MasteredCrafts <= masteredCrafts
@@ -813,7 +807,7 @@ public class AchievementReskinVendor : GameNPC
 
     }
 
-    private SkinVendorItem FindChoosenOptionOneHanded(string str, InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerOrbs, int epicBossPlayerKills, int masteredCrafts, bool isGm)
+    private SkinVendorItem FindChoosenOptionOneHanded(string str, InventoryItem item, int playerRealm, int noneRealm, int damageType, int characterClassUnknown, int playerClass, int playerRealmRank, int accountRealmRank, int playerDragonKills, int playerBP, int epicBossPlayerKills, int masteredCrafts, bool isGm)
     {
 
         if (isGm)
@@ -833,7 +827,7 @@ public class AchievementReskinVendor : GameNPC
             && (x.CharacterClass == playerClass || x.CharacterClass == characterClassUnknown)
             && x.PlayerRealmRank <= playerRealmRank
             && x.AccountRealmRank <= accountRealmRank
-            && x.Orbs <= playerOrbs
+            && x.Orbs <= playerBP
             && x.Drake <= playerDragonKills
             && x.EpicBossKills <= epicBossPlayerKills
             && x.MasteredCrafts <= masteredCrafts
