@@ -1046,6 +1046,75 @@ namespace DOL.GS
 			}
 		}
 	}
+
+	public class AtlasBPAchievementMerchant : GameBountyMerchant
+	{
+		public override void OnPlayerBuy(GamePlayer player, int item_slot, int number)
+		{
+			//Get the template
+			int pagenumber = item_slot / MerchantTradeItems.MAX_ITEM_IN_TRADEWINDOWS;
+			int slotnumber = item_slot % MerchantTradeItems.MAX_ITEM_IN_TRADEWINDOWS;
+
+			ItemTemplate template = this.TradeItems.GetItem(pagenumber, (eMerchantWindowSlot)slotnumber);
+			if (template == null) return;
+
+			//Calculate the amout of items
+			int amountToBuy = number;
+			if (template.PackSize > 0)
+				amountToBuy *= template.PackSize;
+
+			if (amountToBuy <= 0) return;
+
+			//Calculate the value of items
+			long totalValue = number * template.Price;
+
+			var mobRequirement = KillCreditUtils.GetRequiredKillMob(template.Id_nb);
+
+			if (mobRequirement != null && player.Client.Account.PrivLevel == 1)
+			{
+				var hasCredit = AchievementUtils.CheckPlayerCredit(mobRequirement, player, (int) player.Realm);
+
+				if (!hasCredit)
+				{
+					player.Out.SendMessage($"You have not defeated {mobRequirement} at least once, and will be charged twice the normal rate for the purchase.", eChatType.CT_Merchant,eChatLoc.CL_SystemWindow);
+					totalValue *= 2;
+				}
+			}
+
+			var loyalty = LoyaltyManager.GetPlayerRealmLoyalty(player);
+			if (loyalty.Days > 0)
+			{
+				var discountAmount = (.25 * (loyalty.Days > 30 ? 30 : loyalty.Days) / 30);
+				player.Out.SendMessage($"Your loyalty to your realm grants you a {discountAmount * 100}% discount on item purchases.", eChatType.CT_Merchant,eChatLoc.CL_SystemWindow);
+				Console.WriteLine($"Total Val {totalValue} discount {(1 - discountAmount)} after {(int)(totalValue * (1 - discountAmount))}");
+				totalValue = (int)(totalValue * (1 - discountAmount));
+			}
+			
+			lock (player.Inventory)
+			{
+				if (player.BountyPoints < totalValue)
+				{
+					player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.YouNeedBP", totalValue), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					return;
+				}
+				if (!player.Inventory.AddTemplate(GameInventoryItem.Create(template), amountToBuy, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack))
+				{
+					player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.NotInventorySpace"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					return;
+				}
+				InventoryLogging.LogInventoryAction(this, player, eInventoryActionType.Merchant, template, amountToBuy);
+				//Generate the buy message
+				string message;
+				if (number > 1)
+					message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.BoughtPiecesBP", totalValue, template.GetName(1, false));
+				else
+					message = LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.BoughtBP", template.GetName(1, false), totalValue);
+				player.BountyPoints -= totalValue;
+				player.Out.SendUpdatePoints();
+				player.Out.SendMessage(message, eChatType.CT_Merchant, eChatLoc.CL_SystemWindow);
+			}
+		}
+	}
 	public class L20RewardsMerchant : GameItemCurrencyMerchant
 	{
 		public override string MoneyKey { get { return "L20RewardToken"; } }
