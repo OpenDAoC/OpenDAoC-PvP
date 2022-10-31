@@ -18,7 +18,6 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -43,9 +42,15 @@ namespace DOL.GS.Spells
 	/// </summary>
 	public abstract class SummonSpellHandler : SpellHandler
 	{
-		private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly log4net.ILog log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
 		protected GamePet m_pet = null;
+
+		public GamePet Pet
+		{
+			get => m_pet;
+			protected set => m_pet = value;
+		}
 
 		/// <summary>
 		/// Is a summon of this pet silent (no message to caster, or ambient texts)?
@@ -80,14 +85,10 @@ namespace DOL.GS.Spells
 			if (Spell.Message1 == string.Empty)
 			{
 				if (m_isSilent == false)
-				{
-					MessageToCaster(String.Format("The {0} is now under your control.", m_pet.Name), eChatType.CT_Spell);
-				}
+					MessageToCaster(string.Format("The {0} is now under your control.", m_pet.Name), eChatType.CT_Spell);
 			}
 			else
-			{
 				MessageToCaster(Spell.Message1, eChatType.CT_Spell);
-			}
 		}
 
 		#region ApplyEffectOnTarget Gets
@@ -132,6 +133,7 @@ namespace DOL.GS.Spells
 		public override void ApplyEffectOnTarget(GameLiving target, double effectiveness)
 		{
 			INpcTemplate template = NpcTemplateMgr.GetTemplate(Spell.LifeDrainReturn);
+
 			if (template == null)
 			{
 				if (log.IsWarnEnabled)
@@ -140,9 +142,8 @@ namespace DOL.GS.Spells
 				return;
 			}
 
-			//GameSpellEffect effect = CreateSpellEffect(target, effectiveness);            
-
             IControlledBrain brain = null;
+
 			if (template.ClassType != null && template.ClassType.Length > 0)
 			{
 				Assembly asm = Assembly.GetExecutingAssembly();
@@ -155,7 +156,6 @@ namespace DOL.GS.Spells
 				brain = GetPetBrain(Caster);
 
 			m_pet = GetGamePet(template);
-			//brain.WalkState = eWalkState.Stay;
 			m_pet.SetOwnBrain(brain as AI.ABrain);
 
 			m_pet.SummonSpellDamage = Spell.Damage;
@@ -172,7 +172,6 @@ namespace DOL.GS.Spells
 			m_pet.Z = z;
 			m_pet.Heading = heading;
 			m_pet.CurrentRegion = region;
-
 			m_pet.CurrentSpeed = 0;
 			m_pet.Realm = Caster.Realm;
 
@@ -181,21 +180,19 @@ namespace DOL.GS.Spells
 
 			m_pet.AddToWorld();
 			
-			//Check for buffs
+			// Check for buffs
 			if (brain is ControlledNpcBrain)
 				(brain as ControlledNpcBrain).CheckSpells(StandardMobBrain.eCheckSpellType.Defensive);
 
 			AddHandlers();
-
 			SetBrainToOwner(brain);
 			
 			m_pet.SetPetLevel();
 			m_pet.Health = m_pet.MaxHealth;
 
-			if (DOL.GS.ServerProperties.Properties.PET_SCALE_SPELL_MAX_LEVEL > 0)
+			if (ServerProperties.Properties.PET_SCALE_SPELL_MAX_LEVEL > 0)
 				m_pet.Spells = template.Spells; // Have to scale spells again now that the pet level has been assigned
 
-            //effect.Start(m_pet);
             CreateECSEffect(new ECSGameEffectInitParams(m_pet, CalculateEffectDuration(target, effectiveness), effectiveness, this));
 
 			Caster.OnPetSummoned(m_pet);
@@ -216,7 +213,7 @@ namespace DOL.GS.Spells
 		public override int OnEffectExpires(GameSpellEffect effect, bool noMessages)
 		{
 			RemoveHandlers();
-			effect.Owner.Health = 0; // to send proper remove packet
+			effect.Owner.Health = 0; // To send proper remove packet
 			effect.Owner.Delete();
 			return 0;
 		}
@@ -237,28 +234,24 @@ namespace DOL.GS.Spells
 		/// <param name="arguments"></param>
 		protected virtual void OnNpcReleaseCommand(DOLEvent e, object sender, EventArgs arguments)
 		{
-            if (!(sender is GameNPC) || !((sender as GameNPC).Brain is IControlledBrain))
+            if (sender is not GameNPC pet || pet.Brain is not IControlledBrain petBrain)
                 return;
 
-            GameNPC pet = sender as GameNPC;
-            IControlledBrain brain = pet.Brain as IControlledBrain;
-            GameLiving living = brain.Owner;
-            living.SetControlledBrain(null);
+            GameLiving petOwner = petBrain.Owner;
+
+			if (petOwner.ControlledBrain == petBrain)
+				petOwner.SetControlledBrain(null);
 
             foreach (var ability in pet.effectListComponent.GetAbilityEffects())
             {
-	            if(ability is InterceptECSGameEffect iecs && iecs.InterceptSource == pet && iecs.InterceptTarget == living)
-		            iecs.Cancel(false);
+	            if (ability is InterceptECSGameEffect interceptEffect && interceptEffect.InterceptSource == pet && interceptEffect.InterceptTarget == petOwner)
+		            interceptEffect.Cancel(false);
             }
 
             GameEventMgr.RemoveHandler(pet, GameLivingEvent.PetReleased, new DOLEventHandler(OnNpcReleaseCommand));
-
-            //GameSpellEffect effect = FindEffectOnTarget(pet, this);
-            if (pet.effectListComponent.Effects.TryGetValue(eEffect.Pet, out var petEffect))
+			
+            if (pet.effectListComponent.Effects.TryGetValue(EffectService.GetEffectFromSpell(Spell), out var petEffect))
 				EffectService.RequestImmediateCancelEffect(petEffect.FirstOrDefault());
-            //if (effect != null)
-            //    effect.Cancel(false);
-
 		}
 
 		/// <summary>
