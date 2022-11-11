@@ -16,32 +16,38 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
  */
+
 /*
-TODO: listStart
+* TODO: listStart
+*
+* /who  Can be modified with
+* [playername],
+* [class],
+* [#] level,
+* [location],
+* [##] [##] level range -
+* please note that /who CSR will not show hidden CSRs
+*
+* 1.69
+* - The /who command has been altered to show a [CG] and a [BG] next to players'
+* names who are the leaders of a public chat group and battlegroup respectively.
+*
+* - The /who command now allows multiple different search filters at once.
+* For example, typing /who 40 50 Wizard Emain Dragonhearts would list all of the
+* level 40 through 50 Wizards currently in Emain Macha with a guild that matches
+* the "Dragonhearts" filter.
+*/
 
-/who  Can be modified with
-[playername],
-[class],
-[#] level,
-[location],
-[##] [##] level range -
-please note that /who CSR will not show hidden CSRs
+/* ---REGARDING THE REMOVAL OF `/who`---
+ * The `/who` command has been removed for the Titan project so as to prevent any intentional targeting/griefing of players.
+ * Folks will just have to find one another the old-fashioned way, with radar, lag, and camera panning.
+*/
 
-
-1.69
-- The /who command has been altered to show a [CG] and a [BG] next to players'
- names who are the leaders of a public chat group and battlegroup respectively.
-
-- The /who command now allows multiple different search filters at once.
- For example, typing /who 40 50 Wizard Emain Dragonhearts would list all of the
- level 40 through 50 Wizards currently in Emain Macha with a guild that matches
- the "Dragonhearts" filter.
-
- */
-
+/*
 using System;
 using System.Collections;
 using System.Text;
+
 
 namespace DOL.GS.Commands
 {
@@ -239,13 +245,13 @@ namespace DOL.GS.Commands
 		// make /who line using GamePlayer
 		private string FormatLine(GamePlayer player, uint PrivLevel, GameClient source)
 		{
-			/*
-			 * /setwho class | trade
-			 * Sets how the player wishes to be displayed on a /who inquery.
-			 * Class displays the character's class and level.
-			 * Trade displays the tradeskill type and level of the character.
-			 * and it is saved after char logs out
-			 */
+
+			// /setwho class | trade
+			// Sets how the player wishes to be displayed on a /who inquery.
+			// Class displays the character's class and level.
+			// Trade displays the tradeskill type and level of the character.
+			// and it is saved after char logs out
+
 
 			if (player == null)
 			{
@@ -595,3 +601,4 @@ namespace DOL.GS.Commands
 		}
 	}
 }
+*/
