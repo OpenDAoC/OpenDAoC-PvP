@@ -39,7 +39,8 @@
 */
 
 /* ---REGARDING THE REMOVAL OF `/who`---
- * The `/who` command has been removed for the Titan project so as to prevent any intentional targeting/griefing of players.
+ * The `/who` command has been updated for the Titan project with the requirement of plvl 2+ so as to prevent any intentional
+ * targeting/griefing of players.
  * Folks will just have to find one another the old-fashioned way, with radar, lag, and camera panning.
 */
 
