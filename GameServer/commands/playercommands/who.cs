@@ -43,7 +43,7 @@
  * Folks will just have to find one another the old-fashioned way, with radar, lag, and camera panning.
 */
 
-/*
+
 using System;
 using System.Collections;
 using System.Text;
@@ -53,7 +53,7 @@ namespace DOL.GS.Commands
 {
 	[CmdAttribute(
 		"&who",
-		ePrivLevel.Player,
+		ePrivLevel.GM,
 		"Shows who is online",
 		//help:
 		//"/who  Can be modified with [playername], [class], [#] level, [location], [##] [##] level range",
@@ -601,4 +601,3 @@ namespace DOL.GS.Commands
 		}
 	}
 }
-*/
