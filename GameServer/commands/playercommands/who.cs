@@ -86,8 +86,16 @@ namespace DOL.GS.Commands
 
 		public void OnCommand(GameClient client, string[] args)
 		{
-			if (IsSpammingCommand(client.Player, "who"))
+			if (IsSpammingCommand(client.Player, "who") && client.Account.PrivLevel == 1)
 				return;
+
+			// Command may only be used by Titan team members
+			if (client.Account.PrivLevel == 1)
+			{
+				// Message: "That command has been disabled for this server."
+				ChatUtil.SendGMMessage(client, "PlayerCommands.Removed.Err.NoUse", null);
+				return;
+			}
 
 			int listStart = 1;
 			ArrayList filters = null;
