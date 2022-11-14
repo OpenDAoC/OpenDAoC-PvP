@@ -2,6 +2,7 @@
 
 ## Error
 AllCommands.Error.NoCommand:                        No such command ({0}).
+PlayerCommands.Removed.Err.NoUse:                   That command has been disabled for this server.
 
 ## General
 AllCommands.Command.SyntaxDesc:                           Use the following syntax for this command:
