@@ -16,8 +16,6 @@ public static class DungeonItemHelper
 
     public static ItemTemplate GetItemForZone(int zoneId)
     {
-        Console.WriteLine($"List status: {_availableItems}");
-        Console.WriteLine($"Zone ID: {zoneId} listSize {_availableItems.Count} listContains? {_availableItems.FirstOrDefault(x=> x.ZoneID == zoneId)}");
         return _availableItems.FirstOrDefault(x => x.ZoneID == zoneId)?.Template;
     }
 
@@ -25,11 +23,9 @@ public static class DungeonItemHelper
     {
          var templates = GameServer.Database.SelectAllObjects<ItemTemplate>().Where(x=> x.PackageID.Contains("TitanXP")).ToDictionary(k => k.Id_nb.ToLower());
          List<DungeonItem> items = new List<DungeonItem>();
-
-         Console.WriteLine($"Template count: {templates.Count}");
+         
         foreach (var itemTemplate in templates)
         {
-            Console.WriteLine($"Key: {itemTemplate.Key} template: {itemTemplate.Value}");
             switch (itemTemplate.Key)
             {
                 case "avaloncitymedallion":

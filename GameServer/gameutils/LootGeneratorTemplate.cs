@@ -463,8 +463,6 @@ namespace DOL.GS
                                                 dropChance /= 2;
                                                 break;
                                         }
-                                        
-                                        Console.WriteLine($"mobCon {mobCon} chance{dropChance} templateName {drop.Name} templateId {drop.Id_nb}");
 
                                         if (dropChance >= 100)
                                         {
