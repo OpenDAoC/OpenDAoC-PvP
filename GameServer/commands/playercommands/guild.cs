@@ -444,6 +444,14 @@ namespace DOL.GS.Commands
 								client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Player.Guild.InviteNotThis"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 								return;
 							}
+
+							if (GetNumberOfUniqueAccounts(client.Player) >=
+							    Int32.Parse(ServerProperties.Properties.MAX_ACCOUNTS_PER_GUILD))
+							{
+								client.Out.SendMessage("Unable to invite player. This guild has reached the maximum limit of unique accounts.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+								return;
+							}
+							
 							obj.Out.SendGuildInviteCommand(client.Player, LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Player.Guild.InviteRecieved", client.Player.Name, client.Player.Guild.Name));
 							client.Out.SendMessage(LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Player.Guild.InviteSent", obj.Name, client.Player.Guild.Name), eChatType.CT_Guild, eChatLoc.CL_SystemWindow);
 							client.Player.Guild.UpdateGuildWindow();
@@ -2623,6 +2631,14 @@ namespace DOL.GS.Commands
 
 				DisplayHelp(client);
 			}
+		}
+
+		private int GetNumberOfUniqueAccounts(GamePlayer player)
+		{
+			//select all characters with a matching GuildID, and then grab the distinct account number from the list
+			//this adds a bit of lag for enormous guild, like the starting guilds. ~2s delay to query a 9500 entity guild. 
+			//should not make a difference in 99% of cases since most don't get that big and nobody can invite to starting guild
+			return GameServer.Database.SelectObjects<DOLCharacters>(DB.Column("GuildID").IsEqualTo(player.GuildID)).Select(o=>o.AccountName).Distinct().Count();
 		}
 
 		private const string GUILD_BANNER_PRICE = "GUILD_BANNER_PRICE";
