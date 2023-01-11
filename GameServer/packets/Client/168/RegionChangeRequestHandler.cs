@@ -209,6 +209,18 @@ namespace DOL.GS.PacketHandler.Client.v168
 			{
 				var player = (GamePlayer)m_actionSource;
 
+				
+				//TODO - nuke this when SI is ready to come back
+				if (m_zonePoint.TargetRegion is 51 or 151 or 181)
+				{
+					//51 == alb SI
+					//151 == mid SI
+					//181 == hib SI
+					player.Out.SendMessage("The Shrouded Isles have been temporarily disabled.",
+						eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					return 0;
+				}
+
 				Region reg = WorldMgr.GetRegion(m_zonePoint.TargetRegion);
 				if (reg != null && reg.Expansion > (int)player.Client.ClientType)
 				{
