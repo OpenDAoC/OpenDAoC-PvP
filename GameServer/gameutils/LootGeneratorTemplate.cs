@@ -358,12 +358,13 @@ namespace DOL.GS
                                     }
                                 }
 
-                                if (timedDrops.Count > 0)
+                                if (killer is {CurrentZone: {IsDungeon: true}})
                                 {
                                     LootTemplate
                                         lootTemplate =
                                             timedDrops[
                                                 Util.Random(timedDrops.Count - 1)]; //randomly pick one available drop
+                                    //reroute this to find the right XP item ^^^^
 
                                     lock (player._xpGainersLock)
                                     {
@@ -388,22 +389,22 @@ namespace DOL.GS
                                         switch (mobCon)
                                         {
                                             case >=2:
-                                                dropChan *= 5;
+                                                dropChance *= 5;
                                                 break;
                                             case >=1:
-                                                dropChan *= 2;
+                                                dropChance *= 2;
                                                 break;
                                             case >=0:
                                                 //keep base chance
                                                 break;
                                             case >=-1:
-                                                dropChan /= 2;
+                                                dropChance /= 2;
                                                 break;
                                             case >=-2:
-                                                dropChan /= 5;
+                                                dropChance /= 5;
                                                 break;
                                             default:
-                                                dropChan /= 2;
+                                                dropChance /= 2;
                                                 break;
                                         }
 
@@ -449,7 +450,7 @@ namespace DOL.GS
                                     }
                                 }
 
-                                if (timedDrops.Count > 0)
+                                if (killer is {CurrentZone: {IsDungeon: true}})
                                 {
                                     LootTemplate
                                         lootTemplate =
@@ -479,22 +480,22 @@ namespace DOL.GS
                                         switch (mobCon)
                                         {
                                             case >=2:
-                                                dropChan *= 5;
+                                                dropChance *= 5;
                                                 break;
                                             case >=1:
-                                                dropChan *= 2;
+                                                dropChance *= 2;
                                                 break;
                                             case >=0:
                                                 //keep base chance
                                                 break;
                                             case >=-1:
-                                                dropChan /= 2;
+                                                dropChance /= 2;
                                                 break;
                                             case >=-2:
-                                                dropChan /= 5;
+                                                dropChance /= 5;
                                                 break;
                                             default:
-                                                dropChan /= 2;
+                                                dropChance /= 2;
                                                 break;
                                         }
 
@@ -503,22 +504,6 @@ namespace DOL.GS
                                     }
                                 }
                             }
-                        }
-
-                        if (tmp > 0 && dropChan > 0)
-                        {
-                            long timeDifference = GameLoop.GameLoopTime - (tmp + dropChan);
-                            timeDifference *= -1;
-                            //"PvE Time Remaining: " + TimeSpan.FromMilliseconds(pve).Hours + "h " + TimeSpan.FromMilliseconds(pve).Minutes + "m " + TimeSpan.FromMilliseconds(pve).Seconds + "s");
-                            if (timeDifference > 0)
-                                player.Out.SendMessage(
-                                    TimeSpan.FromMilliseconds(timeDifference).Hours + "h " +
-                                    TimeSpan.FromMilliseconds(timeDifference).Minutes + "m " +
-                                    TimeSpan.FromMilliseconds(timeDifference).Seconds + "s until next XP item",
-                                    eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                            else
-                                player.Out.SendMessage("XP item will drop after your next kill!", eChatType.CT_System,
-                                    eChatLoc.CL_SystemWindow);
                         }
                     }
                 }
