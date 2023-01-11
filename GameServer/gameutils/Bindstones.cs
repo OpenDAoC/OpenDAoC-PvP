@@ -39,12 +39,13 @@ public class Bindstones
         AvailableBindstones.Add(new BindstoneLocation(200, 343364, 591653, 5456)); //howth
         AvailableBindstones.Add(new BindstoneLocation(200, 296117, 642170, 4848)); //connla
         AvailableBindstones.Add(new BindstoneLocation(200, 335039, 720014, 4296)); //innis carthaig
+        
+        //TODO - add SI zone release options
     }
 
     public BindstoneLocation GetRandomBindstone()
     {
         int index = Util.Random(AvailableBindstones.Count - 1);
-        Console.WriteLine($"index: {index} region {AvailableBindstones[index].Region}");
         return AvailableBindstones[index];
     }
 }
