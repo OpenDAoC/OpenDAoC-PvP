@@ -2964,6 +2964,9 @@ namespace DOL.GS.ServerProperties
         
         [ServerProperty("titan", "max_accounts_allowed_per_guild", "The maximum number of unique accounts allowed per guild", "24")]
         public static string MAX_ACCOUNTS_PER_GUILD;
+        
+        [ServerProperty("titan", "base_xp_item_dropchance", "The base % for XP item drops (as though they were from a yellow con monster)", "10")]
+        public static string BASE_XP_ITEM_DROPCHANCE;
 
 		#endregion
 		public static IDictionary<string, object> AllCurrentProperties
