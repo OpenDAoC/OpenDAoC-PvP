@@ -329,7 +329,6 @@ namespace DOL.GS
                         if (m_lootTemplates.ContainsKey(mob.Name.ToLower()))
                         {
                             Dictionary<string, LootTemplate> lootTemplatesToDrop = m_lootTemplates[mob.Name.ToLower()];
-                            List<LootTemplate> timedDrops = new List<LootTemplate>();
 
                             if (lootTemplatesToDrop != null)
                             {
@@ -343,11 +342,7 @@ namespace DOL.GS
                                     if (drop != null && (drop.Realm == (int) player.Realm || drop.Realm == 0 ||
                                                          player.CanUseCrossRealmItems))
                                     {
-                                        if (lootTemplate.Chance < 0)
-                                        {
-                                            timedDrops.Add(lootTemplate);
-                                        }
-                                        else if (lootTemplate.Chance == 100)
+                                        if (lootTemplate.Chance == 100)
                                         {
                                             loot.AddFixed(drop, lootTemplate.Count);
                                         }
@@ -360,25 +355,12 @@ namespace DOL.GS
 
                                 if (killer is {CurrentZone: {IsDungeon: true}})
                                 {
-                                    LootTemplate
-                                        lootTemplate =
-                                            timedDrops[
-                                                Util.Random(timedDrops.Count - 1)]; //randomly pick one available drop
-                                    //reroute this to find the right XP item ^^^^
-
                                     lock (player._xpGainersLock)
                                     {
                                         ItemTemplate drop =
-                                            GameServer.Database.FindObjectByKey<ItemTemplate>(lootTemplate
-                                                .ItemTemplateID);
+                                            GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonItemHelper.GetItemForZone(killer.CurrentZone.ID));
 
                                         GamePlayer playerToUse = player;
-                                        List<string> itemsDropped =
-                                            player.TempProperties
-                                                .getProperty<List<string>>(
-                                                    XPItemDroppersKey); //check our list of dropped monsters
-                                        if (itemsDropped == null) itemsDropped = new List<string>();
-
                                         if (player.Group != null)
                                             playerToUse = (GamePlayer) GetHighestLevelGroupmate(player);
 
@@ -409,7 +391,6 @@ namespace DOL.GS
                                         }
 
                                         loot.AddRandom(dropChance, drop);
-                                        itemsDropped.Clear();
                                     }
                                 }
                             }
@@ -433,17 +414,12 @@ namespace DOL.GS
 
                             if (lootTemplatesToDrop != null)
                             {
-                                List<LootTemplate> timedDrops = new List<LootTemplate>();
                                 foreach (LootTemplate lootTemplate in lootTemplatesToDrop)
                                 {
                                     ItemTemplate drop =
                                         GameServer.Database.FindObjectByKey<ItemTemplate>(lootTemplate.ItemTemplateID);
 
-                                    if (lootTemplate.Chance < 0)
-                                    {
-                                        timedDrops.Add(lootTemplate);
-                                    }
-                                    else if (drop != null && (drop.Realm == (int) player.Realm || drop.Realm == 0 ||
+                                    if (drop != null && (drop.Realm == (int) player.Realm || drop.Realm == 0 ||
                                                               player.CanUseCrossRealmItems))
                                     {
                                         loot.AddRandom(lootTemplate.Chance, drop, 1);
@@ -452,29 +428,18 @@ namespace DOL.GS
 
                                 if (killer is {CurrentZone: {IsDungeon: true}})
                                 {
-                                    LootTemplate
-                                        lootTemplate =
-                                            timedDrops[
-                                                Util.Random(timedDrops.Count - 1)]; //randomly pick one available drop
-
-                                     lock (player._xpGainersLock)
+                                    lock (player._xpGainersLock)
                                     {
                                         ItemTemplate drop =
-                                            GameServer.Database.FindObjectByKey<ItemTemplate>(lootTemplate
-                                                .ItemTemplateID);
+                                            GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonItemHelper.GetItemForZone(killer.CurrentZone.ID).Id_nb);
 
                                         GamePlayer playerToUse = player;
-                                        List<string> itemsDropped =
-                                            player.TempProperties
-                                                .getProperty<List<string>>(
-                                                    XPItemDroppersKey); //check our list of dropped monsters
-                                        if (itemsDropped == null) itemsDropped = new List<string>();
-
                                         if (player.Group != null)
                                             playerToUse = (GamePlayer) GetHighestLevelGroupmate(player);
 
                                         var numRelics = RelicMgr.GetRelicCount(player.Realm);
                                         int dropChance = Convert.ToInt32(ServerProperties.Properties.BASE_XP_ITEM_DROPCHANCE);
+                                        dropChance = 100; //TODO remove me
                                         if (numRelics > 0) dropChance += 5 * numRelics; //5% drop chance bonus per relic
                                         double mobCon = playerToUse.GetConLevel(mob);
                                         switch (mobCon)
@@ -484,7 +449,7 @@ namespace DOL.GS
                                                 break;
                                             case >=1:
                                                 dropChance *= 2;
-                                                break;
+                                                break; 
                                             case >=0:
                                                 //keep base chance
                                                 break;
@@ -498,9 +463,18 @@ namespace DOL.GS
                                                 dropChance /= 2;
                                                 break;
                                         }
+                                        
+                                        Console.WriteLine($"mobCon {mobCon} chance{dropChance} templateName {drop.Name} templateId {drop.Id_nb}");
 
-                                        loot.AddRandom(dropChance, drop);
-                                        itemsDropped.Clear();
+                                        if (dropChance >= 100)
+                                        {
+                                            loot.AddFixed(drop, 1);
+                                        }
+                                        else
+                                        {
+                                            loot.AddRandom(dropChance, drop);    
+                                        }
+                                        
                                     }
                                 }
                             }

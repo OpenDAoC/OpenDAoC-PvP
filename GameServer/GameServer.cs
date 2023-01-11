@@ -832,6 +832,8 @@ namespace DOL.GS
 
 				log.Info($"GarbageCollection IsServerGC: {System.Runtime.GCSettings.IsServerGC}" );
 
+				DungeonItemHelper.GetItemForZone(1);
+
 				//---------------------------------------------------------------
 				//Open the server, players can now connect if webhook, inform Discord!
 				m_status = eGameServerStatus.GSS_Open;
