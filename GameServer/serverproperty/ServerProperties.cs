@@ -2961,6 +2961,9 @@ namespace DOL.GS.ServerProperties
         
         [ServerProperty("atlas", "alt_currency_id", "The id_nb of the item to use as alternative currency (i.e. Orbs)", "")]
         public static string ALT_CURRENCY_ID;
+        
+        [ServerProperty("titan", "max_accounts_allowed_per_guild", "The maximum number of unique accounts allowed per guild", "30")]
+        public static string MAX_ACCOUNTS_PER_GUILD;
 
 		#endregion
 		public static IDictionary<string, object> AllCurrentProperties
