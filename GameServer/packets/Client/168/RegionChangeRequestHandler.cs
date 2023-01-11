@@ -211,7 +211,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 
 				
 				//TODO - nuke this when SI is ready to come back
-				if (m_zonePoint.TargetRegion is 51 or 151 or 181)
+				if ((m_zonePoint.TargetRegion is 51 or 151 or 181) && ServerProperties.Properties.DISABLE_SI_TELEPORT)
 				{
 					//51 == alb SI
 					//151 == mid SI

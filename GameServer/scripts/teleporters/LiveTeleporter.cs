@@ -128,6 +128,7 @@ namespace DOL.GS.Scripts
                       "[Druim Ligen] in Connacht or \n" +
                       "[Druim Cain] in Bri Leith\n" +
                       "[Shannon Estuary] watchtower\n\n" +
+                      (ServerProperties.Properties.DISABLE_SI_TELEPORT ? "" : "[Gothwaite Harbor]  [Aegirhamn]  or [Domnann] in the [Shrouded Isles]\n") +
                       //"[Gothwaite Harbor]  [Aegirhamn]  or [Domnann] in the [Shrouded Isles]\n" +
                       "[Camelot], [Jordheim], or [Tir na Nog], our glorious cities\n" +
                       "The [entrance] to the areas of [Housing]\n" +
@@ -202,9 +203,7 @@ namespace DOL.GS.Scripts
 
         protected virtual bool GetTeleportLocation(GamePlayer player, string text)
         {
-            //TODO - disabled teleports to SI areas to keep population in a smaller area for alpha/beta
-            //uncomment when ready for SI
-            /*if (text.ToLower() == "shrouded isles")
+            if (text.ToLower() == "shrouded isles" && !ServerProperties.Properties.DISABLE_SI_TELEPORT)
             {
                 String reply = "Would you prefer\n\n" +
                     "Albion:\n" +
@@ -216,7 +215,7 @@ namespace DOL.GS.Scripts
                 
                 SayTo(player, reply);
                 return false;
-            }*/
+            }
                     
             if (text.ToLower() == "housing")
             {
@@ -224,12 +223,13 @@ namespace DOL.GS.Scripts
                     "I can send you to your [personal] or [guild] house. If you do not have a personal house, I can teleport you to the housing [entrance] or your housing [hearth] bindstone.");
                 return false;
             }
-
-            //TODO - disabled teleports to SI areas to keep population in a smaller area for alpha/beta
-            //remove this block when ready for SI
-            if (text.ToLower() == "bjarken" || text.ToLower() == "hagall" || text.ToLower() == "knarr"||
+            
+            if ((text.ToLower() == "bjarken" || text.ToLower() == "hagall" || text.ToLower() == "knarr"||
                 text.ToLower() == "wearyall village" || text.ToLower() == "gwyntell" || text.ToLower() == "caer diogel" ||
-                text.ToLower() == "droighaid" || text.ToLower() == "aalid feie" || text.ToLower() == "necht")
+                text.ToLower() == "droighaid" || text.ToLower() == "aalid feie" || text.ToLower() == "necht" ||
+                text.ToLower() == "gothwaite harbor" || text.ToLower() == "aegirhamn" || text.ToLower() == "domnann")
+
+                && ServerProperties.Properties.DISABLE_SI_TELEPORT)
             {
                 SayTo(player, "This area has been temporarily disabled.");
                 return false;

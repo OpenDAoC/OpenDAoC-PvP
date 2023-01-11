@@ -2967,6 +2967,9 @@ namespace DOL.GS.ServerProperties
         
         [ServerProperty("titan", "base_xp_item_dropchance", "The base % for XP item drops (as though they were from a yellow con monster)", "10")]
         public static string BASE_XP_ITEM_DROPCHANCE;
+        
+        [ServerProperty("titan", "disable_SI_teleports", "Should teleports/zone points for Shrouded Isles be disabled?", false)]
+        public static bool DISABLE_SI_TELEPORT;
 
 		#endregion
 		public static IDictionary<string, object> AllCurrentProperties
