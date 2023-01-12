@@ -39,6 +39,7 @@ namespace DOL.Database
 		private int m_lastRealm;
 		private int m_type;
 		private DateTime m_lastCaptureDate;
+		private string m_owningGuildID;
 
 
 		/// <summary>
@@ -229,6 +230,23 @@ namespace DOL.Database
 			{
 				Dirty = true;
 				m_lastCaptureDate = value;
+			}
+		}
+		
+		/// <summary>
+		/// ID of guild who captured relic
+		/// </summary>
+		[DataElement(AllowDbNull = false)]
+		public string OwningGuildID
+		{
+			get
+			{
+				return m_owningGuildID;
+			}
+			set
+			{
+				Dirty = true;
+				m_owningGuildID = value;
 			}
 		}
 	}

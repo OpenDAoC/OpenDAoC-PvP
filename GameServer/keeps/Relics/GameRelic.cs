@@ -591,6 +591,7 @@ namespace DOL.GS
 			m_originalRealm = (eRealm)m_dbRelic.OriginalRealm;
 			m_lastRealm = (eRealm)m_dbRelic.LastRealm;
 			m_lastCapturedDate = m_dbRelic.LastCaptureDate;
+			m_owningGuild = !string.IsNullOrEmpty(m_dbRelic.OwningGuildID) ? GuildMgr.GetGuildByGuildID(m_dbRelic.OwningGuildID.ToString()) : null;
 
 
 			//get constant values
@@ -637,6 +638,7 @@ namespace DOL.GS
 			m_dbRelic.Y = Y;
 			m_dbRelic.Z = Z;
 			m_dbRelic.LastCaptureDate = m_lastCapturedDate;
+			m_dbRelic.OwningGuildID = OwningGuild != null && !string.IsNullOrEmpty(OwningGuild.GuildID) ? OwningGuild.GuildID : "";
 
 			if (InternalID == null)
 			{
