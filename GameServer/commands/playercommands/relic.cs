@@ -75,27 +75,30 @@ namespace DOL.GS.Commands
                     case eRealm.Albion:
                         {
                             if (relic.RelicType == eRelicType.Strength)
-								albStr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Strength") + ": " + GlobalConstants.RealmToName(relic.Realm) + relicLoc + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
+								albStr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Strength") + ": " + (relic.OwningGuild == null ? "None" : relic.OwningGuild.Name) + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
                             if (relic.RelicType == eRelicType.Magic)
-								albPwr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Power") + ": " + GlobalConstants.RealmToName(relic.Realm) + relicLoc + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
+								albPwr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Power") + ": " + (relic.OwningGuild == null ? "None" : relic.OwningGuild.Name) + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
                             break;
                         }
 
                     case eRealm.Midgard:
                         {
                             if (relic.RelicType == eRelicType.Strength)
-								midStr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Strength") + ": " + GlobalConstants.RealmToName(relic.Realm) + relicLoc + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
+                            {
+                                midStr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Strength") + ": " + (relic.OwningGuild == null ? "None" : relic.OwningGuild.Name) + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago"; 
+                            }
+								//midStr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Strength") + ": " + GlobalConstants.RealmToName(relic.Realm) + relicLoc + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
                             if (relic.RelicType == eRelicType.Magic)
-								midPwr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Power") + ": " + GlobalConstants.RealmToName(relic.Realm) + relicLoc + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
+								midPwr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Power") + ": " + (relic.OwningGuild == null ? "None" : relic.OwningGuild.Name) + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
                             break;
                         }
 
                     case eRealm.Hibernia:
                         {
                             if (relic.RelicType == eRelicType.Strength)
-								hibStr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Strength") + ": " + GlobalConstants.RealmToName(relic.Realm) + relicLoc + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
+								hibStr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Strength") + ": " + (relic.OwningGuild == null ? "None" : relic.OwningGuild.Name) + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
                             if (relic.RelicType == eRelicType.Magic)
-								hibPwr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Power") + ": " + GlobalConstants.RealmToName(relic.Realm) + relicLoc + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
+								hibPwr = LanguageMgr.GetTranslation(client.Account.Language, "Scripts.Players.Relic.Power") + ": " + (relic.OwningGuild == null ? "None" : relic.OwningGuild.Name) + " | " + RelicMgr.GetDaysSinceCapture(relic) + "d ago";
                             break;
                         }
                 }
