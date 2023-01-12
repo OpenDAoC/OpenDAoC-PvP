@@ -271,7 +271,7 @@ namespace DOL.GS.Spells
 						}
 					}
 
-					// Nature's shield, 100% block chance, 120Åã frontal angle
+					// Nature's shield, 100% block chance, 120¬Å‚Äπ frontal angle
 					if (target.IsObjectInFront(caster, 120) && (target.styleComponent.NextCombatStyle?.ID == 394 || target.styleComponent.NextCombatBackupStyle?.ID == 394))
 					{
 						m_handler.MessageToLiving(player, "You block " + caster.GetName(0, false) + "'s spell!", eChatType.CT_Missed);
@@ -307,9 +307,13 @@ namespace DOL.GS.Spells
 					int physMod = (int)(damage * (ad.Target.GetResist(ad.DamageType)) / -100.0);
 					ad.Modifier += physMod;
 					damage += physMod;
+					
+					
 
 					damage = damage * effectiveness;
-					damage *= (1.0 + RelicMgr.GetRelicBonusModifier(caster.Realm, eRelicType.Magic));
+					
+					if(caster is GamePlayer casterPlayer)
+						damage *= (1.0 + RelicMgr.GetRelicBonusModifier(caster.Realm, eRelicType.Magic, casterPlayer.Guild));
 
 					if (damage < 0) damage = 0;
 					ad.Damage += (int)damage;

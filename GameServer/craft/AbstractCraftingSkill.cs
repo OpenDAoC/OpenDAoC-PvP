@@ -674,7 +674,7 @@ namespace DOL.GS
 			// Player does check for capital city bonus as well
 			craftingTime = (int)(craftingTime / player.CraftingSpeed);
 
-			craftingTime = (int)(craftingTime * (1 - (.05 * RelicMgr.GetRelicCount(player.Realm))));
+			craftingTime = (int)(craftingTime * (1 - (.05 * RelicMgr.GetRelicCount(player.Guild))));
 
 			//keep bonuses reduction in crafting time
 			if (Keeps.KeepBonusMgr.RealmHasBonus(DOL.GS.Keeps.eKeepBonusType.Craft_Timers_5, (eRealm)player.Realm))

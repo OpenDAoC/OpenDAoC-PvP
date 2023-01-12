@@ -1593,7 +1593,7 @@ namespace DOL.GS.ServerRules
 						double levelPercent =
 							((double) (player.Experience + xpReward - player.ExperienceForCurrentLevel) /
 							 (player.ExperienceForNextLevel - player.ExperienceForCurrentLevel)) * 100;
-						double relicXp =  (baseXP * (0.05 * RelicMgr.GetRelicCount(player.Realm)));
+						double relicXp =  (baseXP * (0.05 * RelicMgr.GetRelicCount(player.Guild)));
 						double relicPercent = ((double) relicXp / (baseXP)) * 100.0;
 
 						player.Out.SendMessage(

@@ -151,7 +151,7 @@ namespace DOL.GS {
 
                 var loyaltyBonus = ((amount * .2) * (numCurrentLoyalDays / 30));
                 
-                double relicBonus = (amount * (0.025 * RelicMgr.GetRelicCount(player.Realm)));
+                double relicBonus = (amount * (0.025 * RelicMgr.GetRelicCount(player.Guild)));
 
                 var totBPs = amount + Convert.ToInt32(loyaltyBonus) + Convert.ToInt32(relicBonus);
                 
@@ -192,7 +192,7 @@ namespace DOL.GS {
 
                 var loyaltyBonus = ((amount * .2) * (numCurrentLoyalDays / 30));
                 
-                double relicOrbBonus = (amount * (0.025 * RelicMgr.GetRelicCount(player.Realm)));
+                double relicOrbBonus = (amount * (0.025 * RelicMgr.GetRelicCount(player.Guild)));
 
                 var totOrbs = amount + Convert.ToInt32(loyaltyBonus) + Convert.ToInt32(relicOrbBonus);
 

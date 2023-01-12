@@ -1675,7 +1675,7 @@ namespace DOL.GS
 
                     double weaponskillCalc = 1 + 
                         owner.GetWeaponSkill(weapon); //this provide level * damagetable * stats part of equation
-                    double strengthRelicCount = 1 + RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength);
+                    double strengthRelicCount = 1 + RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength, ownPlayer.Guild);
                     //Console.WriteLine($"relic count {strengthRelicCount} bonusmod {RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength)}");
                        // 0.9 + (0.1 * Math.Max(1.0, RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength)));
 

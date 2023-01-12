@@ -261,21 +261,14 @@ namespace DOL.GS
 			return realmTypeRelics;
 		}
 
-
-
-		/// <summary>
-		/// get relic count by realm
-		/// </summary>
-		/// <param name="realm"></param>
-		/// <returns></returns>
-		public static int GetRelicCount(eRealm realm)
+		public static int GetRelicCount(Guild guild)
 		{
 			int index = 0;
 			lock (m_relics.SyncRoot)
 			{
 				foreach (GameRelic relic in m_relics.Values)
 				{
-					if ((relic.Realm == realm) && (relic is GameRelic))
+					if ((relic.OwningGuild != null && relic.OwningGuild == guild))
 						index++;
 				}
 			}

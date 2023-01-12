@@ -261,8 +261,9 @@ namespace DOL.GS.Spells
 					double effectiveness = caster.Effectiveness;
 					effectiveness += (caster.GetModified(eProperty.SpellDamage) * 0.01);
 					damage = damage * effectiveness;
-
-					damage *= (1.0 + RelicMgr.GetRelicBonusModifier(caster.Realm, eRelicType.Magic));
+					
+					if(caster is GamePlayer casterPlayer)
+						damage *= (1.0 + RelicMgr.GetRelicBonusModifier(caster.Realm, eRelicType.Magic, casterPlayer.Guild));
 
 					if (damage < 0) damage = 0;
 
