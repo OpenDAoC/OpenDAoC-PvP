@@ -34,6 +34,11 @@ namespace DOL.GS
 		eRelicType m_relicType;
 		ECSGameTimer m_returnRelicTimer;
 		long m_timeRelicOnGround = 0;
+		private long m_maxCaptureTime = 1000 * 60 * 1; //1000ms = 1s, 1s * 60 = 1min, 1min * 5 = 5 min capture time
+		private long m_captureStartTick;
+		private long m_captureEndTick;
+		private long m_lastMessageTick = 0;
+		private Guild m_owningGuild = null;
 
 		protected int ReturnRelicInterval
 		{
@@ -88,6 +93,18 @@ namespace DOL.GS
 			set
 			{
 				m_lastRealm = value;
+			}
+		}
+
+		public Guild OwningGuild
+		{
+			get
+			{
+				return m_owningGuild;
+			}
+			set
+			{
+				m_owningGuild = value;
 			}
 		}
 
@@ -158,6 +175,18 @@ namespace DOL.GS
 			if (!player.IsAlive)
 			{
 				player.Out.SendMessage("You cannot pickup " + GetName(0, false) + ". You are dead!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+			
+			if (player.Guild == null)
+			{
+				player.Out.SendMessage("You cannot pickup " + GetName(0, false) + " without a guild to claim it.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+			
+			if (player.Guild != null && OwningGuild != null && player.Guild == OwningGuild)
+			{
+				player.Out.SendMessage("Your guild already owns " + GetName(0, false) + ".", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				return false;
 			}
 
@@ -237,11 +266,12 @@ namespace DOL.GS
 
 				log.DebugFormat("keep {0}", keep);
 				
+				/* TODO - remove this
 				if (m_currentRelicPad.GetEnemiesOnPad() < Properties.RELIC_PLAYERS_REQUIRED_ON_PAD)
 				{
 					player.Out.SendMessage($"You must have {Properties.RELIC_PLAYERS_REQUIRED_ON_PAD} players nearby the pad before taking a relic.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 					return;
-				}
+				}*/
 			}
 
 			if (player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, m_item))
@@ -384,6 +414,9 @@ namespace DOL.GS
 					m_currentCarrierTimer.Stop();
 					m_currentCarrierTimer = null;
 				}
+
+				m_captureStartTick = GameLoop.GameLoopTime;
+				m_captureEndTick = m_captureStartTick + 60000; //m_maxCaptureTime;
 				m_currentCarrierTimer = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(CarrierTimerTick));
 				m_currentCarrierTimer.Start(RelicEffectInterval);
 
@@ -410,10 +443,19 @@ namespace DOL.GS
 			Update();
 
 			// check to make sure relic is in a legal region and still in the players backpack
-
 			if (GameServer.KeepManager.FrontierRegionsList.Contains(CurrentRegionID) == false)
 			{
 				log.DebugFormat("{0} taken out of frontiers, relic returned to previous pad.", Name);
+				RelicPadTakesOver(ReturnRelicPad, true);
+				SaveIntoDatabase();
+				AddToWorld();
+				return 0;
+			}
+
+			if (m_currentCarrier.GetDistanceTo(this.m_returnRelicPad) > 5000)
+			{
+				log.DebugFormat("{0} taken too far from home keep, relic returned to previous pad.", Name);
+				m_currentCarrier.Out.SendMessage("You have taken the relic too far from its home keep and it has been returned to its pad.", eChatType.CT_ScreenCenter_And_CT_System, eChatLoc.CL_SystemWindow);
 				RelicPadTakesOver(ReturnRelicPad, true);
 				SaveIntoDatabase();
 				AddToWorld();
@@ -429,6 +471,41 @@ namespace DOL.GS
 				return 0;
 			}
 
+			if (m_captureEndTick <= GameLoop.GameLoopTime)
+			{
+				RelicPadTakesOver(ReturnRelicPad, false);
+				SaveIntoDatabase();
+				AddToWorld();
+				return 0;
+			}
+			else
+			{
+				long timeLeft = m_captureEndTick - GameLoop.GameLoopTime;
+				int messageInterval = 5000;
+				switch (timeLeft/1000)
+				{
+					case >180:
+						messageInterval = 60000;
+						break;
+					case >60:
+						messageInterval = 30000;
+						break;
+					case >15:
+						messageInterval = 15000;
+						break;
+					default:
+						messageInterval = 4000;
+						break;
+				}
+				
+				if ((m_lastMessageTick == 0 || GameLoop.GameLoopTime - m_lastMessageTick > messageInterval))
+				{
+					m_currentCarrier.Out.SendMessage($"{timeLeft/1000} seconds remain to capture the relic", eChatType.CT_ScreenCenter_And_CT_System, eChatLoc.CL_SystemWindow);
+					m_lastMessageTick = GameLoop.GameLoopTime;
+				}
+					
+			}
+			
 			//fireworks spells temp
 			ushort effectID = (ushort)Util.Random(5811, 5815);
 			foreach (GamePlayer ppl in m_currentCarrier.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
