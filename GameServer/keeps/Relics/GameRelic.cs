@@ -21,7 +21,7 @@ namespace DOL.GS
 		private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
 		public const string PLAYER_CARRY_RELIC_WEAK = "IAmCarryingARelic";
-		protected const int RelicEffectInterval = 4000;
+		protected const int RelicEffectInterval = 2500;
 
 		#region declarations
 		InventoryItem m_item;
@@ -34,7 +34,7 @@ namespace DOL.GS
 		eRelicType m_relicType;
 		ECSGameTimer m_returnRelicTimer;
 		long m_timeRelicOnGround = 0;
-		private long m_maxCaptureTime = 1000 * 60 * 1; //1000ms = 1s, 1s * 60 = 1min, 1min * 5 = 5 min capture time
+		private long m_maxCaptureTime = 1000 * 60 * 5; //1000ms = 1s, 1s * 60 = 1min, 1min * 5 = 5 min capture time
 		private long m_captureStartTick;
 		private long m_captureEndTick;
 		private long m_lastMessageTick = 0;
@@ -190,20 +190,6 @@ namespace DOL.GS
 				return false;
 			}
 
-			/*
-			if (IsMounted && player.Realm == Realm)
-			{
-				player.Out.SendMessage("You cannot pickup " + GetName(0, false) + ". It is owned by your realm.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-				return false;
-			}*/
-
-			/*
-			if (IsMounted && !RelicMgr.CanPickupRelicFromShrine(player, this))
-			{
-				player.Out.SendMessage("You cannot pickup " + GetName(0, false) + ". You need to capture your realms " + (Enum.GetName(typeof(eRelicType), RelicType)) + " relic first.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-				return false;
-			}*/
-
 			PlayerTakesRelic(player);
 			return true;
 		}
@@ -268,12 +254,12 @@ namespace DOL.GS
 
 				log.DebugFormat("keep {0}", keep);
 				
-				/* TODO - remove this
-				if (m_currentRelicPad.GetEnemiesOnPad() < Properties.RELIC_PLAYERS_REQUIRED_ON_PAD)
+				
+				if (m_currentRelicPad.GetGuildmatesOnPad(player.Guild) < Properties.RELIC_PLAYERS_REQUIRED_ON_PAD)
 				{
-					player.Out.SendMessage($"You must have {Properties.RELIC_PLAYERS_REQUIRED_ON_PAD} players nearby the pad before taking a relic.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					player.Out.SendMessage($"You must have {Properties.RELIC_PLAYERS_REQUIRED_ON_PAD} guildmates nearby the pad before taking a relic.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 					return;
-				}*/
+				}
 			}
 
 			if (player.Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, m_item))
@@ -359,7 +345,7 @@ namespace DOL.GS
 				m_timeRelicOnGround = GameLoop.GameLoopTime;
 				m_returnRelicTimer = new ECSGameTimer(this, new ECSGameTimer.ECSTimerCallback(ReturnRelicTick), RelicEffectInterval);
 				log.DebugFormat("{0} dropped, return timer for relic set to {1} seconds.", Name, ReturnRelicInterval / 1000);
-				Console.WriteLine($"Starting return relic timer {m_returnRelicTimer}");
+				//Console.WriteLine($"Starting return relic timer {m_returnRelicTimer}");
 
 				// update the position of the worldObject Relic
 				Update();
@@ -407,7 +393,7 @@ namespace DOL.GS
 		/// <param name="player">Player to set the timer on. Timer stops if param is null</param>
 		protected virtual void StartPlayerTimer(GamePlayer player)
 		{
-			Console.WriteLine($"Starting player relic timer {player} currentTimer {m_currentCarrierTimer}");
+			//Console.WriteLine($"Starting player relic timer {player} currentTimer {m_currentCarrierTimer}");
 			if (player != null)
 			{
 				if (m_currentCarrierTimer != null)
