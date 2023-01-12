@@ -310,20 +310,15 @@ namespace DOL.GS
 		/// <param name="realm"></param>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		public static double GetRelicBonusModifier(eRealm realm, eRelicType type)
+		public static double GetRelicBonusModifier(eRealm realm, eRelicType type, Guild guild)
 		{
 			double bonus = 0.0;
 			bool owningSelf = false;
 			//only playerrealms can get bonus
 			foreach (GameRelic rel in getRelics(realm, type))
 			{
-				if (rel.Realm == rel.OriginalRealm)
+				if (rel.OwningGuild == guild)
 				{
-					owningSelf = true;
-				}
-				else
-				{
-					var cache = bonus;
 					switch (GetDaysSinceCapture(rel))
 					{
 						case <1:
@@ -342,11 +337,7 @@ namespace DOL.GS
 				}
 			}
 
-			// Bonus apply only if owning original relic
-			if (owningSelf)
-				return bonus;
-			
-			return 0.0;
+			return bonus;
 		}
 
 		/// <summary>
