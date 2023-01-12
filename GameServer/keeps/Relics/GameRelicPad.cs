@@ -279,17 +279,18 @@ namespace DOL.GS
 			}
 		}
 		
-		public int GetEnemiesOnPad()
+		public int GetGuildmatesOnPad(Guild guild)
 		{
 			var players = GetPlayersInRadius(500);
-			var enemyNearby = 0;
+			var guildmateNearby = 0;
 				
 			foreach (GamePlayer p in players)
 			{
-				if (p.Realm == Realm) continue;
-				enemyNearby++;
+				if(p.Guild == guild)
+					guildmateNearby++;
 			}
-			return enemyNearby;
+			
+			return guildmateNearby;
 		}
 
 		public void RemoveRelic()
