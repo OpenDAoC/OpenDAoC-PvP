@@ -190,17 +190,19 @@ namespace DOL.GS
 				return false;
 			}
 
+			/*
 			if (IsMounted && player.Realm == Realm)
 			{
 				player.Out.SendMessage("You cannot pickup " + GetName(0, false) + ". It is owned by your realm.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				return false;
-			}
+			}*/
 
+			/*
 			if (IsMounted && !RelicMgr.CanPickupRelicFromShrine(player, this))
 			{
 				player.Out.SendMessage("You cannot pickup " + GetName(0, false) + ". You need to capture your realms " + (Enum.GetName(typeof(eRelicType), RelicType)) + " relic first.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				return false;
-			}
+			}*/
 
 			PlayerTakesRelic(player);
 			return true;
