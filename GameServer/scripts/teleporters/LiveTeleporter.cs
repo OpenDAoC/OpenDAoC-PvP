@@ -179,7 +179,7 @@ namespace DOL.GS.Scripts
             }*/
             
                       message += "\n\n" +
-                                 "Perhaps you would like the challenge of the epic dungeons, [Caer Sidi], [Tuscarian Glacier], or [Galladoria]?";
+                                 "Perhaps you would like the challenge of the epic dungeons, [Caer Sidi], [Tuscaran Glacier], or [Galladoria]?";
 
             SayTo(player, message);
 
@@ -379,6 +379,7 @@ namespace DOL.GS.Scripts
                 }
             }
             
+            /*
             if (text.ToLower() == "caer sidi")
             {
                 GetTeleportLocation(player, "Caer Sidi");
@@ -395,7 +396,7 @@ namespace DOL.GS.Scripts
             {
                 GetTeleportLocation(player, "Galladoria");
                 return true;
-            }
+            }*/
 
             // Find the teleport location in the database.
             Teleport port = WorldMgr.GetTeleportLocation((eRealm)GetRealmForSelection(text), String.Format("{0}:{1}", Type, text));
@@ -433,6 +434,7 @@ namespace DOL.GS.Scripts
                 case "wearyall village":
                 case "gwyntell":
                 case "caer diogel":
+                case "caer sidi":
                     return 1;
                 case "mularn":
                 case "fort veldon":
@@ -447,6 +449,7 @@ namespace DOL.GS.Scripts
                 case "svasud faste":
                 case "vindsaul faste":
                 case "gotar":
+                case "tuscaran glacier":
                     return 2;
                 case "mag mell":
                 case "tir na mbeo":
@@ -461,6 +464,7 @@ namespace DOL.GS.Scripts
                 case "druim ligen":
                 case "druim cain":
                 case "shannon estuary":
+                case "galladoria":
                     return 3;
                     break;
                 default: return 0;
