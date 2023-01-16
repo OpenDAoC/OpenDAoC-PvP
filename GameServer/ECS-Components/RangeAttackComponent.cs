@@ -166,7 +166,7 @@ namespace DOL.GS
                     {
                         if (target is GameLiving living &&
                             RangedAttackType == eRangedAttackType.Critical &&
-                            (living.attackComponent.AttackState && living.InCombat) || // Maybe not 100% correct.
+                            ((living.attackComponent.AttackState && living.InCombat) || // Maybe not 100% correct.
                             EffectListService.GetEffectOnTarget(living, eEffect.Mez) != null))
                         {
                             /*
