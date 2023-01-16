@@ -104,7 +104,7 @@ namespace DOL.GS.Spells
                     player.Client.Out.SendUpdateMaxSpeed();
                     check = 1;
                 }
-                effect.Owner.attackComponent.LivingStopAttack();
+                effect.Owner.attackComponent.StopAttack();
                 effect.Owner.StopCurrentSpellcast();
                 effect.Owner.DisarmedTime = effect.Owner.CurrentRegion.Time + Spell.Duration;
             }
@@ -366,9 +366,9 @@ namespace DOL.GS.Spells
                     case eAttackResult.HitStyle: resultByte = 11; break;
                     case eAttackResult.Parried:
                         resultByte = 1;
-                        if (ad.Target != null && ad.Target.AttackWeapon != null)
+                        if (ad.Target != null && ad.Target.ActiveWeapon != null)
                         {
-                            defendersWeapon = ad.Target.AttackWeapon.Model;
+                            defendersWeapon = ad.Target.ActiveWeapon.Model;
                         }
                         break;
                     case eAttackResult.Blocked:

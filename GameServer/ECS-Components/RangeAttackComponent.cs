@@ -1,312 +1,173 @@
-﻿using DOL.Database;
-using DOL.Events;
+﻿using System;
+using DOL.Database;
 using DOL.GS.PacketHandler;
-using DOL.GS.Spells;
 using DOL.Language;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static DOL.GS.GameLiving;
 using static DOL.GS.GameObject;
 
 namespace DOL.GS
 {
     public class RangeAttackComponent
     {
-        GameLiving owner;
+        private GameLiving m_owner;
 
         public RangeAttackComponent(GameLiving owner)
         {
-            this.owner = owner;
+            m_owner = owner;
         }
 
-        /// <summary>
-		/// The time someone can hold a ranged attack before tiring
-		/// </summary>
-		internal const string RANGE_ATTACK_HOLD_START = " RangeAttackHoldStart";
-        /// <summary>
-        /// Endurance used for normal range attack
-        /// </summary>
+        internal const string RANGED_ATTACK_START = "RangedAttackStart";
         public const int RANGE_ATTACK_ENDURANCE = 5;
-        /// <summary>
-        /// Endurance used for critical shot
-        /// </summary>
         public const int CRITICAL_SHOT_ENDURANCE = 10;
-
-        /// <summary>
-		/// The state of the ranged attack
-		/// </summary>
-		protected eRangedAttackState m_rangedAttackState;
-        /// <summary>
-        /// The gtype of the ranged attack
-        /// </summary>
+        public const int PROJECTILE_FLIGHT_SPEED = 1800; // 1800 units per second. Live value is unknown, but DoL had 1500. Also affects throwing weapons.
+        protected eRangedAttackState m_rangedAttackState;
         protected eRangedAttackType m_rangedAttackType;
+        protected eActiveQuiverSlot m_activeQuiverSlot;
+        protected WeakReference m_rangeAttackAmmo = new WeakRef(null);
+        protected WeakReference m_rangeAttackTarget = new WeakRef(null);
+        protected InventoryItem m_ammo;
+        protected bool m_isAmmoCompatible;
 
-        /// <summary>
-        /// Gets or Sets the state of a ranged attack
-        /// </summary>
         public eRangedAttackState RangedAttackState
         {
-            get { return m_rangedAttackState; }
-            set { m_rangedAttackState = value; }
+            get => m_rangedAttackState;
+            set => m_rangedAttackState = value;
         }
 
-        /// <summary>
-        /// Gets or Sets the type of a ranged attack
-        /// </summary>
         public eRangedAttackType RangedAttackType
         {
-            get { return m_rangedAttackType; }
-            set { m_rangedAttackType = value; }
+            get => m_rangedAttackType;
+            set => m_rangedAttackType = value;
         }
 
-        /// <summary>
-        /// Holds the quiverslot to be used
-        /// </summary>
-        protected eActiveQuiverSlot m_activeQuiverSlot;
-
-        /// <summary>
-        /// Gets/Sets the current active quiver slot of this living
-        /// </summary>
-        public virtual eActiveQuiverSlot ActiveQuiverSlot
+        public eActiveQuiverSlot ActiveQuiverSlot
         {
-            get { return m_activeQuiverSlot; }
-            set { m_activeQuiverSlot = value; }
+            get => m_activeQuiverSlot;
+            set => m_activeQuiverSlot = value;
         }
-        
-        
 
-        
-        
-  //      /// <summary>
-		///// Check the range attack state and decides what to do
-		///// Called inside the AttackTimerCallback
-		///// </summary>
-		///// <returns></returns>
-		//public virtual eCheckRangeAttackStateResult CheckRangeAttackState(GameObject target)
-  //      {
-  //          //Standard livings ALWAYS shot and reload automatically!
-  //          return eCheckRangeAttackStateResult.Fire;
-  //      }
+        public InventoryItem Ammo => m_ammo;
+        public bool IsAmmoCompatible => m_isAmmoCompatible;
 
-        ///// <summary>
-        ///// Gets/Sets the item that is used for ranged attack
-        ///// </summary>
-        ///// <returns>Item that will be used for range/accuracy/damage modifications</returns>
-        //public virtual InventoryItem RangeAttackAmmo
-        //{
-        //    get { return null; }
-        //    set { }
-        //}
-
-        ///// <summary>
-        ///// Gets/Sets the target for current ranged attack
-        ///// </summary>
-        ///// <returns></returns>
-        //public virtual GameObject RangeAttackTarget
-        //{
-        //    get { return owner.TargetObject; }
-        //    set { }
-        //}
-
-        /// <summary>
-		/// Check the selected range ammo and decides if it's compatible with select weapon
-		/// </summary>
-		/// <returns>True if compatible, false if not</returns>
-		public virtual bool CheckRangedAmmoCompatibilityWithActiveWeapon()
+        private InventoryItem GetAmmoFromInventory(eObjectType ammoType)
         {
-            var p = owner as GamePlayer;
-
-            InventoryItem weapon = p.attackComponent.AttackWeapon;
-            if (weapon != null)
+            switch (ActiveQuiverSlot)
             {
-                switch ((eObjectType)weapon.Object_Type)
-                {
-                    case eObjectType.Crossbow:
-                    case eObjectType.Longbow:
-                    case eObjectType.CompositeBow:
-                    case eObjectType.RecurvedBow:
-                    case eObjectType.Fired:
-                        {
-                            if (ActiveQuiverSlot != eActiveQuiverSlot.None)
-                            {
-                                InventoryItem ammo = null;
-                                switch (ActiveQuiverSlot)
-                                {
-                                    case eActiveQuiverSlot.Fourth: ammo = p.Inventory.GetItem(eInventorySlot.FourthQuiver); break;
-                                    case eActiveQuiverSlot.Third: ammo = p.Inventory.GetItem(eInventorySlot.ThirdQuiver); break;
-                                    case eActiveQuiverSlot.Second: ammo = p.Inventory.GetItem(eInventorySlot.SecondQuiver); break;
-                                    case eActiveQuiverSlot.First: ammo = p.Inventory.GetItem(eInventorySlot.FirstQuiver); break;
-                                }
-
-                                if (ammo == null) return false;
-
-                                if (weapon.Object_Type == (int)eObjectType.Crossbow)
-                                    return ammo.Object_Type == (int)eObjectType.Bolt;
-                                return ammo.Object_Type == (int)eObjectType.Arrow;
-                            }
-                        }
-                        break;
-                }
+                case eActiveQuiverSlot.First:
+                    return m_owner.Inventory.GetItem(eInventorySlot.FirstQuiver);
+                case eActiveQuiverSlot.Second:
+                    return m_owner.Inventory.GetItem(eInventorySlot.SecondQuiver);
+                case eActiveQuiverSlot.Third:
+                    return m_owner.Inventory.GetItem(eInventorySlot.ThirdQuiver);
+                case eActiveQuiverSlot.Fourth:
+                    return m_owner.Inventory.GetItem(eInventorySlot.FourthQuiver);
+                case eActiveQuiverSlot.None:
+                    return m_owner.Inventory.GetFirstItemByObjectType((int)ammoType, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
             }
-            return true;
+
+            return null;
         }
 
-        /// <summary>
-        /// Holds the arrows for next range attack
-        /// </summary>
-        protected WeakReference m_rangeAttackAmmo = new WeakRef(null);
+        public InventoryItem UpdateAmmo(InventoryItem weapon)
+        {
+            m_ammo = null;
+            m_isAmmoCompatible = true;
 
-        /// <summary>
-        /// Gets/Sets the item that is used for ranged attack
-        /// </summary>
-        /// <returns>Item that will be used for range/accuracy/damage modifications</returns>
-        public InventoryItem RangeAttackAmmo
+            if (m_owner is not GamePlayer || weapon == null)
+                return null;
+
+            switch (weapon.Object_Type)
+            {
+                case (int)eObjectType.Thrown:
+                    m_ammo = m_owner.Inventory.GetItem(eInventorySlot.DistanceWeapon);
+                    break;
+                case (int)eObjectType.Crossbow:
+                    m_ammo = GetAmmoFromInventory(eObjectType.Bolt);
+                    m_isAmmoCompatible = m_ammo.Object_Type == (int)eObjectType.Bolt;
+                    break;
+                case (int)eObjectType.Longbow:
+                case (int)eObjectType.CompositeBow:
+                case (int)eObjectType.RecurvedBow:
+                case (int)eObjectType.Fired:
+                    m_ammo = GetAmmoFromInventory(eObjectType.Arrow);
+                    m_isAmmoCompatible = m_ammo.Object_Type == (int)eObjectType.Arrow;
+                    break;
+            }
+
+            return m_ammo;
+        }
+
+        public GameObject Target
         {
             get
             {
-                if (owner is GamePlayer)
-                {
-                    //TODO: ammo should be saved on start of every range attack and used here
-                    InventoryItem ammo = null;//(InventoryItem)m_rangeAttackArrows.Target;
-
-                    InventoryItem weapon = owner.attackComponent.AttackWeapon;
-                    if (weapon != null)
-                    {
-                        switch (weapon.Object_Type)
-                        {
-                            case (int)eObjectType.Thrown: ammo = owner.Inventory.GetItem(eInventorySlot.DistanceWeapon); break;
-                            case (int)eObjectType.Crossbow:
-                            case (int)eObjectType.Longbow:
-                            case (int)eObjectType.CompositeBow:
-                            case (int)eObjectType.RecurvedBow:
-                            case (int)eObjectType.Fired:
-                                {
-                                    switch (ActiveQuiverSlot)
-                                    {
-                                        case eActiveQuiverSlot.First: ammo = owner.Inventory.GetItem(eInventorySlot.FirstQuiver); break;
-                                        case eActiveQuiverSlot.Second: ammo = owner.Inventory.GetItem(eInventorySlot.SecondQuiver); break;
-                                        case eActiveQuiverSlot.Third: ammo = owner.Inventory.GetItem(eInventorySlot.ThirdQuiver); break;
-                                        case eActiveQuiverSlot.Fourth: ammo = owner.Inventory.GetItem(eInventorySlot.FourthQuiver); break;
-                                        case eActiveQuiverSlot.None:
-                                            eObjectType findType = eObjectType.Arrow;
-                                            if (weapon.Object_Type == (int)eObjectType.Crossbow)
-                                                findType = eObjectType.Bolt;
-
-                                            ammo = owner.Inventory.GetFirstItemByObjectType((int)findType, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
-
-                                            break;
-                                    }
-                                }
-                                break;
-                        }
-                    }
-
-                    return ammo;
-                }
-                else
-                    return null;
-            }
-            set {
-                if (owner is GamePlayer)
-                    m_rangeAttackAmmo.Target = value;
-                else { };
-            }
-        }
-
-        /// <summary>
-        /// Holds the target for next range attack
-        /// </summary>
-        protected WeakReference m_rangeAttackTarget = new WeakRef(null);
-
-        /// <summary>
-        /// Gets/Sets the target for current ranged attack
-        /// </summary>
-        /// <returns></returns>
-        public GameObject RangeAttackTarget
-        {
-            get
-            {
-                if (owner is GamePlayer)
+                if (m_owner is GamePlayer)
                 {
                     GameObject target = (GameObject)m_rangeAttackTarget.Target;
+
                     if (target == null || target.ObjectState != eObjectState.Active)
-                        target = owner.TargetObject;
+                        target = m_owner.TargetObject;
+
                     return target;
                 }
                 else
-                    return owner.TargetObject;
+                    return m_owner.TargetObject;
             }
-            set { m_rangeAttackTarget.Target = value; }
+            set => m_rangeAttackTarget.Target = value;
         }
 
         /// <summary>
-        /// Check the range attack state and decides what to do
-        /// Called inside the AttackTimerCallback
+        /// Check the range attack state and decides what to do. Called inside the AttackTimerCallback.
         /// </summary>
-        /// <returns></returns>
         public eCheckRangeAttackStateResult CheckRangeAttackState(GameObject target)
         {
-            if (owner is GamePlayer)
+            if (m_owner is GamePlayer playerOwner)
             {
-                var p = owner as GamePlayer;
+                long attackStart = m_owner.TempProperties.getProperty<long>(RANGED_ATTACK_START);
 
-                long holdStart = p.TempProperties.getProperty<long>(RANGE_ATTACK_HOLD_START);
-                if (holdStart == 0)
+                // Failsafe, but it should never happen.
+                if (attackStart == 0)
                 {
-                    holdStart = GameLoop.GameLoopTime;
-                    p.TempProperties.setProperty(RANGE_ATTACK_HOLD_START, holdStart);
-                }
-                //DOLConsole.WriteLine("Holding.... ("+holdStart+") "+(Environment.TickCount - holdStart));
-                if ((GameLoop.GameLoopTime - holdStart) > 15000 && p.attackComponent.AttackWeapon.Object_Type != (int)eObjectType.Crossbow)
-                {
-                    p.Out.SendMessage(LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.TooTired"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                    return eCheckRangeAttackStateResult.Stop; //Stop the attack
+                    attackStart = GameLoop.GameLoopTime;
+                    playerOwner.TempProperties.setProperty(RANGED_ATTACK_START, attackStart);
                 }
 
-                //This state is set when the player wants to fire!
-                if (RangedAttackState == eRangedAttackState.Fire
-                    || RangedAttackState == eRangedAttackState.AimFire
-                    || RangedAttackState == eRangedAttackState.AimFireReload)
+                if ((GameLoop.GameLoopTime - attackStart) > 15000 && playerOwner.ActiveWeapon.Object_Type != (int)eObjectType.Crossbow)
                 {
-                    RangeAttackTarget = null; // clean the RangeAttackTarget at the first shot try even if failed
+                    playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.TooTired"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    return eCheckRangeAttackStateResult.Stop;
+                }
 
-                    if (target == null || !(target is GameLiving))
+                // This state is set when the player wants to fire.
+                if (RangedAttackState is eRangedAttackState.Fire or eRangedAttackState.AimFire or eRangedAttackState.AimFireReload)
+                {
+                    // Clean the RangeAttackTarget at the first shot try even if failed.
+                    Target = null;
+
+                    if (target is null or not GameLiving)
                     {
-                        ECSGameEffect volley = EffectListService.GetEffectOnTarget(p, eEffect.Volley);//volley check to avoid spam
-                        if(volley == null)
-                            p.Out.SendMessage(LanguageMgr.GetTranslation(p.Client.Account.Language, "System.MustSelectTarget"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                        // Volley check to avoid spam.
+                        ECSGameEffect volley = EffectListService.GetEffectOnTarget(playerOwner, eEffect.Volley);
+
+                        if (volley == null)
+                            playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "System.MustSelectTarget"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                     }
-                    else if (!p.IsWithinRadius(target, p.attackComponent.AttackRange))
+                    else if (!playerOwner.IsWithinRadius(target, playerOwner.attackComponent.AttackRange))
+                        playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.TooFarAway", target.GetName(0, true)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    else if (!playerOwner.TargetInView)  // TODO: Wrong, must be checked with the target parameter and not with the targetObject.
+                        playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.CantSeeTarget"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    else if (!playerOwner.IsObjectInFront(target, 90))
+                        playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.NotInView", target.GetName(0, true)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                    else if (UpdateAmmo(playerOwner.ActiveWeapon) == null)
+                        // Another check for ammo just before firing.
+                        playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.MustSelectQuiver"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
+                    else if (!m_isAmmoCompatible)
+                        playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.CantUseQuiver"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
+                    else if (GameServer.ServerRules.IsAllowedToAttack(playerOwner, (GameLiving)target, false))
                     {
-                        p.Out.SendMessage(LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.TooFarAway", target.GetName(0, true)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                    }
-                    else if (!p.TargetInView)  // TODO : wrong, must be checked with the target parameter and not with the targetObject
-                    {
-                        p.Out.SendMessage(LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.CantSeeTarget"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                    }
-                    else if (!p.IsObjectInFront(target, 90))
-                    {
-                        p.Out.SendMessage(LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.NotInView", target.GetName(0, true)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                    }
-                    else if (RangeAttackAmmo == null)
-                    {
-                        //another check for ammo just before firing
-                        p.Out.SendMessage(LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.MustSelectQuiver"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
-                    }
-                    else if (!CheckRangedAmmoCompatibilityWithActiveWeapon())
-                    {
-                        p.Out.SendMessage(LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.CantUseQuiver"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
-                    }
-                    else if (GameServer.ServerRules.IsAllowedToAttack(p, (GameLiving)target, false))
-                    {
-                        GameLiving living = target as GameLiving;
-                        if (RangedAttackType == eRangedAttackType.Critical && living != null
-                            && ((living.attackComponent.AttackState && living.InCombat) //maybe not 100% correct
-                                || EffectListService.GetEffectOnTarget(living, eEffect.Mez) /*SpellHandler.FindEffectOnTarget(living, "Mesmerize")*/ != null
-                               ))
+                        if (target is GameLiving living &&
+                            RangedAttackType == eRangedAttackType.Critical &&
+                            (living.attackComponent.AttackState && living.InCombat) || // Maybe not 100% correct.
+                            EffectListService.GetEffectOnTarget(living, eEffect.Mez) != null))
                         {
                             /*
                              * http://rothwellhome.org/guides/archery.htm
@@ -328,10 +189,11 @@ namespace DOL.GS
                              * delays) than against fast piercing/thrusting weapon wielders.
                              */
 
-                            // TODO: more checks?
-                            p.Out.SendMessage(LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.CantCritical"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                            // TODO: More checks?
+                            playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.CantCritical"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                             RangedAttackType = eRangedAttackType.Normal;
                         }
+
                         return eCheckRangeAttackStateResult.Fire;
                     }
 
@@ -339,61 +201,43 @@ namespace DOL.GS
                     return eCheckRangeAttackStateResult.Hold;
                 }
 
-                //Player is aiming
                 if (RangedAttackState == eRangedAttackState.Aim)
                 {
-                    ECSGameEffect volley = EffectListService.GetEffectOnTarget(p, eEffect.Volley);//volley check to avoid spam
+                    ECSGameEffect volley = EffectListService.GetEffectOnTarget(playerOwner, eEffect.Volley);//volley check to avoid spam
                     if (volley == null)
                     {
-                        p.Out.SendMessage(LanguageMgr.GetTranslation(p.Client.Account.Language, "GamePlayer.Attack.ReadyToFire"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                        playerOwner.Out.SendMessage(LanguageMgr.GetTranslation(playerOwner.Client.Account.Language, "GamePlayer.Attack.ReadyToFire"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
                         RangedAttackState = eRangedAttackState.ReadyToFire;
                         return eCheckRangeAttackStateResult.Hold;
                     }
                 }
                 else if (RangedAttackState == eRangedAttackState.ReadyToFire)
-                {
-                    return eCheckRangeAttackStateResult.Hold; //Hold the shot
-                }
+                    return eCheckRangeAttackStateResult.Hold;
+
                 return eCheckRangeAttackStateResult.Fire;
             }
             else
-                return eCheckRangeAttackStateResult.Fire;
-        }
-
-        /// <summary>
-        /// Removes ammo and endurance on range attack
-        /// </summary>
-        /// <param name="e"></param>
-        /// <param name="sender"></param>
-        /// <param name="arguments"></param>
-        public void RangeAttackHandler(EventArgs arguments)
-        {
-            AttackFinishedEventArgs args = arguments as AttackFinishedEventArgs;
-            if (args == null) return;
-
-            switch (args.AttackData.AttackResult)
             {
-                case eAttackResult.HitUnstyled:
-                case eAttackResult.Missed:
-                case eAttackResult.Blocked:
-                case eAttackResult.Parried:
-                case eAttackResult.Evaded:
-                case eAttackResult.HitStyle:
-                case eAttackResult.Fumbled:
-                    // remove an arrow and endurance
-                    int arrowRecoveryChance = owner.GetModified(eProperty.ArrowRecovery);
+                if (!m_owner.IsWithinRadius(target, m_owner.attackComponent.AttackRange))
+                    return eCheckRangeAttackStateResult.Stop;
 
-                    if (arrowRecoveryChance == 0 || Util.Chance(100 - arrowRecoveryChance))
-                        owner.Inventory.RemoveCountFromStack(RangeAttackAmmo, 1);
-
-                    if (RangedAttackType == eRangedAttackType.Critical)
-                        owner.Endurance -= CRITICAL_SHOT_ENDURANCE;
-                    else if (RangedAttackType == eRangedAttackType.RapidFire && owner.GetAbilityLevel(Abilities.RapidFire) == 2)
-                        owner.Endurance -= (int)Math.Ceiling(RANGE_ATTACK_ENDURANCE / 2.0);
-                    else owner.Endurance -= RANGE_ATTACK_ENDURANCE;
-                    break;
+                return eCheckRangeAttackStateResult.Fire;
             }
         }
 
+        public void RemoveEnduranceAndAmmoOnShot()
+        {
+            int arrowRecoveryChance = m_owner.GetModified(eProperty.ArrowRecovery);
+
+            if (arrowRecoveryChance == 0 || Util.Chance(100 - arrowRecoveryChance))
+                m_owner.Inventory.RemoveCountFromStack(m_ammo, 1);
+
+            if (RangedAttackType == eRangedAttackType.Critical)
+                m_owner.Endurance -= CRITICAL_SHOT_ENDURANCE;
+            else if (RangedAttackType == eRangedAttackType.RapidFire && m_owner.GetAbilityLevel(Abilities.RapidFire) == 2)
+                m_owner.Endurance -= (int)Math.Ceiling(RANGE_ATTACK_ENDURANCE / 2.0);
+            else
+                m_owner.Endurance -= RANGE_ATTACK_ENDURANCE;
+        }
     }
 }

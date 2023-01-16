@@ -1,8 +1,10 @@
-﻿using DOL.Database;
-using DOL.GS.PacketHandler;
+﻿using System.Collections.Generic;
+using System.Linq;
+using DOL.Database;
 using DOL.GS.Effects;
-using System.Collections.Generic;
 using DOL.GS.Keeps;
+using DOL.GS.PacketHandler;
+using DOL.Language;
 
 namespace DOL.GS.RealmAbilities
 {
@@ -39,7 +41,7 @@ namespace DOL.GS.RealmAbilities
                 attackrangeMin = 2000 * 0.66;//minimum attack range
                 attackrangeMax = 4200;//maximum attack range
             }
-            InventoryItem ammo = m_player.rangeAttackComponent.RangeAttackAmmo;
+
             Region rgn = WorldMgr.GetRegion(m_player.CurrentRegion.ID);
 
             if (CheckPreconditions(m_player, DEAD | SITTING | MEZZED | STUNNED))
@@ -49,12 +51,12 @@ namespace DOL.GS.RealmAbilities
                 m_player.Out.SendMessage("You can't use Volley in dungeons!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
             }
-            if (m_player.ActiveWeaponSlot != eActiveWeaponSlot.Distance || m_player.AttackWeapon == null)
+            if (m_player.ActiveWeaponSlot != eActiveWeaponSlot.Distance || m_player.ActiveWeapon == null)
             {
                 m_player.Out.SendMessage("You need to be equipped with a bow to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
             }
-            if (ammo == null)
+            if (m_player.rangeAttackComponent.UpdateAmmo(m_player.ActiveWeapon) == null)
             {
                 m_player.Out.SendMessage("You need arrows to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
@@ -168,8 +170,21 @@ namespace DOL.GS.RealmAbilities
                     }
                 }
             }
+
+            if (m_player.attackComponent.Attackers.Count > 0 && m_player.InterruptTime > GameLoop.GameLoopTime)
+            {
+                string attackTypeMsg;
+                GameObject attacker = m_player.attackComponent.Attackers.Last();
+
+                if (attacker is GameNPC npcAttacker)
+                    m_player.Out.SendMessage(LanguageMgr.GetTranslation(m_player.Client.Account.Language, "GamePlayer.Attack.Interrupted", attacker.GetName(0, true, m_player.Client.Account.Language, npcAttacker), "volley"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
+                else
+                    m_player.Out.SendMessage(LanguageMgr.GetTranslation(m_player.Client.Account.Language, "GamePlayer.Attack.Interrupted", attacker.GetName(0, true), "volley"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
+
+                return;
+            }
+
             new AtlasOF_VolleyECSEffect(new ECSGameEffectInitParams(m_player, 0, 1));
-            //DisableSkill(living);
 		}
         public override void AddEffectsInfo(IList<string> list)
         {

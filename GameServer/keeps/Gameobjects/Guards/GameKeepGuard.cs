@@ -173,7 +173,7 @@ namespace DOL.GS.Keeps
 
 				if (healSpell != null && !IsStunned && !IsMezzed)
 				{
-					attackComponent.NPCStopAttack();
+					attackComponent.StopAttack();
 					TargetObject = HealTarget;
 					CastSpell(healSpell, GuardSpellLine);
 				}
@@ -304,7 +304,7 @@ namespace DOL.GS.Keeps
 				}
 			}
 			if (attackComponent.AttackState)
-				attackComponent.NPCStopAttack();
+				attackComponent.StopAttack();
 			if (IsMoving)
 				StopFollowing();
 			TurnTo(TargetObject);
@@ -362,7 +362,7 @@ namespace DOL.GS.Keeps
 					if (TargetObject != null && !IsWithinRadius(TargetObject, AttackRange))
 					{
 						//stop the attack
-						attackComponent.NPCStopAttack();
+						attackComponent.StopAttack();
 						//if the distance to the attacker is less than the attack range
 						if (IsWithinRadius(ad.Attacker, AttackRange))
 						{
@@ -767,7 +767,7 @@ namespace DOL.GS.Keeps
 		{
 			if (PatrolGroup != null)
 			{
-				attackComponent.NPCStopAttack();
+				attackComponent.StopAttack();
 				StopFollowing();
 
 				StandardMobBrain brain = Brain as StandardMobBrain;

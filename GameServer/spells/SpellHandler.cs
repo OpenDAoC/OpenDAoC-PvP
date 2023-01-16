@@ -22,7 +22,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
@@ -32,7 +31,6 @@ using DOL.GS.PlayerClass;
 using DOL.GS.ServerProperties;
 using DOL.GS.SkillHandler;
 using DOL.Language;
-
 using log4net;
 
 namespace DOL.GS.Spells
@@ -329,7 +327,7 @@ namespace DOL.GS.Spells
 		/// <returns>true if right instrument</returns>
 		protected bool CheckInstrument()
 		{
-			InventoryItem instrument = Caster.AttackWeapon;
+			InventoryItem instrument = Caster.ActiveWeapon;
 			// From patch 1.97:  Flutes, Lutes, and Drums will now be able to play any song type, and will no longer be limited to specific songs.
 			if (instrument == null || instrument.Object_Type != (int)eObjectType.Instrument ) // || (instrument.DPS_AF != 4 && instrument.DPS_AF != m_spell.InstrumentRequirement))
 			{
@@ -690,16 +688,9 @@ namespace DOL.GS.Spells
 			}
 		}
 
-		/// <summary>
-		/// casting sequence has a chance for interrupt through attack from enemy
-		/// the final decision and the interrupt is done here
-		/// TODO: con level dependend
-		/// </summary>
-		/// <param name="attacker">attacker that interrupts the cast sequence</param>
-		/// <returns>true if casting was interrupted</returns>
 		public virtual bool CasterIsAttacked(GameLiving attacker)
 		{
-			//[StephenxPimentel] Check if the necro has MoC effect before interrupting.
+			// [StephenxPimentel] Check if the necro has MoC effect before interrupting.
 			if (Caster is NecromancerPet necroPet && necroPet.Owner is GamePlayer necroOwner)
             {
 				if (necroOwner.effectListComponent.ContainsEffectForEffectType(eEffect.MasteryOfConcentration))
@@ -714,25 +705,22 @@ namespace DOL.GS.Spells
 				|| Caster.effectListComponent.ContainsEffectForEffectType(eEffect.QuickCast))
 				return false;
 
-			// Only interrupt if we're under 50% of the way through the cast
-			if (IsCasting && (GameLoop.GameLoopTime < _castStartTick + _calculatedCastTime * .5))
+			// Only interrupt if we're under 50% of the way through the cast.
+			if (IsCasting && (GameLoop.GameLoopTime < _castStartTick + _calculatedCastTime * 0.5))
 			{
-				if (Caster.ChanceSpellInterrupt(attacker))
+				if (Caster is GamePet petCaster && petCaster.Owner is GamePlayer casterOwner)
 				{
-					if (Caster is GamePet petCaster && petCaster.Owner is GamePlayer casterOwner)
-					{
-						casterOwner.LastInterruptMessage = $"Your {Caster.Name} was attacked by {attacker.Name} and their spell was interrupted!";
-						MessageToLiving(casterOwner, casterOwner.LastInterruptMessage, eChatType.CT_SpellResisted);
-					}
-					else if (Caster is GamePlayer playerCaster)
-					{
-						playerCaster.LastInterruptMessage = $"{attacker.GetName(0, true)} attacks you and your spell is interrupted!";
-						MessageToLiving(playerCaster, playerCaster.LastInterruptMessage, eChatType.CT_SpellResisted);
-					}
-												
-					InterruptCasting(); // Always interrupt at the moment
-					return true;
+					casterOwner.LastInterruptMessage = $"Your {Caster.Name} was attacked by {attacker.Name} and their spell was interrupted!";
+					MessageToLiving(casterOwner, casterOwner.LastInterruptMessage, eChatType.CT_SpellResisted);
 				}
+				else if (Caster is GamePlayer playerCaster)
+				{
+					playerCaster.LastInterruptMessage = $"{attacker.GetName(0, true)} attacks you and your spell is interrupted!";
+					MessageToLiving(playerCaster, playerCaster.LastInterruptMessage, eChatType.CT_SpellResisted);
+				}
+												
+				InterruptCasting(); // Always interrupt at the moment.
+				return true;
 			}
 
 			return false;
@@ -862,7 +850,7 @@ namespace DOL.GS.Spells
 				if (m_caster.CanCastInCombat(Spell) == false)
 				{
 					if (m_caster is not GamePet)
-						m_caster.attackComponent.LivingStopAttack(); //dont stop melee for pet (probaby look at stopping attack just for game player)
+						m_caster.attackComponent.StopAttack(); //dont stop melee for pet (probaby look at stopping attack just for game player)
 					return false;
 				}
 			}
@@ -1357,15 +1345,14 @@ namespace DOL.GS.Spells
 					//	return false;
 					//}
 
-					if (Properties.CHECK_LOS_DURING_CAST && GameLoop.GameLoopTime >  _lastDuringCastLosCheckTime + Properties.CHECK_LOS_DURING_CAST_MINIMUM_INTERVAL)
+					if (Properties.CHECK_LOS_DURING_CAST && GameLoop.GameLoopTime > _lastDuringCastLosCheckTime + Properties.CHECK_LOS_DURING_CAST_MINIMUM_INTERVAL)
 					{
 						_lastDuringCastLosCheckTime = GameLoop.GameLoopTime;
 
-						GamePlayer playerCheck = Caster as GamePlayer;
-						playerCheck?.Out.SendCheckLOS(playerCheck, target, CheckPlayerLosDuringCastCallback);
-			
-						GamePet petCheck = Caster as GamePet;
-						(petCheck?.Owner as GamePlayer)?.Out.SendCheckLOS(petCheck, target, CheckPetLosDuringCastCallback);
+						if (Caster is GameNPC npc && npc.Brain is IControlledBrain npcBrain)
+							npcBrain.GetPlayerOwner()?.Out.SendCheckLOS(npc, target, CheckPetLosDuringCastCallback);
+						else if (Caster is GamePlayer player)
+							player.Out.SendCheckLOS(player, target, CheckPlayerLosDuringCastCallback);
 					}
 				}
 
@@ -2216,17 +2203,18 @@ namespace DOL.GS.Spells
 		public virtual void FinishSpellCast(GameLiving target)
 		{
 			GamePlayer playerCaster = Caster as GamePlayer;
-			GameInventoryItem playerWeapon = playerCaster?.AttackWeapon as GameInventoryItem;
+			InventoryItem playerWeapon = null;
 
 			if (playerCaster != null)
 			{
+				playerWeapon = playerCaster.ActiveWeapon;
+
 				if (!HasPositiveEffect)
 				{
 					if (playerCaster.IsOnHorse)
 						playerCaster.IsOnHorse = false;
 
-					if (playerWeapon != null)
-						playerWeapon.OnSpellCast(playerCaster, target, Spell);
+					(playerWeapon as GameInventoryItem)?.OnSpellCast(playerCaster, target, Spell);
 				}
 
 				if (UnstealthCasterOnFinish)
@@ -3122,7 +3110,7 @@ namespace DOL.GS.Spells
 			duration *= (1.0 + m_caster.GetModified(eProperty.SpellDuration) * 0.01);
 			if (Spell.InstrumentRequirement != 0)
 			{
-				InventoryItem instrument = Caster.AttackWeapon;
+				InventoryItem instrument = Caster.ActiveWeapon;
 				if (instrument != null)
 				{
 					duration *= 1.0 + Math.Min(1.0, instrument.Level / (double)Caster.Level); // up to 200% duration for songs
@@ -4263,9 +4251,9 @@ namespace DOL.GS.Spells
 				}
 				else if (SpellLine.KeyName == GlobalSpellsLines.Combat_Styles_Effect)
 				{
-					double weaponskillScalar = (3 + .02 * player.GetWeaponStat(player.AttackWeapon)) /
-					                           (1 + .005 * player.GetWeaponStat(player.AttackWeapon));
-					spellDamage *= (player.GetWeaponSkill(player.AttackWeapon) * weaponskillScalar /3 + 200) / 200;
+					double weaponskillScalar = (3 + .02 * player.GetWeaponStat(player.ActiveWeapon)) /
+					                           (1 + .005 * player.GetWeaponStat(player.ActiveWeapon));
+					spellDamage *= (player.GetWeaponSkill(player.ActiveWeapon) * weaponskillScalar /3 + 200) / 200;
 				}
 				else if (player.CharacterClass.ManaStat != eStat.UNDEFINED
 				    && SpellLine.KeyName != GlobalSpellsLines.Combat_Styles_Effect

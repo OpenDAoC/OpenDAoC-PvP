@@ -1068,10 +1068,6 @@ namespace DOL.GS
 		/// Minimum allowed pet follow distance
 		/// </summary>
 		protected const int MIN_ALLOWED_PET_FOLLOW_DISTANCE = 90;
-		/// <summary>
-		/// At what health percent will npc give up range attack and rush the attacker
-		/// </summary>
-		protected const int MINHEALTHPERCENTFORRANGEDATTACK = 70;
 
 		private string m_pathID;
 		public string PathID
@@ -1437,8 +1433,6 @@ namespace DOL.GS
 		/// <summary>
 		/// Walk to a certain spot at a given speed.
 		/// </summary>
-		/// <param name="p"></param>
-		/// <param name="speed"></param>
 		public virtual void WalkTo(IPoint3D target, short speed)
 		{
 			if (IsTurningDisabled)
@@ -1450,38 +1444,28 @@ namespace DOL.GS
 			if (speed <= 0)
 				return;
 
+			TargetPosition = target; // This also saves the current position.
 
-		
-			TargetPosition = target; // this also saves the current position
-			
-
+			// No need to start walking.
 			if (IsWithinRadius(TargetPosition, CONST_WALKTOTOLERANCE))
-			{
-				// No need to start walking.
-
-				//Notify(GameNPCEvent.ArriveAtTarget, this);
 				return;
-			}
 
-
-			//update existing component
-			//register moveComponent w/ the movement-to-be-processed queue
-
-
-			//kill everything below this line?
 			CancelWalkToTimer();
-		
-
 			m_Heading = GetHeading(TargetPosition);
 			m_currentSpeed = speed;
-			MovementStartTick = GameLoop.GameLoopTime; //Adding this to prevent pets from warping when using GoTo and Here on the same target twice.
+			MovementStartTick = GameLoop.GameLoopTime; // Adding this to prevent pets from warping when using GoTo and Here on the same target twice.
 			UpdateTickSpeed();
-			
-			// Notify(GameNPCEvent.WalkTo, this, new WalkToEventArgs(TargetPosition, speed));
-			
-			StartArriveAtTargetAction(GetTicksToArriveAt(TargetPosition, speed));
+			int ticksToArrive = GetTicksToArriveAt(TargetPosition, speed);
+
+			// Cancel the ranged attack if the NPC is moving.
+			if (ActiveWeaponSlot == eActiveWeaponSlot.Distance && ticksToArrive > 0)
+			{
+				StopAttack();
+				attackComponent.attackAction?.CleanUp();
+			}
+
+			StartArriveAtTargetAction(ticksToArrive);
 			NeedsBroadcastUpdate = true;
-			//BroadcastUpdate();
 		}
 
 		private void StartArriveAtTargetAction(int requiredTicks)
@@ -1519,7 +1503,7 @@ namespace DOL.GS
 		/// </summary>
 		public virtual void WalkToSpawn(short speed)
 		{
-			attackComponent.NPCStopAttack();
+			attackComponent.StopAttack();
 			StopFollowing();
 
 			StandardMobBrain brain = Brain as StandardMobBrain;
@@ -2081,7 +2065,6 @@ namespace DOL.GS
 				if (Inventory != null)
 				{
 					//if the distance slot isnt empty we use that
-					//Seems to always
 					if (Inventory.GetItem(eInventorySlot.DistanceWeapon) != null)
 						SwitchWeapon(eActiveWeaponSlot.Distance);
 					else
@@ -3907,7 +3890,7 @@ namespace DOL.GS
 
         public virtual void StopAttack()
         {
-            attackComponent.NPCStopAttack();
+            attackComponent.StopAttack();
         }
 
         /// <summary>
@@ -4098,62 +4081,6 @@ namespace DOL.GS
   
 			return weaponskill;
         }
-		
-
-		public override void RangedAttackFinished()
-		{
-			base.RangedAttackFinished();
-
-			if (ServerProperties.Properties.ALWAYS_CHECK_PET_LOS &&
-				Brain != null &&
-				Brain is IControlledBrain &&
-				(TargetObject is GamePlayer || (TargetObject is GameNPC && (TargetObject as GameNPC).Brain != null && (TargetObject as GameNPC).Brain is IControlledBrain)))
-			{
-				GamePlayer player = null;
-
-				if (TargetObject is GamePlayer)
-				{
-					player = TargetObject as GamePlayer;
-				}
-				else if (TargetObject is GameNPC && (TargetObject as GameNPC).Brain != null && (TargetObject as GameNPC).Brain is IControlledBrain)
-				{
-					if (((TargetObject as GameNPC).Brain as IControlledBrain).Owner is GamePlayer)
-					{
-						player = ((TargetObject as GameNPC).Brain as IControlledBrain).Owner as GamePlayer;
-					}
-				}
-
-				if (player != null)
-				{
-					player.Out.SendCheckLOS(this, TargetObject, new CheckLOSResponse(NPCStopRangedAttackCheckLOS));
-					if (ServerProperties.Properties.ENABLE_DEBUG)
-					{
-						log.Debug(Name + " sent LOS check to player " + player.Name);
-					}
-				}
-			}
-		}
-
-
-		/// <summary>
-		/// If we don't have LOS we stop attack
-		/// </summary>
-		/// <param name="player"></param>
-		/// <param name="response"></param>
-		/// <param name="targetOID"></param>
-		public void NPCStopRangedAttackCheckLOS(GamePlayer player, ushort response, ushort targetOID)
-		{
-			if ((response & 0x100) != 0x100)
-			{
-				if (ServerProperties.Properties.ENABLE_DEBUG)
-				{
-					log.Debug(Name + " FAILED stop ranged attack LOS check to player " + player.Name);
-				}
-
-                attackComponent.NPCStopAttack();
-			}
-		}
-
 
 		public void SetLastMeleeAttackTick()
 		{
@@ -4182,26 +4109,7 @@ namespace DOL.GS
 		/// <returns></returns>
 		public virtual double AttackDamage(InventoryItem weapon)
 		{
-			double damage = attackComponent.AttackDamage(weapon);
-
-			if (ActiveWeaponSlot == eActiveWeaponSlot.TwoHanded && m_blockChance > 0)
-				switch (this)
-				{
-					case Keeps.GameKeepGuard guard:
-						if (ServerProperties.Properties.GUARD_2H_BONUS_DAMAGE)
-							damage *= (100 + m_blockChance) / 100.00;
-						break;
-					case GamePet pet:
-						if (ServerProperties.Properties.PET_2H_BONUS_DAMAGE)
-							damage *= (100 + m_blockChance) / 100.00;
-						break;
-					default:
-						if (ServerProperties.Properties.MOB_2H_BONUS_DAMAGE)
-							damage *= (100 + m_blockChance) / 100.00;
-						break;
-				}
-
-			return damage;
+			return attackComponent.AttackDamage(weapon);
 		}
 
 		/// <summary>
@@ -4537,7 +4445,7 @@ namespace DOL.GS
 		{
 			// Tolakram: Order is important here.  First StopAttack, then switch weapon
 			StopFollowing();
-            attackComponent.NPCStopAttack();
+            attackComponent.StopAttack();
 
 			InventoryItem twohand = Inventory.GetItem(eInventorySlot.TwoHandWeapon);
 			InventoryItem righthand = Inventory.GetItem(eInventorySlot.RightHandWeapon);
@@ -4563,7 +4471,7 @@ namespace DOL.GS
 		public void SwitchToRanged(GameObject target)
 		{
 			StopFollowing();
-            attackComponent.NPCStopAttack();
+            attackComponent.StopAttack();
 			SwitchWeapon(eActiveWeaponSlot.Distance);
 			attackComponent.StartAttack(target);
 		}
@@ -4583,40 +4491,18 @@ namespace DOL.GS
 			}
 		}
 
-		/// <summary>
-		/// If npcs cant move, they cant be interupted from range attack
-		/// </summary>
-		/// <param name="attacker"></param>
-		/// <param name="attackType"></param>
-		/// <returns></returns>
-		protected override bool OnInterruptTick(GameLiving attacker, AttackData.eAttackType attackType)
+		protected override bool CheckRangedAttackInterrupt(GameLiving attacker, AttackData.eAttackType attackType)
 		{
-			if (this.MaxSpeedBase == 0)
-			{
-				if (attackType == AttackData.eAttackType.Ranged || attackType == AttackData.eAttackType.Spell)
-				{
-					if (this.IsWithinRadius(attacker, 150) == false)
-						return false;
-				}
-			}
+			// Immobile NPCs can only be interrupted from close range attacks.
+			if (MaxSpeedBase == 0 && attackType is AttackData.eAttackType.Ranged or AttackData.eAttackType.Spell && !IsWithinRadius(attacker, 150))
+				return false;
 
-			// Experimental - this prevents interrupts from causing ranged attacks to always switch to melee
-			if (attackComponent.AttackState)
-			{
-				if (ActiveWeaponSlot == eActiveWeaponSlot.Distance && HealthPercent < MINHEALTHPERCENTFORRANGEDATTACK)
-				{
-					SwitchToMelee(attacker);
-				}
-				else if (ActiveWeaponSlot != eActiveWeaponSlot.Distance &&
-						 Inventory != null &&
-						 Inventory.GetItem(eInventorySlot.DistanceWeapon) != null &&
-						 GetDistanceTo(attacker) > 500)
-				{
-					SwitchToRanged(attacker);
-				}
-			}
+			bool interrupted = base.CheckRangedAttackInterrupt(attacker, attackType);
 
-			return base.OnInterruptTick(attacker, attackType);
+			if (interrupted)
+				attackComponent.attackAction.OnAimInterrupt(attacker);
+
+			return interrupted;
 		}
 
 		/// <summary>
@@ -4631,6 +4517,7 @@ namespace DOL.GS
 		/// The sync object for respawn timer modifications
 		/// </summary>
 		protected readonly object m_respawnTimerLock = new object();
+
 		/// <summary>
 		/// The Respawn Interval of this mob in milliseconds
 		/// </summary>
@@ -4831,7 +4718,7 @@ namespace DOL.GS
 			//if (m_attackAction != null)
 			//	m_attackAction.Stop();
             if (attackComponent.attackAction != null)
-                attackComponent.attackAction.CleanupAttackAction();
+                attackComponent.attackAction.CleanUp();
 			StopFollowing();
 		}
 
@@ -4862,40 +4749,16 @@ namespace DOL.GS
         //		SwitchWeapon(eActiveWeaponSlot.Distance);
         //}
 
-        public override void OnAttackedByEnemy(AttackData ad)
-        {
+		public override void OnAttackedByEnemy(AttackData ad)
+		{
 			if (Brain is StandardMobBrain standardMobBrain)
-            {
-				standardMobBrain.AddToAggroList(ad.Attacker, ad.Damage + ad.CriticalDamage + Math.Abs(ad.Modifier));
 				standardMobBrain.OnAttackedByEnemy(ad);
-            }
 
 			if ((Flags & eFlags.STEALTH) != 0)
 				Flags ^= eFlags.STEALTH;
-			
+
 			base.OnAttackedByEnemy(ad);
-        }
-
-        public override void TakeDamage(AttackData ad)
-        {
-	        base.TakeDamage(ad);
-	        
-	        if (Brain is StandardMobBrain standardMobBrain)
-	        {
-		        var aggro = ad.Damage + ad.CriticalDamage + Math.Abs(ad.Modifier);
-
-		        if (ad.Attacker is GameNPC attacker && attacker.Brain is IControlledBrain petBrain)
-			    {
-				    // Owner gets 25% of aggro
-				    standardMobBrain.AddToAggroList(petBrain.Owner, (int)Math.Max(1, aggro * 0.25));
-				    // Remaining of aggro is given to pet
-				    aggro = (int)Math.Max(1, aggro * 0.75);
-			    }
-
-		        standardMobBrain.AddToAggroList(ad.Attacker, aggro);
-		        standardMobBrain.OnAttackedByEnemy(ad);
-	        }
-        }
+		}
 
         /// <summary>
         /// This method is called to drop loot after this mob dies

@@ -28,6 +28,7 @@ using DOL.AI;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.API;
 using DOL.GS.Effects;
 using DOL.GS.Housing;
 using DOL.GS.Keeps;
@@ -1045,7 +1046,7 @@ namespace DOL.GS
         /// </summary>
         protected virtual void CleanupOnDisconnect()
         {
-            attackComponent.LivingStopAttack();
+            attackComponent.StopAttack();
             // remove all stealth handlers
             Stealth(false);
             if (IsOnHorse)
@@ -6367,16 +6368,24 @@ namespace DOL.GS
         public override void SwitchWeapon(eActiveWeaponSlot slot)
         {
             //When switching weapons, attackmode is removed!
-            if (attackComponent != null && attackComponent.AttackState && attackComponent.AttackWeapon != null)
+            if (attackComponent != null && attackComponent.AttackState && ActiveWeapon != null)
             {
-                if (attackComponent.AttackWeapon.Item_Type == (int)eInventorySlot.DistanceWeapon 
+                if (ActiveWeapon.Item_Type == (int)eInventorySlot.DistanceWeapon 
                     && rangeAttackComponent.RangedAttackState != eRangedAttackState.None 
-                    && GameLoop.GameLoopTime - this.TempProperties.getProperty<long>(RangeAttackComponent.RANGE_ATTACK_HOLD_START) > 100
+                    && GameLoop.GameLoopTime - this.TempProperties.getProperty<long>(RangeAttackComponent.RANGED_ATTACK_START) > 100
                     && attackComponent.attackAction != null)
                 {
                     attackComponent.attackAction.StartTime = 1000;
                 }
-                attackComponent.LivingStopAttack();
+                attackComponent.StopAttack();
+            }
+
+            if (effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
+            {
+                AtlasOF_VolleyECSEffect volley = (AtlasOF_VolleyECSEffect)EffectListService.GetEffectOnTarget(this, eEffect.Volley);
+
+                if (volley != null)
+                    volley.OnPlayerSwitchedWeapon();
             }
 
             if (CurrentSpellHandler != null)
@@ -7627,22 +7636,14 @@ namespace DOL.GS
         /// <param name="attacker">the attacker that is interrupting</param>
         /// <param name="attackType">The attack type</param>
         /// <returns>true if interrupted successfully</returns>
-        protected override bool OnInterruptTick(GameLiving attacker, AttackData.eAttackType attackType)
+        protected override bool CheckRangedAttackInterrupt(GameLiving attacker, AttackData.eAttackType attackType)
         {
-            if (base.OnInterruptTick(attacker, attackType))
+            if (base.CheckRangedAttackInterrupt(attacker, attackType))
             {
-                if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
-                {
-                    string attackTypeMsg = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Attack.Type.Shot");
-                    if (attackComponent.AttackWeapon != null && attackComponent.AttackWeapon.Object_Type == (int)eObjectType.Thrown)
-                        attackTypeMsg = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Attack.Type.Throw");
-                    if (attacker is GameNPC)
-                        Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Attack.Interrupted", attacker.GetName(0, true, Client.Account.Language, (attacker as GameNPC)), attackTypeMsg), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
-                    else
-                        Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Attack.Interrupted", attacker.GetName(0, true), attackTypeMsg), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
-                }
+                attackComponent.attackAction.OnAimInterrupt(attacker);
                 return true;
             }
+
             return false;
         }
 
@@ -7979,11 +7980,11 @@ namespace DOL.GS
         {
             get
             {
-                int itemBonus = WeaponSpecLevel(attackComponent?.AttackWeapon) - WeaponBaseSpecLevel(attackComponent?.AttackWeapon) - RealmLevel / 10;
+                int itemBonus = WeaponSpecLevel(ActiveWeapon) - WeaponBaseSpecLevel(ActiveWeapon) - RealmLevel / 10;
                 double m = 0.56 + itemBonus / 70.0;
-                double weaponSpec = WeaponSpecLevel(attackComponent?.AttackWeapon) + itemBonus * m;
-                double oldWStoNewWSScalar = (3 + .02 * GetWeaponStat(attackComponent?.AttackWeapon) ) /(1 + .005 * GetWeaponStat(attackComponent?.AttackWeapon));
-                return (int)(GetWeaponSkill(attackComponent?.AttackWeapon) * (1.00 + weaponSpec * 0.01) * oldWStoNewWSScalar);
+                double weaponSpec = WeaponSpecLevel(ActiveWeapon) + itemBonus * m;
+                double oldWStoNewWSScalar = (3 + .02 * GetWeaponStat(ActiveWeapon) ) /(1 + .005 * GetWeaponStat(ActiveWeapon));
+                return (int)(GetWeaponSkill(ActiveWeapon) * (1.00 + weaponSpec * 0.01) * oldWStoNewWSScalar);
             }
         }
 
@@ -9929,10 +9930,10 @@ namespace DOL.GS
                                 }
                                 else
                                 {
-                                    if (rangeAttackComponent.RangeAttackTarget == null)
+                                    if (rangeAttackComponent.Target == null)
                                     {
                                         //set new target only if there was no target before
-                                        rangeAttackComponent.RangeAttackTarget = TargetObject;
+                                        rangeAttackComponent.Target = TargetObject;
                                     }
 
                                     rangeAttackComponent.RangedAttackState = eRangedAttackState.AimFire;
@@ -9991,7 +9992,7 @@ namespace DOL.GS
                     {
                         if (useItem.Object_Type == (int)eObjectType.Poison)
                         {
-                            InventoryItem mainHand = attackComponent.AttackWeapon;
+                            InventoryItem mainHand = ActiveWeapon;
                             InventoryItem leftHand = Inventory.GetItem(eInventorySlot.LeftHandWeapon);
                             if (mainHand != null && mainHand.PoisonSpellID == 0)
                             {
@@ -12025,10 +12026,10 @@ namespace DOL.GS
                     if (attackComponent.AttackState && ActiveWeaponSlot == eActiveWeaponSlot.Distance)
                     {
                         string attackTypeMsg = "shot";
-                        if (attackComponent.AttackWeapon.Object_Type == (int)eObjectType.Thrown)
+                        if (ActiveWeapon.Object_Type == (int)eObjectType.Thrown)
                             attackTypeMsg = "throw";
                         Out.SendMessage("You move and interrupt your " + attackTypeMsg + "!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-                        attackComponent.LivingStopAttack();
+                        attackComponent.StopAttack();
                     }
                 }
             }
@@ -12168,9 +12169,9 @@ namespace DOL.GS
             {
                 if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
                 {
-                    string attackTypeMsg = (attackComponent.AttackWeapon.Object_Type == (int)eObjectType.Thrown ? "throw" : "shot");
+                    string attackTypeMsg = (ActiveWeapon.Object_Type == (int)eObjectType.Thrown ? "throw" : "shot");
                     Out.SendMessage("You move and interrupt your " + attackTypeMsg + "!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-                    attackComponent.LivingStopAttack();
+                    attackComponent.StopAttack();
                 }
                 else
                 {
@@ -12188,13 +12189,13 @@ namespace DOL.GS
                 }
             }
 
-            if(effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
+            if (effectListComponent.ContainsEffectForEffectType(eEffect.Volley))
             {
                 AtlasOF_VolleyECSEffect volley = (AtlasOF_VolleyECSEffect)EffectListService.GetEffectOnTarget(this, eEffect.Volley);
-                if(volley != null)
-                    volley.PlayerMoving();
-            }
 
+                if (volley != null)
+                    volley.OnPlayerMoved();
+            }
 
             //Notify the GameEventMgr of the moving player
             // GameEventMgr.Notify(GamePlayerEvent.Moving, this);
@@ -12263,7 +12264,7 @@ namespace DOL.GS
             //Stop attack if you sit down while attacking
             if (sit && attackComponent.AttackState)
             {
-                attackComponent.LivingStopAttack();
+                attackComponent.StopAttack();
             }
 
             if (!sit)
@@ -17422,7 +17423,7 @@ namespace DOL.GS
             if (HasAbility(Abilities.Shield))
             {
                 lefthand = Inventory.GetItem(eInventorySlot.LeftHandWeapon);
-                if (lefthand != null && (attackComponent.AttackWeapon == null || attackComponent.AttackWeapon.Item_Type == Slot.RIGHTHAND || attackComponent.AttackWeapon.Item_Type == Slot.LEFTHAND))
+                if (lefthand != null && (ActiveWeapon == null || ActiveWeapon.Item_Type == Slot.RIGHTHAND || ActiveWeapon.Item_Type == Slot.LEFTHAND))
                 {
                     if (lefthand.Object_Type == (int)eObjectType.Shield)
                         blockChance = GetModified(eProperty.BlockChance) * lefthand.Quality * 0.01;
@@ -17451,7 +17452,7 @@ namespace DOL.GS
             //	parry = SpellHandler.FindEffectOnTarget(this, "SavageParryBuff");
             ECSGameEffect parry = EffectListService.GetEffectOnTarget(this, eEffect.SavageBuff, eSpellType.SavageParryBuff);
 
-            if ((HasSpecialization(Specs.Parry) || parry != null) && (attackComponent.AttackWeapon != null))
+            if ((HasSpecialization(Specs.Parry) || parry != null) && (ActiveWeapon != null))
                 parryChance = GetModified(eProperty.ParryChance);
             else if (EffectList.GetOfType<BladeBarrierEffect>() != null)
                 parryChance = GetModified(eProperty.ParryChance);

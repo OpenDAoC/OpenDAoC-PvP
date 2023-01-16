@@ -185,7 +185,7 @@ namespace DOL.GS.Spells
 				{
 					GamePlayer player = (GamePlayer)target;
 					InventoryItem lefthand = player.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
-					if (lefthand != null && (player.AttackWeapon == null || player.AttackWeapon.Item_Type == Slot.RIGHTHAND || player.AttackWeapon.Item_Type == Slot.LEFTHAND))
+					if (lefthand != null && (player.ActiveWeapon == null || player.ActiveWeapon.Item_Type == Slot.RIGHTHAND || player.ActiveWeapon.Item_Type == Slot.LEFTHAND))
 					{
 						if (target.IsObjectInFront(caster, 180) && lefthand.Object_Type == (int)eObjectType.Shield)
 						{
@@ -269,13 +269,13 @@ namespace DOL.GS.Spells
 
 					ad.Damage += (int)damage;
 
-					if (caster.AttackWeapon != null)
+					if (caster.ActiveWeapon != null)
 					{
 						// Quality
-						ad.Damage -= (int)(ad.Damage * (100 - caster.AttackWeapon.Quality) * .01);
+						ad.Damage -= (int)(ad.Damage * (100 - caster.ActiveWeapon.Quality) * .01);
 
 						// Condition
-						ad.Damage = (int)((double)ad.Damage * Math.Min(1.0, (double)caster.AttackWeapon.Condition / (double)caster.AttackWeapon.MaxCondition));
+						ad.Damage = (int)((double)ad.Damage * Math.Min(1.0, (double)caster.ActiveWeapon.Condition / (double)caster.ActiveWeapon.MaxCondition));
 
 						// Patch Note:  http://support.darkageofcamelot.com/kb/article.php?id=931
 						// - The Damage Per Second (DPS) of your bow will have an effect on your damage for archery shots. If the effective DPS
@@ -284,9 +284,9 @@ namespace DOL.GS.Spells
 
 						int spellRequiredDPS = 12 + 3 * m_handler.Spell.Level;
 
-						if (caster.AttackWeapon.DPS_AF < spellRequiredDPS)
+						if (caster.ActiveWeapon.DPS_AF < spellRequiredDPS)
 						{
-							double percentReduction = (double)caster.AttackWeapon.DPS_AF / (double)spellRequiredDPS;
+							double percentReduction = (double)caster.ActiveWeapon.DPS_AF / (double)spellRequiredDPS;
 							ad.Damage = (int)(ad.Damage * percentReduction);
 						}
 					}
@@ -331,11 +331,11 @@ namespace DOL.GS.Spells
 					}
 				}
 
-				if (arrowBlock == false && m_handler.Caster.AttackWeapon != null && GlobalConstants.IsBowWeapon((eObjectType)m_handler.Caster.AttackWeapon.Object_Type))
+				if (arrowBlock == false && m_handler.Caster.ActiveWeapon != null && GlobalConstants.IsBowWeapon((eObjectType)m_handler.Caster.ActiveWeapon.Object_Type))
 				{
 					if (ad.AttackResult == eAttackResult.HitUnstyled || ad.AttackResult == eAttackResult.HitStyle)
 					{
-						caster.CheckWeaponMagicalEffect(ad, m_handler.Caster.AttackWeapon);
+						caster.CheckWeaponMagicalEffect(ad, m_handler.Caster.ActiveWeapon);
 					}
 				}
 

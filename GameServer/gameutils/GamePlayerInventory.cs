@@ -438,7 +438,7 @@ namespace DOL.GS
 			if (oldSlot >= eInventorySlot.RightHandWeapon && oldSlot <= eInventorySlot.DistanceWeapon)
 			{
 				// if active weapon was destroyed
-				if (m_player.AttackWeapon == null)
+				if (m_player.ActiveWeapon == null)
 				{
 					m_player.SwitchWeapon(eActiveWeaponSlot.Standard);
 				}
@@ -1104,7 +1104,7 @@ namespace DOL.GS
 					if ((updatedSlot >= eInventorySlot.RightHandWeapon && updatedSlot <= eInventorySlot.DistanceWeapon)
 					    || (updatedSlot >= eInventorySlot.FirstQuiver && updatedSlot <= eInventorySlot.FourthQuiver))
 					{
-						m_player.attackComponent.LivingStopAttack();
+						m_player.attackComponent.StopAttack();
 						break;
 					}
 				}

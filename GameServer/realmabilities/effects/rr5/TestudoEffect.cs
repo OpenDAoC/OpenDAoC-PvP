@@ -33,7 +33,7 @@ namespace DOL.GS.Effects
 				}
 			}
 
-			target.attackComponent.LivingStopAttack();
+			target.attackComponent.StopAttack();
 			GameEventMgr.AddHandler(target, GameLivingEvent.AttackedByEnemy, new DOLEventHandler(OnAttack));
 			GameEventMgr.AddHandler(target, GameLivingEvent.AttackFinished, new DOLEventHandler(attackEventHandler));
 			if (player != null)
@@ -59,7 +59,7 @@ namespace DOL.GS.Effects
 				return;
 			if (living.ActiveWeaponSlot == eActiveWeaponSlot.Distance)
 				return;
-			if (living.AttackWeapon.Hand == 1)
+			if (living.ActiveWeapon.Hand == 1)
 				return;
 			AttackedByEnemyEventArgs attackedByEnemy = arguments as AttackedByEnemyEventArgs;
 			AttackData ad = null;

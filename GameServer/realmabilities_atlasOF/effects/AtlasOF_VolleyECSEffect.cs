@@ -1,14 +1,11 @@
-﻿using DOL.GS.PacketHandler;
-using DOL.Events;
-using DOL.Language;
-using System;
+﻿using System;
 using System.Collections;
-using DOL.GS.RealmAbilities;
-using DOL.Database;
 using DOL.AI.Brain;
-using DOL.GS.Spells;
-using System.Collections.Generic;
-using DOL.GS.Commands;
+using DOL.Database;
+using DOL.Events;
+using DOL.GS.PacketHandler;
+using DOL.GS.RealmAbilities;
+using DOL.Language;
 
 namespace DOL.GS.Effects
 {
@@ -21,7 +18,6 @@ namespace DOL.GS.Effects
             EffectType = eEffect.Volley;
             EffectService.RequestStartEffect(this);
         }
-        private IPoint3D sol = null;
         private const ushort radiusToCheck = 350;                   //ground target radius
         private int nbShoot = 0;                                    //arrows to shot
         private const int VOLLEY_SHOT_ENDURANCE = 15;               //Endurance
@@ -35,67 +31,62 @@ namespace DOL.GS.Effects
             get { return m_isreadytofire; }
             set { m_isreadytofire = value; }
         }
-        //private bool IsReadyToFire = false;
         private bool IsReadyToFireAgain;
         private bool BowPreparation = false;
         public override void OnStartEffect()
         {
             if (OwnerPlayer == null)
                 return;
+
             m_player = OwnerPlayer;
-            if (m_player != null)
-            {              
-                nbShoot = 5;//Max arrows we set here
-                IsReadyToFireAgain = false;//make sure it's false at beginning
-                if (m_player.IsStealthed)//cancel stealth if player use Volley
-                    m_player.Stealth(false);
+            nbShoot = 5;//Max arrows we set here
+            IsReadyToFireAgain = false;//make sure it's false at beginning
 
-                base.OnStartEffect();
-                #region Cancel running timers
-                var readyTimerContinue = m_player.TempProperties.getProperty<ECSGameTimer>("volley_readyTimerContinue");
-                if (readyTimerContinue != null)
-                {
-                    readyTimerContinue.Stop();
-                    m_player.TempProperties.removeProperty("volley_readyTimerContinue");
-                }
-                var readyTimerAgain = m_player.TempProperties.getProperty<ECSGameTimer>("volley_readyTimerAgain");
-                if (readyTimerAgain != null)
-                {
-                    readyTimerAgain.Stop();
-                    m_player.TempProperties.removeProperty("volley_readyTimerAgain");
-                }
-                #endregion
-                InventoryItem attackWeapon = m_player.attackComponent.AttackWeapon;//define user weapon
-                byte HoldAttack = 255;//0x1E;//30 seconds
-                int speed = attackWeapon.SPD_ABS * 100;//weapon speed used to timer
-                ECSGameTimer readyTimer = new ECSGameTimer(m_player, new ECSGameTimer.ECSTimerCallback(ReadyToFire), speed);//timer to prepare bow
-                ECSGameTimer tiredTimer = new ECSGameTimer(m_player, new ECSGameTimer.ECSTimerCallback(TooTired1stShoot), 32500);//timer too tired
-                m_player.TempProperties.setProperty("volley_readyTimer", readyTimer);
-                m_player.TempProperties.setProperty("volley_tiredTimer", tiredTimer);              
-                m_player.Out.SendMessage("You prepare to unleash a volley of arrows!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                m_player.Out.SendMessage(String.Format("You prepare to fire. ({0}s to fire)", (double)speed/1000), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-                int model = (m_player.attackComponent.AttackWeapon == null ? 0 : m_player.attackComponent.AttackWeapon.Model);
+            if (m_player.IsStealthed)//cancel stealth if player use Volley
+                m_player.Stealth(false);
 
-                if (!BowPreparation)
-                {
-                    //m_player.attackComponent.LivingStopAttack();    //stop all attacks
-                    //m_player.StopCurrentSpellcast();                //stop all casts
-                    foreach (GamePlayer player in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-                    {
-                        player.Out.SendCombatAnimation(m_player, null, (ushort)model, 0x00, player.Out.BowPrepare, HoldAttack, 0x00, m_player.HealthPercent);//bow animation
-                    }
-                    BowPreparation = true;
-                }              
-                GameEventMgr.AddHandler(m_player, GamePlayerEvent.Quit, new DOLEventHandler(PlayerLeftWorld));
-                // GameEventMgr.AddHandler(m_player, GameLivingEvent.Moving, new DOLEventHandler(PlayerMoving));
-                GameEventMgr.AddHandler(m_player, GamePlayerEvent.UseSlot, new DOLEventHandler(PlayerUseVolley));
-                GameEventMgr.AddHandler(m_player, GamePlayerEvent.TakeDamage, new DOLEventHandler(AttackedByEnemy));
+            m_player.attackComponent.StopAttack();
+            m_player.StopCurrentSpellcast();
+
+            base.OnStartEffect();
+            #region Cancel running timers
+            var readyTimerContinue = m_player.TempProperties.getProperty<ECSGameTimer>("volley_readyTimerContinue");
+            if (readyTimerContinue != null)
+            {
+                readyTimerContinue.Stop();
+                m_player.TempProperties.removeProperty("volley_readyTimerContinue");
             }
+            var readyTimerAgain = m_player.TempProperties.getProperty<ECSGameTimer>("volley_readyTimerAgain");
+            if (readyTimerAgain != null)
+            {
+                readyTimerAgain.Stop();
+                m_player.TempProperties.removeProperty("volley_readyTimerAgain");
+            }
+            #endregion
+            InventoryItem attackWeapon = m_player.ActiveWeapon;//define user weapon
+            byte HoldAttack = 255;//0x1E;//30 seconds
+            int speed = attackWeapon.SPD_ABS * 100;//weapon speed used to timer
+            ECSGameTimer readyTimer = new ECSGameTimer(m_player, new ECSGameTimer.ECSTimerCallback(ReadyToFire), speed);//timer to prepare bow
+            ECSGameTimer tiredTimer = new ECSGameTimer(m_player, new ECSGameTimer.ECSTimerCallback(TooTired1stShoot), 32500);//timer too tired
+            m_player.TempProperties.setProperty("volley_readyTimer", readyTimer);
+            m_player.TempProperties.setProperty("volley_tiredTimer", tiredTimer);              
+            m_player.Out.SendMessage("You prepare to unleash a volley of arrows!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+            m_player.Out.SendMessage(String.Format("You prepare to fire. ({0}s to fire)", (double)speed/1000), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
+            int model = (m_player.ActiveWeapon == null ? 0 : m_player.ActiveWeapon.Model);
+
+            if (!BowPreparation)
+            {
+                foreach (GamePlayer player in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+                    player.Out.SendCombatAnimation(m_player, null, (ushort)model, 0x00, player.Out.BowPrepare, HoldAttack, 0x00, m_player.HealthPercent);
+
+                BowPreparation = true;
+            }
+            
+            GameEventMgr.AddHandler(m_player, GamePlayerEvent.Quit, new DOLEventHandler(OnPlayerLeftWorld));
+            GameEventMgr.AddHandler(m_player, GamePlayerEvent.UseSlot, new DOLEventHandler(PlayerUseVolley));
         }
         public override void OnStopEffect()
         {
-            m_player.attackComponent.LivingStopAttack();    //stop all attacks
-            m_player.StopCurrentSpellcast();                //stop all casts
             #region Stop timers properties
             var readyTimer = m_player.TempProperties.getProperty<ECSGameTimer>("volley_readyTimer");
             if (readyTimer != null)
@@ -178,21 +169,21 @@ namespace DOL.GS.Effects
                 m_player.TempProperties.removeProperty("volley_shot5Continue");
             }
             #endregion
-            GameEventMgr.RemoveHandler(m_player, GamePlayerEvent.Quit, new DOLEventHandler(PlayerLeftWorld));
+
+            GameEventMgr.RemoveHandler(m_player, GamePlayerEvent.Quit, new DOLEventHandler(OnPlayerLeftWorld));
             GameEventMgr.RemoveHandler(m_player, GamePlayerEvent.UseSlot, new DOLEventHandler(PlayerUseVolley));
-            // GameEventMgr.RemoveHandler(m_player, GameLivingEvent.Moving, new DOLEventHandler(PlayerMoving));
-            GameEventMgr.RemoveHandler(m_player, GamePlayerEvent.TakeDamage, new DOLEventHandler(AttackedByEnemy));
             base.OnStopEffect();
         }
+
         public void Cancel(bool playerCancel)
         {
             EffectService.RequestImmediateCancelEffect(this, playerCancel);
-            OnStopEffect();
         }
+
         private void PrepareBowAgain()//Bow prepare again incase player hold too long volley
         {
             ECSGameEffect volley = EffectListService.GetEffectOnTarget(m_player, eEffect.Volley);
-            InventoryItem attackWeapon = m_player.attackComponent.AttackWeapon;
+            InventoryItem attackWeapon = m_player.ActiveWeapon;
             byte HoldAttack = 0x1E;//30 seconds
             int speed = attackWeapon.SPD_ABS * 100;//weapon speed used to timer
             #region Properties and Timers for each shot
@@ -227,14 +218,14 @@ namespace DOL.GS.Effects
             }
             #endregion
             m_player.Out.SendMessage(String.Format("You prepare to fire. ({0}s to fire)", (double)speed / 1000), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-            int model = (m_player.attackComponent.AttackWeapon == null ? 0 : m_player.attackComponent.AttackWeapon.Model);
+            int model = (m_player.ActiveWeapon == null ? 0 : m_player.ActiveWeapon.Model);
 
             //m_player.attackComponent.LivingStopAttack();    //stop all attacks
             //m_player.StopCurrentSpellcast();                //stop all casts
 
-            foreach (GamePlayer players in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+            foreach (GamePlayer playerInRadius in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
             {
-                players.Out.SendCombatAnimation(m_player, null, (ushort)model, 0x00, players.Out.BowPrepare, HoldAttack, 0x00, 0x00);//bow animation
+                playerInRadius.Out.SendCombatAnimation(m_player, null, (ushort)model, 0x00, playerInRadius.Out.BowPrepare, HoldAttack, 0x00, 0x00);//bow animation
             }
         }
         #region Timers for each volley shoot && ReadyToFire
@@ -427,80 +418,122 @@ namespace DOL.GS.Effects
             {
                 m_player.Out.SendMessage("Your volley is finished!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 Cancel(false);
-                AtlasOF_Volley volle = m_player.GetAbility<AtlasOF_Volley>();
-                m_player.DisableSkill(volle, AtlasOF_Volley.DISABLE_DURATION);
+                AtlasOF_Volley volley = m_player.GetAbility<AtlasOF_Volley>();
+                m_player.DisableSkill(volley, AtlasOF_Volley.DISABLE_DURATION);
             }
         }
         #endregion
 
         #region LaunchVolley
-        public void LaunchVolley(GamePlayer player, int slot, int type)
+        public void LaunchVolley(GamePlayer player)
         {
             if (player.IsBeingInterrupted)
-                Cancel(false);
-            else
             {
-                InventoryItem ammo = player.rangeAttackComponent.RangeAttackAmmo;
-                sol = new Point3D(player.GroundTarget.X, player.GroundTarget.Y, player.GroundTarget.Z);
+                Cancel(false);
+                return;
+            }
 
-                //m_player.attackComponent.LivingStopAttack();
-                //m_player.StopCurrentSpellcast();
-                if (ammo == null)
-                {
-                    player.Out.SendMessage("You need arrows to use Volley!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-                    return;
-                }
-                if (player.ActiveWeaponSlot != eActiveWeaponSlot.Distance)
-                {
-                    player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "Skill.Ability.CannotUse.CriticalShot.NoRangedWeapons"), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-                    return;
-                }
-                // Check if selected ammo is compatible for ranged attack
-                if (!player.rangeAttackComponent.CheckRangedAmmoCompatibilityWithActiveWeapon())
-                {
-                    player.Out.SendMessage("You need arrows to use Volley!", eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
-                    return;
-                }
-                if (sol == null)
-                {
-                    player.Out.SendMessage("You must have a ground target to use Volley!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-                    return;
-                }
-                if (AbortShot && !IsReadyToFireAgain)//dont shot anymore but do not cancel effect
+            if (player.rangeAttackComponent.UpdateAmmo(player.ActiveWeapon) == null)
+            {
+                player.Out.SendMessage("You need arrows to use Volley!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
+                return;
+            }
+
+            if (player.ActiveWeaponSlot != eActiveWeaponSlot.Distance)
+            {
+                player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "Skill.Ability.CannotUse.CriticalShot.NoRangedWeapons"), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
+                return;
+            }
+
+            if (!player.rangeAttackComponent.IsAmmoCompatible)
+            {
+                player.Out.SendMessage("You need arrows to use Volley!", eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
+                return;
+            }
+
+            if (player.GroundTarget == null)
+            {
+                player.Out.SendMessage("You must have a ground target to use Volley!", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
+                return;
+            }
+
+            if (AbortShot)
+            {
+                if (!IsReadyToFireAgain)
                 {
                     PrepareBowAgain();
                     IsReadyToFireAgain = true;
                 }
-                //int speedtodisplay = m_player.AttackSpeed(m_player.AttackWeapon) / 100;
-                //m_player.Out.SendMessage(LanguageMgr.GetTranslation(m_player.Client.Account.Language, "GamePlayer.StartAttack.YouPrepare.Volley", Name, speedtodisplay / 10, speedtodisplay % 10), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
-                /* foreach (GamePlayer playerS in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-                 {
-                     int weaponspeed = m_player.AttackSpeed(m_player.AttackWeapon);
-                     byte prepareTime = (byte)(weaponspeed / 100);
-                     playerS.Out.SendSpellCastAnimation(m_player, 7454, prepareTime);
-                 }*/
-                if (!AbortShot)//make sure AbortShot not active
-                {
-                    int model = (m_player.attackComponent.AttackWeapon == null ? 0 : m_player.attackComponent.AttackWeapon.Model);
-                    foreach (GamePlayer players in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-                    {
-                        if (players == null) continue;
-                        players.Out.SendCombatAnimation(m_player, null, (ushort)model, 0x00, players.Out.BowShoot, 0, 0x00, 0x00);
-                    }
-                    if (CanLaunch == false)
-                    {
-                        new ECSGameTimer(OwnerPlayer, new ECSGameTimer.ECSTimerCallback(MakeAnimation), 300);
-                        CanLaunch = true;
-                    }
-                }
+
                 return;
             }
+
+            int model = m_player.ActiveWeapon == null ? 0 : m_player.ActiveWeapon.Model;
+
+            foreach (GamePlayer playerInRadius in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+            {
+                if (playerInRadius == null) 
+                    continue;
+
+                playerInRadius.Out.SendCombatAnimation(m_player, null, (ushort)model, 0x00, playerInRadius.Out.BowShoot, 0, 0x00, 0x00);
+            }
+
+            IsReadyToFire = false;
+            int ticksToTarget = m_player.GetDistanceTo(m_player.GroundTarget) * 1000 / RangeAttackComponent.PROJECTILE_FLIGHT_SPEED;
+            new ECSGameTimer(OwnerPlayer, new ECSGameTimer.ECSTimerCallback(MakeAnimation), ticksToTarget);
+            player.Out.SendMessage("Your shot arcs into the sky!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+            player.Endurance -= VOLLEY_SHOT_ENDURANCE;
+            int arrowRecoveryChance = player.GetModified(eProperty.ArrowRecovery);
+
+            if (arrowRecoveryChance == 0 || Util.Chance(100 - arrowRecoveryChance))
+                player.Inventory.RemoveCountFromStack(player.rangeAttackComponent.Ammo, 1);
+
+            if (player.IsStealthed)
+                player.Stealth(false);
+
+            decNbShoot();
+
+            if (m_player.TempProperties.getProperty<ECSGameTimer>("volley_readyTimerAgain") == null)
+            {
+                ECSGameTimer readyTimerContinue = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(ReadyToFire), 1500);
+                m_player.TempProperties.setProperty("volley_readyTimerContinue", readyTimerContinue);
+
+                if (nbShoot == 4)
+                {
+                    ECSGameTimer shot2Continue = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(TooTired2ndShoot), 32500);
+                    m_player.TempProperties.setProperty("volley_shot2Continue", shot2Continue);
+                }
+                else if (nbShoot == 3)
+                {
+                    ECSGameTimer shot3Continue = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(TooTired3thShoot), 32500);
+                    m_player.TempProperties.setProperty("volley_shot3Continue", shot3Continue);
+                }
+                else if (nbShoot == 2)
+                {
+                    ECSGameTimer shot4Continue = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(TooTired4thShoot), 32500);
+                    m_player.TempProperties.setProperty("volley_shot4Continue", shot4Continue);
+                }
+                else if (nbShoot == 1)
+                {
+                    ECSGameTimer shot5Continue = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(TooTired5thShoot), 32500);
+                    m_player.TempProperties.setProperty("volley_shot5Continue", shot5Continue);
+                }
+            }
+
+            if (nbShoot >= 1)
+            {
+                player.Out.SendMessage("You have " + nbShoot + " arrows to be drawn!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+
+                foreach (GamePlayer playerInRadius in player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+                    playerInRadius.Out.SendCombatAnimation(player, null, (ushort)model, 0x00, playerInRadius.Out.BowPrepare, 0x1E, 0x00, 0x00);
+            }
         }
+
         #endregion
         #region DamageTarget
         private void DamageTarget(GameLiving target, GamePlayer archer)
         {
-            InventoryItem attackWeapon = archer.attackComponent.AttackWeapon;
+            InventoryItem attackWeapon = archer.ActiveWeapon;
             eDamageType damagetype = archer.attackComponent.AttackDamageType(attackWeapon);
             int modifier = archer.RealmLevel;
             double effectivenes = 1;
@@ -542,12 +575,14 @@ namespace DOL.GS.Effects
             // DEBUG
             // Console.WriteLine($"base dmg {baseDamage} dps {WeaponDPS} ws {AcherWeaponSkill} af {TargetAF} divvy {AcherWeaponSkill/TargetAF} slowwep {SlowWeaponBonus} 2hbon {WeaponBonus2H} speed {weaponspeed}");
 
-            switch ((archer?.rangeAttackComponent?.RangeAttackAmmo?.SPD_ABS) & 0x3)//switch dmg based of arrow type
+            switch ((archer.rangeAttackComponent.Ammo?.SPD_ABS) & 0x3)//switch dmg based of arrow type
             {
                 case 0:
                     baseDamage *= 0.85;
-                    break; //Blunt       (light) -15%
-                           //case 1: damage *= 1;	break; //Bodkin     (medium)   0%
+                    break; //Blunt  (light) -15%
+                //case 1:
+                //  damage *= 1;
+                //  break; //Bodkin (medium) 0%
                 case 2:
                     baseDamage *= 1.15;
                     break; //doesn't exist on live
@@ -846,7 +881,7 @@ namespace DOL.GS.Effects
             mob.RespawnInterval = -1;
             mob.AddToWorld();
         }
-        private bool CanLaunch = false;
+
         private void PlayerUseVolley(DOLEvent e, object sender, EventArgs args)//player click bow slow/arrow
         {
             UseSlotEventArgs useArgs = args as UseSlotEventArgs;
@@ -895,9 +930,9 @@ namespace DOL.GS.Effects
             if (IsReadyToFire)
             {
                 ECSGameEffect volley = EffectListService.GetEffectOnTarget(m_player, eEffect.Volley);
-                if (CanLaunch == false && volley != null)//make sure player does have volley effect
+                if (volley != null)//make sure player does have volley effect
                 {
-                    LaunchVolley(player, slot, type);
+                    LaunchVolley(player);
                 }
                 else
                 {
@@ -911,169 +946,74 @@ namespace DOL.GS.Effects
                 return;
             }
         }
+
         private int MakeAnimation(ECSGameTimer timer)
         {
-            ECSGameEffect volley = EffectListService.GetEffectOnTarget(m_player, eEffect.Volley);
-            if (volley != null)//if player does not have volley effect then stop doing all actions
+            ShowVolleyEffect();
+            IList targets = SelectTargets();
+
+            if (targets.Count > 0)
             {
-                var player = m_player;
-                decNbShoot();
+                // Pick only 1 target from list.
+                GameLiving target = (GameLiving)targets[Util.Random(0, targets.Count - 1)];
 
-                InventoryItem ammo = player.rangeAttackComponent.RangeAttackAmmo;
-                InventoryItem attackWeapon = player.AttackWeapon;
-                eDamageType damagetype = player.attackComponent.AttackDamageType(attackWeapon);
-                int speed = player.AttackSpeed(attackWeapon);
-                byte attackSpeed = (byte)(speed / 1000);
-
-                player.Out.SendMessage("Your shot arcs into the sky!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-
-                int arrowRecoveryChance = player.GetModified(eProperty.ArrowRecovery);
-                if (arrowRecoveryChance == 0 || Util.Chance(100 - arrowRecoveryChance))
-                    player.Inventory.RemoveCountFromStack(ammo, 1);
-
-                player.Endurance -= VOLLEY_SHOT_ENDURANCE;
-
-                if (player.IsStealthed)
-                    player.Stealth(false);
-
-                //GetTarget 
-                IList targets = SelectTargets();
-                ShowVolleyEffect();
-
-                if (targets.Count > 0)
+                if (target != null && target.IsAlive)
                 {
-                    /*foreach (GameLiving livingaffected in targets)//has chance to hit all targets in list
+                    DamageTarget(target, m_player);
+                    if (target is GamePlayer playerTarget)
                     {
-                        if (livingaffected != null)
-                        {
-                            DamageTarget(livingaffected, player);
-                            if (livingaffected is GamePlayer)
-                            {
-                                if (livingaffected.IsStealthed)
-                                    ((GamePlayer)livingaffected).Stealth(false);
-                            }
-                        }
-                    }*/
-                    GameLiving Target = (GameLiving)targets[Util.Random(0, targets.Count - 1)];//pick only 1 target from list
-                    if (Target != null && Target.IsAlive)
-                    {
-                        DamageTarget(Target, player);
-                        if (Target is GamePlayer)
-                        {
-                            if (Target.IsStealthed)
-                                ((GamePlayer)Target).Stealth(false);
-                        }
-                    }
-                }
-                if (targets.Count == 0)//0 targets 
-                {
-                    player.Out.SendMessage("Your shot sails clear of all targets!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                }
-                if (nbShoot >= 1)
-                {
-                    player.Out.SendMessage("You have " + nbShoot + " arrows to be drawn!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                }
-                targets.Clear();
-                CanLaunch = false;
-                IsReadyToFire = false;
-                int model = (player.attackComponent.AttackWeapon == null ? 0 : player.attackComponent.AttackWeapon.Model);
-
-                if (!AbortShot)
-                {
-                    var readyTimerAgain = m_player.TempProperties.getProperty<ECSGameTimer>("volley_readyTimerAgain");
-                    if (readyTimerAgain == null)
-                    {
-                        ECSGameTimer readyTimerContinue = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(ReadyToFire), 1500);
-                        m_player.TempProperties.setProperty("volley_readyTimerContinue", readyTimerContinue);
-                        if (nbShoot == 4 && volley != null)
-                        {
-                            ECSGameTimer shot2Continue = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(TooTired2ndShoot), 32500);
-                            m_player.TempProperties.setProperty("volley_shot2Continue", shot2Continue);
-                        }
-                        if (nbShoot == 3 && volley != null)
-                        {
-                            ECSGameTimer shot3Continue = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(TooTired3thShoot), 32500);
-                            m_player.TempProperties.setProperty("volley_shot3Continue", shot3Continue);
-                        }
-                        if (nbShoot == 2 && volley != null)
-                        {
-                            ECSGameTimer shot4Continue = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(TooTired4thShoot), 32500);
-                            m_player.TempProperties.setProperty("volley_shot4Continue", shot4Continue);
-                        }
-                        if (nbShoot == 1 && volley != null)
-                        {
-                            ECSGameTimer shot5Continue = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(TooTired5thShoot), 32500);
-                            m_player.TempProperties.setProperty("volley_shot5Continue", shot5Continue);
-                        }
-                    }
-                }
-                byte HoldAttack = 0x1E;//30 seconds
-                player.attackComponent.LivingStopAttack();    //stop all attacks
-                player.StopCurrentSpellcast();                //stop all casts
-
-                if (nbShoot >= 1)
-                {
-                    foreach (GamePlayer players in player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-                    {
-                        players.Out.SendCombatAnimation(player, null, (ushort)model, 0x00, players.Out.BowPrepare, HoldAttack, 0x00, 0x00);
+                        if (playerTarget.IsStealthed)
+                            playerTarget.Stealth(false);
                     }
                 }
             }
+            else
+                m_player.Out.SendMessage("Your shot sails clear of all targets!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+
             return 0;
         }
         #endregion
 
-        #region PlayerLeftWorld / PlayerMoving / AttackedByEnemy(TakeDamage)
-        /// <summary>
-        /// Called when a player leaves the game
-        /// </summary>
-        /// <param name="e">The event which was raised</param>
-        /// <param name="sender">Sender of the event</param>
-        /// <param name="args">EventArgs associated with the event</param>
-        private void PlayerLeftWorld(DOLEvent e, object sender, EventArgs args)
+        private void OnPlayerLeftWorld(DOLEvent e, object sender, EventArgs arguments)
         {
             Cancel(false);
         }
-        /// <summary>
-        /// Called when a player move
-        /// </summary>
-        /// <param name="e">The event which was raised</param>
-        /// <param name="sender">Sender of the event</param>
-        /// <param name="args">EventArgs associated with the event</param>
-        //private void PlayerMoving(DOLEvent e, object sender, EventArgs args)
-        public void PlayerMoving()
+
+        public void OnPlayerMoved()
         {
-            if (m_player == null) return;
-            m_player.Out.SendAttackMode(false);
             Cancel(false);
-            AtlasOF_Volley volle = m_player.GetAbility<AtlasOF_Volley>();
-            m_player.DisableSkill(volle, AtlasOF_Volley.DISABLE_DURATION);
+            AtlasOF_Volley volley = m_player.GetAbility<AtlasOF_Volley>();
+            m_player.DisableSkill(volley, AtlasOF_Volley.DISABLE_DURATION);
             m_player.Out.SendMessage("You move and interrupt your volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-            foreach (GamePlayer i_player in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-            {
-                i_player.Out.SendInterruptAnimation(m_player);
-            }
-           
+
+            foreach (GamePlayer playerInRadius in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+                playerInRadius.Out.SendInterruptAnimation(m_player);
         }
-        private void AttackedByEnemy(DOLEvent e, object sender, EventArgs arguments)
+
+        public void OnPlayerSwitchedWeapon()
         {
-            GamePlayer player = sender as GamePlayer;
-            if (player == null) return; 
-            if (e == GamePlayerEvent.TakeDamage)
-            {
-                Cancel(false);
-                AttackData ad = player.TempProperties.getProperty<object>(GameLiving.LAST_ATTACK_DATA, null) as AttackData;
-                player.StartInterruptTimer(ad, ServerProperties.Properties.SPELL_INTERRUPT_DURATION);
-                player.Out.SendMessage("You have been attacked and your volley is interrupted!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                foreach (GamePlayer i_player in player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-                {
-                    i_player.Out.SendInterruptAnimation(player);
-                }
-            }
+            Cancel(false);
+            AtlasOF_Volley volley = m_player.GetAbility<AtlasOF_Volley>();
+            m_player.DisableSkill(volley, AtlasOF_Volley.DISABLE_DURATION);
+            m_player.Out.SendMessage("You put away your bow and interrupt your volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+
+            foreach (GamePlayer playerInRadius in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+                playerInRadius.Out.SendInterruptAnimation(m_player);
         }
-        #endregion
+
+        public void OnAttacked()
+        {
+            Cancel(false);
+            AtlasOF_Volley volley = m_player.GetAbility<AtlasOF_Volley>();
+            m_player.DisableSkill(volley, AtlasOF_Volley.DISABLE_DURATION);
+            m_player.Out.SendMessage("You have been attacked and your volley is interrupted!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+
+            foreach (GamePlayer playerInRadius in m_player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
+                playerInRadius.Out.SendInterruptAnimation(m_player);
+        }
     }
 }
+
 /// <summary>
 /// //////////////////////////////Volley mob to show player actuall volley location hit and nice effect for ability
 /// </summary>
