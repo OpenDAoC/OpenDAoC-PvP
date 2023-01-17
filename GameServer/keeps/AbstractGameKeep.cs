@@ -1079,9 +1079,7 @@ namespace DOL.GS.Keeps
 
 			Realm = realm;
 
-			PlayerMgr.BroadcastCapture(this);
-
-            Level = (byte)ServerProperties.Properties.STARTING_KEEP_LEVEL;
+			Level = (byte)ServerProperties.Properties.STARTING_KEEP_LEVEL;
 
 			//if a guild holds the keep, we release it
 			if (Guild != null)
@@ -1166,6 +1164,8 @@ namespace DOL.GS.Keeps
 					}
 				}
 			}
+			
+			PlayerMgr.BroadcastCapture(this);
 
 		}
 

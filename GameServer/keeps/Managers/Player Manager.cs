@@ -49,8 +49,7 @@ namespace DOL.GS.Keeps
 				}
 				else
 				{
-					message = string.Format(LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE,
-						"PlayerManager.BroadcastCapture.Captured", "No guild wtf", keep.Name));
+					message = $"{keep.Name} has been captured!";
 				}
 			}
 			else
