@@ -21,7 +21,7 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-
+using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
 using DOL.GS.PacketHandler;
@@ -611,11 +611,11 @@ namespace DOL.GS.Keeps
 				return false;
 			}
 
-			if(player.Realm != this.Realm)
-			{
-				player.Out.SendMessage("The keep is not owned by your realm.",eChatType.CT_System,eChatLoc.CL_SystemWindow);
-				return false;
-			}
+			// if(player.Realm != this.Realm)
+			// {
+			// 	player.Out.SendMessage("The keep is not owned by your realm.",eChatType.CT_System,eChatLoc.CL_SystemWindow);
+			// 	return false;
+			// }
 			
 			// Disabled check on DBKeep.BaseLevel to allow claiming of BG keeps
 			if (this.DBKeep.BaseLevel != 50 && !ServerProperties.Properties.ALLOW_BG_CLAIM)
@@ -1072,7 +1072,7 @@ namespace DOL.GS.Keeps
 		/// reset the realm when the lord have been killed
 		/// </summary>
 		/// <param name="realm"></param>
-		public virtual void Reset(eRealm realm)
+		public virtual void Reset(eRealm realm, GameObject killer)
 		{
 			LastAttackedByEnemyTick = 0;
 			StartCombatTick = 0;
@@ -1143,6 +1143,29 @@ namespace DOL.GS.Keeps
 			SaveIntoDatabase();
 
 			GameEventMgr.Notify(KeepEvent.KeepTaken, new KeepEventArgs(this));
+
+			if (killer is GamePlayer player)
+			{
+				if (player.Guild != null)
+				{
+					if (CheckForClaim(player))
+					{
+						Claim(player);
+					}
+				}
+			} 
+			else if (killer is GameNPC && (killer as GameNPC).Brain is IControlledBrain)
+			{
+				GamePlayer petPlayer = ((killer as GameNPC).Brain as IControlledBrain).GetPlayerOwner();
+				
+				if (petPlayer.Guild != null)
+				{
+					if (CheckForClaim(petPlayer))
+					{
+						Claim(petPlayer);
+					}
+				}
+			}
 
 		}
 

@@ -42,7 +42,16 @@ namespace DOL.GS.Keeps
 			string message = "";
 			if (keep.Realm != eRealm.None)
 			{
-				message = string.Format(LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE, "PlayerManager.BroadcastCapture.Captured", GlobalConstants.RealmToName((eRealm)keep.Realm), keep.Name));
+				if (keep.Guild != null)
+				{
+					message = string.Format(LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE,
+						"PlayerManager.BroadcastCapture.Captured", keep.Guild.Name, keep.Name));
+				}
+				else
+				{
+					message = string.Format(LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE,
+						"PlayerManager.BroadcastCapture.Captured", "No guild wtf", keep.Name));
+				}
 			}
 			else
 			{

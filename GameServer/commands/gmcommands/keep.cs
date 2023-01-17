@@ -2366,7 +2366,7 @@ namespace DOL.GS.Commands
 							DisplaySyntax(client);
 							return;
 						}
-						myKeep.Reset(realm);
+						myKeep.Reset(realm, client.Player);
 						DisplayMessage(client, LanguageMgr.GetTranslation(client.Account.Language, "GMCommands.Keep.Realm.YouChangeKeepRealm", GlobalConstants.RealmToName(realm)));
 						break;
 					}
