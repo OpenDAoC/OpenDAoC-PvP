@@ -320,7 +320,7 @@ namespace DOL.GS.Commands
 					
 						var message = new DiscordMessage(
 							"",
-							username: "Atlas GameServer",
+							username: "Titan GameServer",
 							avatarUrl: "https://cdn.discordapp.com/avatars/924819091028586546/656e2b335e60cb1bfaf3316d7754a8fd.webp",
 							tts: false,
 							embeds: new[]
@@ -502,7 +502,7 @@ namespace DOL.GS.Commands
 					
 						var message = new DiscordMessage(
 							"",
-							username: "Atlas GameServer",
+							username: "Titan GameServer",
 							avatarUrl: "https://cdn.discordapp.com/avatars/924819091028586546/656e2b335e60cb1bfaf3316d7754a8fd.webp",
 							tts: false,
 							embeds: new[]
@@ -631,7 +631,7 @@ namespace DOL.GS.Commands
 					
 							var message = new DiscordMessage(
 								"",
-								username: "Atlas GameServer",
+								username: "Titan GameServer",
 								avatarUrl: "https://cdn.discordapp.com/avatars/924819091028586546/656e2b335e60cb1bfaf3316d7754a8fd.webp",
 								tts: false,
 								embeds: new[]
@@ -816,7 +816,7 @@ namespace DOL.GS.Commands
 					
 				var message = new DiscordMessage(
 					"",
-					username: "Atlas GameServer",
+					username: "Titan GameServer",
 					avatarUrl: "https://cdn.discordapp.com/avatars/924819091028586546/656e2b335e60cb1bfaf3316d7754a8fd.webp",
 					tts: false,
 					embeds: new[]
