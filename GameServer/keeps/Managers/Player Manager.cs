@@ -79,7 +79,7 @@ namespace DOL.GS.Keeps
 
 			if (ServerProperties.Properties.DISCORD_ACTIVE && (!string.IsNullOrEmpty(ServerProperties.Properties.DISCORD_RVR_WEBHOOK_ID)))
 			{
-				BroadcastDiscordRvR(message, keep.Realm, keep.Name);
+				BroadcastDiscordRvR(message, keep.OriginalRealm, keep.Name);
 			}
 			
 		}

@@ -448,22 +448,16 @@ namespace DOL.GS.ServerProperties
 		public static string DISCORD_RVR_WEBHOOK_ID;
 		
 		/// <summary>
-		/// RvRWebhook ID
+		/// RegionWebhook ID
 		/// </summary>
-		[ServerProperty("atlas", "Discord_AlbChat_Webhook_ID", "The id of the webhook for all Albion chat", "")]
-		public static string DISCORD_ALBCHAT_WEBHOOK_ID;
+		[ServerProperty("atlas", "Discord_REGION_Webhook_ID", "The id of the webhook for region chats", "")]
+		public static string DISCORD_REGION_WEBHOOK_ID;
 		
 		/// <summary>
-		/// RvRWebhook ID
+		/// AdviceWebhook ID
 		/// </summary>
-		[ServerProperty("atlas", "Discord_HibChat_Webhook_ID", "The id of the webhook for Hibernia chat", "")]
-		public static string DISCORD_HIBCHAT_WEBHOOK_ID;
-		
-		/// <summary>
-		/// RvRWebhook ID
-		/// </summary>
-		[ServerProperty("atlas", "Discord_MidChat_Webhook_ID", "The id of the webhook for Midgard chat", "")]
-		public static string DISCORD_MIDCHAT_WEBHOOK_ID;
+		[ServerProperty("atlas", "Discord_ADVICE_Webhook_ID", "The id of the webhook for advice chats", "")]
+		public static string DISCORD_ADVICE_WEBHOOK_ID;
 		
 		/// <summary>
 		/// Tester Role

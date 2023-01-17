@@ -33,7 +33,7 @@ namespace DOL.GS.Scripts.discord
             switch (chatType)
             {
                 case eChatType.CT_Broadcast:
-                    formattedMessage = "**[REGION - " + player.CurrentZone.Description + "] ";
+                    formattedMessage = "**[" + player.CurrentZone.Description + "] ";
                     break;
                 case eChatType.CT_Help:
                     formattedMessage = "**[HELP] ";
@@ -54,34 +54,37 @@ namespace DOL.GS.Scripts.discord
             formattedMessage += player.Name + ":** " + message;
 
             string avatar;
-            
-            
-            // Send to Discord
-            switch (player.Realm)
+
+            switch (chatType)
             {
-                case eRealm.Albion:
-                    if (!string.IsNullOrEmpty(Properties.DISCORD_ALBCHAT_WEBHOOK_ID))
+                case eChatType.CT_Broadcast:
+                    if (string.IsNullOrEmpty(Properties.DISCORD_REGION_WEBHOOK_ID))
+                        return;
+                    
+                    switch (player.CurrentZone.Realm)
                     {
-                        avatar = "https://cdn.discordapp.com/attachments/861979059550421023/929455017902104627/alb.png";
-                        SendMessage(Properties.DISCORD_ALBCHAT_WEBHOOK_ID,formattedMessage, avatar: avatar);
+                        case eRealm._First:
+                            avatar = "https://cdn.discordapp.com/attachments/861979059550421023/929455017902104627/alb.png";
+                            SendMessage(Properties.DISCORD_REGION_WEBHOOK_ID, formattedMessage, avatar: avatar);
+                            break;
+                        case eRealm.Hibernia:
+                            avatar = "https://cdn.discordapp.com/attachments/861979059550421023/929455017457496214/hib.png";
+                            SendMessage(Properties.DISCORD_REGION_WEBHOOK_ID, formattedMessage, avatar: avatar);
+                            break;
+                        case eRealm.Midgard:
+                            avatar = "https://cdn.discordapp.com/attachments/861979059550421023/929455017675616288/mid.png";
+                            SendMessage(Properties.DISCORD_REGION_WEBHOOK_ID, formattedMessage, avatar: avatar);
+                            break;
                     }
+                    
                     break;
-                case eRealm.Hibernia:
-                    if (!string.IsNullOrEmpty(Properties.DISCORD_HIBCHAT_WEBHOOK_ID))
-                    {
-                        avatar = "https://cdn.discordapp.com/attachments/861979059550421023/929455017457496214/hib.png";
-                        SendMessage(Properties.DISCORD_HIBCHAT_WEBHOOK_ID,formattedMessage, avatar: avatar);
-                    }
-                    break;
-                case eRealm.Midgard:
-                    if (!string.IsNullOrEmpty(Properties.DISCORD_MIDCHAT_WEBHOOK_ID))
-                    {
-                        avatar = "https://cdn.discordapp.com/attachments/861979059550421023/929455017675616288/mid.png";
-                        SendMessage(Properties.DISCORD_MIDCHAT_WEBHOOK_ID,formattedMessage, avatar: avatar);
-                    }
+                
+                default:
+                    if (string.IsNullOrEmpty(Properties.DISCORD_ADVICE_WEBHOOK_ID))
+                        return;
+                    SendMessage(Properties.DISCORD_ADVICE_WEBHOOK_ID, formattedMessage);
                     break;
             }
-            
         }
     }
 }
