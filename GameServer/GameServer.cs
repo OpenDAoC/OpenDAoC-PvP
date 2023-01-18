@@ -920,22 +920,26 @@ namespace DOL.GS
 			var path = "logs/Error.log.1";
 			
 			var ErrorLogMsg = $"**{now}** \n";
-			
+
 			if (File.Exists(path))
 			{
 				
-				var last_ten = File.ReadLines(path).Reverse().Take(Properties.DISCORD_ERROR_LOG_LINES).ToList();
-				last_ten.Reverse();
-
+				var last_lines = File.ReadLines(path).Reverse().Take(Properties.DISCORD_ERROR_LOG_LINES).ToList();
+				last_lines.Reverse();
+				
+				ErrorLogMsg += $"Last {Properties.DISCORD_ERROR_LOG_LINES} lines: \n";
+					
 				ErrorLogMsg += "```";
 				
-				foreach (var line in last_ten)
+				foreach (var line in last_lines)
 				{
 					ErrorLogMsg += $"{line} \n";
 				}
 				
-				ErrorLogMsg += "```";
+				ErrorLogMsg += "``` \n";
 				
+				ErrorLogMsg += "View the full Error.log: \n";
+
 				var file = new DiscordFile($"Error-{now}.log", File.ReadAllBytes(path));
 				
 				WebhookMessage.SendMessageWithFile(Properties.DISCORD_ERRORLOG_WEBHOOK_ID, ErrorLogMsg, file);
