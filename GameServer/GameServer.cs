@@ -30,7 +30,6 @@ using System.Threading;
 using DOL.Config;
 using DOL.Database;
 using DOL.Database.Attributes;
-using DOL.Database.Connection;
 using DOL.Events;
 using DOL.GS.Behaviour;
 using DOL.GS.DatabaseUpdate;
@@ -39,6 +38,7 @@ using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
 using DOL.GS.PlayerTitles;
 using DOL.GS.Quests;
+using DOL.GS.Scripts.discord;
 using DOL.GS.ServerProperties;
 using DOL.GS.ServerRules;
 using DOL.Language;
@@ -868,6 +868,12 @@ namespace DOL.GS
 					var webserver = new DOL.GS.API.ApiHost();
 					log.Info("Game WebAPI open for connections.");
 				}
+
+				if (Properties.DISCORD_ACTIVE && Properties.DISCORD_ERROR_LOG)
+				{
+					ParseErrorLog();
+				}
+				
 				
 				GetPatchNotes();
 
@@ -903,6 +909,36 @@ namespace DOL.GS
 
 			}
 			PatchNotes = news;
+		}
+
+		private void ParseErrorLog()
+		{
+			if (string.IsNullOrEmpty(Properties.DISCORD_ERRORLOG_WEBHOOK_ID)) return;
+			
+			var ErrorLogMsg = $"**{DateTime.Now}** \n";
+			
+			if (File.Exists("logs/Error.log.1"))
+			{
+				// log.Info($"Last Line: {File.ReadLines("logs/Error.log.1").Last()}");
+					
+				var text = File.ReadLines("logs/Error.log.1").Reverse().Take(Properties.DISCORD_ERROR_LOG_LINES).ToList();
+				text.Reverse();
+
+				ErrorLogMsg += "```";
+				
+				foreach (var line in text)
+				{
+					ErrorLogMsg += $"{line} \n";
+				}
+				
+				ErrorLogMsg += "```";
+			}
+			else
+			{
+				ErrorLogMsg += "`Error.1.log` does not exist (possible roll over).";
+			}
+			
+			WebhookMessage.SendMessage(Properties.DISCORD_ERRORLOG_WEBHOOK_ID, ErrorLogMsg);
 		}
 
 		/// <summary>

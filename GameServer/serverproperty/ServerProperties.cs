@@ -460,6 +460,24 @@ namespace DOL.GS.ServerProperties
 		public static string DISCORD_ADVICE_WEBHOOK_ID;
 		
 		/// <summary>
+		/// ErrorLogWebhook ID
+		/// </summary>
+		[ServerProperty("atlas", "Discord_ERRORLOG_Webhook_ID", "The id of the webhook for the error logs", "")]
+		public static string DISCORD_ERRORLOG_WEBHOOK_ID;
+		
+		/// <summary>
+		/// Send Error Logs to Discord?
+		/// </summary>
+		[ServerProperty("atlas", "Discord_Error_Log", "Send Error Logs to Discord?", false)]
+		public static bool DISCORD_ERROR_LOG;
+		
+		/// <summary>
+		/// How many lines of error logs to send to Discord?
+		/// </summary>
+		[ServerProperty("atlas", "Discord_Error_Log_Lines", "How many lines of error logs to send to Discord?", 15)]
+		public static int DISCORD_ERROR_LOG_LINES;
+
+		/// <summary>
 		/// Tester Role
 		/// </summary>
 		[ServerProperty("atlas", "tester_login", "Allow only testers and staff to login", false)]
