@@ -916,14 +916,15 @@ namespace DOL.GS
 		{
 			if (string.IsNullOrEmpty(Properties.DISCORD_ERRORLOG_WEBHOOK_ID)) return;
 			
-			var ErrorLogMsg = $"**{DateTime.Now}** \n";
+			var now = DateTime.Now;
+			var path = "logs/Error.log.1";
 			
-			if (File.Exists("logs/Error.log.1"))
+			var ErrorLogMsg = $"**{now}** \n";
+			
+			if (File.Exists(path))
 			{
-				// log.Info($"Last Line: {File.ReadLines("logs/Error.log.1").Last()}");
 				
-				var log = File.ReadLines("logs/Error.log.1");
-				var last_ten = File.ReadLines("logs/Error.log.1").Reverse().Take(Properties.DISCORD_ERROR_LOG_LINES).ToList();
+				var last_ten = File.ReadLines(path).Reverse().Take(Properties.DISCORD_ERROR_LOG_LINES).ToList();
 				last_ten.Reverse();
 
 				ErrorLogMsg += "```";
@@ -935,7 +936,7 @@ namespace DOL.GS
 				
 				ErrorLogMsg += "```";
 				
-				var file = new DiscordFile($"Error-{DateTime.Now}.log", File.ReadAllBytes("logs/Error.log.1"));
+				var file = new DiscordFile($"Error-{now}.log", File.ReadAllBytes(path));
 				
 				WebhookMessage.SendMessageWithFile(Properties.DISCORD_ERRORLOG_WEBHOOK_ID, ErrorLogMsg, file);
 			}
@@ -945,9 +946,6 @@ namespace DOL.GS
 				
 				WebhookMessage.SendMessage(Properties.DISCORD_ERRORLOG_WEBHOOK_ID, ErrorLogMsg);
 			}
-			
-			
-			
 			
 		}
 
