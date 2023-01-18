@@ -663,6 +663,7 @@ namespace DOL.GS.Keeps
 
 		public virtual bool IsEnemy(GameKeepGuard checker, GamePlayer target, bool checkGroup)
 		{
+			if (checker.GuildName.Equals(target.GuildName)) return false;
 			if (checker.Component == null || checker.Component.Keep == null)
 				return GameServer.ServerRules.IsAllowedToAttack(checker, target, true);
 			return IsEnemy(checker.Component.Keep, target, checkGroup);
