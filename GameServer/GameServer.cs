@@ -25,6 +25,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 
 using DOL.Config;
@@ -920,25 +921,34 @@ namespace DOL.GS
 			if (File.Exists("logs/Error.log.1"))
 			{
 				// log.Info($"Last Line: {File.ReadLines("logs/Error.log.1").Last()}");
-					
-				var text = File.ReadLines("logs/Error.log.1").Reverse().Take(Properties.DISCORD_ERROR_LOG_LINES).ToList();
-				text.Reverse();
+				
+				var log = File.ReadLines("logs/Error.log.1");
+				var last_ten = File.ReadLines("logs/Error.log.1").Reverse().Take(Properties.DISCORD_ERROR_LOG_LINES).ToList();
+				last_ten.Reverse();
 
 				ErrorLogMsg += "```";
 				
-				foreach (var line in text)
+				foreach (var line in last_ten)
 				{
 					ErrorLogMsg += $"{line} \n";
 				}
 				
 				ErrorLogMsg += "```";
+				
+				var file = new DiscordFile($"Error-{DateTime.Now}.log", File.ReadAllBytes("logs/Error.log.1"));
+				
+				WebhookMessage.SendMessageWithFile(Properties.DISCORD_ERRORLOG_WEBHOOK_ID, ErrorLogMsg, file);
 			}
 			else
 			{
 				ErrorLogMsg += "`Error.1.log` does not exist (possible roll over).";
+				
+				WebhookMessage.SendMessage(Properties.DISCORD_ERRORLOG_WEBHOOK_ID, ErrorLogMsg);
 			}
 			
-			WebhookMessage.SendMessage(Properties.DISCORD_ERRORLOG_WEBHOOK_ID, ErrorLogMsg);
+			
+			
+			
 		}
 
 		/// <summary>

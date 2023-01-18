@@ -21,6 +21,20 @@ namespace DOL.GS.Scripts.discord
             );
             client.SendToDiscord(msg);
         }
+        
+        public static void SendMessageWithFile(String webhookId, String message, DiscordFile file, String userName = "Atlas Bot", string avatar = "https://cdn.discordapp.com/avatars/924819091028586546/656e2b335e60cb1bfaf3316d7754a8fd.webp")
+        {
+            var client = new DiscordWebhookClient(webhookId);
+
+            var content = message;
+            var msg = new DiscordMessage(
+                content,
+                username: userName,
+                avatarUrl: avatar,
+                tts: false
+            );
+            client.SendToDiscord(msg, new[] { file });
+        }
         public static void SendEmbeddedMessage(String webhookId, String message)
         {
             //TODO: Possibly implement this to have all other discord messages delegate through something like this
