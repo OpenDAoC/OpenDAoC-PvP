@@ -2451,11 +2451,11 @@ namespace DOL.GS.PacketHandler
 
 				foreach (KeyValuePair<eCraftingSkill, int> de in m_gameClient.Player.CraftingSkills)
 				{
-					AbstractCraftingSkill curentCraftingSkill = CraftingMgr.getSkillbyEnum((eCraftingSkill) de.Key);
+					AbstractCraftingSkill currentCraftingSkill = CraftingMgr.getSkillbyEnum((eCraftingSkill) de.Key);
 					pak.WriteShort(Convert.ToUInt16(de.Value)); //points
-					pak.WriteByte(curentCraftingSkill.Icon); //icon
+					pak.WriteByte(currentCraftingSkill.Icon); //icon
 					pak.WriteInt(1);
-					pak.WritePascalString(curentCraftingSkill.Name); //name
+					pak.WritePascalString(currentCraftingSkill.Name); //name
 				}
 				SendTCP(pak);
 			}
