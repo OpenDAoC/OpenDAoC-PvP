@@ -582,7 +582,7 @@ namespace DOL.GS.ServerRules
 					realm = (eRealm)group.Leader.Realm;
 				else realm = (eRealm)killer.Realm;
 			}
-			lord.Component.Keep.Reset(realm);
+			lord.Component.Keep.Reset(realm, killer);
 		}
 	}
 }

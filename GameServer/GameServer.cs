@@ -25,12 +25,12 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 
 using DOL.Config;
 using DOL.Database;
 using DOL.Database.Attributes;
-using DOL.Database.Connection;
 using DOL.Events;
 using DOL.GS.Behaviour;
 using DOL.GS.DatabaseUpdate;
@@ -39,6 +39,7 @@ using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
 using DOL.GS.PlayerTitles;
 using DOL.GS.Quests;
+using DOL.GS.Scripts.discord;
 using DOL.GS.ServerProperties;
 using DOL.GS.ServerRules;
 using DOL.Language;
@@ -844,7 +845,7 @@ namespace DOL.GS
 					
  					var message = new DiscordMessage(
  						"",
- 						username: "Atlas GameServer",
+ 						username: "Titan GameServer",
  						avatarUrl: "https://cdn.discordapp.com/avatars/924819091028586546/656e2b335e60cb1bfaf3316d7754a8fd.webp",
  						tts: false,
  						embeds: new[]
@@ -868,6 +869,12 @@ namespace DOL.GS
 					var webserver = new DOL.GS.API.ApiHost();
 					log.Info("Game WebAPI open for connections.");
 				}
+
+				if (Properties.DISCORD_ACTIVE && Properties.DISCORD_ERROR_LOG)
+				{
+					ParseErrorLog();
+				}
+				
 				
 				GetPatchNotes();
 
@@ -903,6 +910,47 @@ namespace DOL.GS
 
 			}
 			PatchNotes = news;
+		}
+
+		private void ParseErrorLog()
+		{
+			if (string.IsNullOrEmpty(Properties.DISCORD_ERRORLOG_WEBHOOK_ID)) return;
+			
+			var now = DateTime.Now;
+			var path = "logs/Error.log.1";
+			
+			var ErrorLogMsg = $"**{now}** \n";
+
+			if (File.Exists(path))
+			{
+				
+				var last_lines = File.ReadLines(path).Reverse().Take(Properties.DISCORD_ERROR_LOG_LINES).ToList();
+				last_lines.Reverse();
+				
+				ErrorLogMsg += $"Last {Properties.DISCORD_ERROR_LOG_LINES} lines: \n";
+					
+				ErrorLogMsg += "```";
+				
+				foreach (var line in last_lines)
+				{
+					ErrorLogMsg += $"{line} \n";
+				}
+				
+				ErrorLogMsg += "``` \n";
+				
+				ErrorLogMsg += "View the full Error.log: \n";
+
+				var file = new DiscordFile($"Error-{now}.log", File.ReadAllBytes(path));
+				
+				WebhookMessage.SendMessageWithFile(Properties.DISCORD_ERRORLOG_WEBHOOK_ID, ErrorLogMsg, file);
+			}
+			else
+			{
+				ErrorLogMsg += "`Error.1.log` does not exist (possible roll over).";
+				
+				WebhookMessage.SendMessage(Properties.DISCORD_ERRORLOG_WEBHOOK_ID, ErrorLogMsg);
+			}
+			
 		}
 
 		/// <summary>

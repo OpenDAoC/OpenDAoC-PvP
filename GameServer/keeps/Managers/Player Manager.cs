@@ -42,7 +42,15 @@ namespace DOL.GS.Keeps
 			string message = "";
 			if (keep.Realm != eRealm.None)
 			{
-				message = string.Format(LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE, "PlayerManager.BroadcastCapture.Captured", GlobalConstants.RealmToName((eRealm)keep.Realm), keep.Name));
+				if (keep.Guild != null)
+				{
+					message = string.Format(LanguageMgr.GetTranslation(ServerProperties.Properties.SERV_LANGUAGE,
+						"PlayerManager.BroadcastCapture.Captured", keep.Guild.Name, keep.Name));
+				}
+				else
+				{
+					message = $"{keep.Name} has been captured!";
+				}
 			}
 			else
 			{
@@ -70,7 +78,7 @@ namespace DOL.GS.Keeps
 
 			if (ServerProperties.Properties.DISCORD_ACTIVE && (!string.IsNullOrEmpty(ServerProperties.Properties.DISCORD_RVR_WEBHOOK_ID)))
 			{
-				BroadcastDiscordRvR(message, keep.Realm, keep.Name);
+				BroadcastDiscordRvR(message, keep.OriginalRealm, keep.Name);
 			}
 			
 		}
