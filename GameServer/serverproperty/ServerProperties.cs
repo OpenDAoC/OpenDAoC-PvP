@@ -21,7 +21,6 @@ using System.Globalization;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
-
 using DOL.Database;
 using log4net;
 
@@ -779,14 +778,7 @@ namespace DOL.GS.ServerProperties
 		/// </summary>
 		[ServerProperty("world", "always_check_pet_los", "Should we perform LOS checks between controlled NPC's and players?", false)]
 		public static bool ALWAYS_CHECK_PET_LOS;
-
-		/// <summary>
-		/// LOS check frequency; how often are we allowed to check LOS on the same player (seconds)
-		/// </summary>
-		[ServerProperty("world", "los_player_check_frequency", "How often are we allowed to check LOS on the same player (seconds)", (ushort)5)]
-		public static ushort LOS_PLAYER_CHECK_FREQUENCY;
-	
-		/// <summary>
+		
 		/// HPs gained per champion's level
 		/// </summary>
 		[ServerProperty("world", "hps_per_championlevel", "The amount of extra HPs gained each time you reach a new Champion's Level", 40)]
@@ -2512,11 +2504,8 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Spells-related properties
 		/// </summary>
-		[ServerProperty("spells", "spell_interrupt_duration", "", 4500)]
+		[ServerProperty("spells", "spell_interrupt_duration", "", 3000)]
 		public static int SPELL_INTERRUPT_DURATION;
-
-		[ServerProperty("spells", "spell_interrupt_recast", "", 2000)]
-		public static int SPELL_INTERRUPT_RECAST;
 
 		[ServerProperty("spells", "spell_interrupt_again", "", 100)]
 		public static int SPELL_INTERRUPT_AGAIN;

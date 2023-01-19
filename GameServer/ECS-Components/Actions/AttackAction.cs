@@ -61,36 +61,23 @@ namespace DOL.GS
             if (time <= StartTime)
                 return;
 
+            if (!CheckAttackState())
+                return;
+
             if (!CanPerformAction())
             {
                 _interval = TICK_INTERVAL_FOR_NON_ATTACK;
                 return;
             }
 
-            _attackData = _owner.TempProperties.getProperty<object>(LAST_ATTACK_DATA, null) as AttackData;
             _weapon = _owner.ActiveWeapon;
             _leftWeapon = _owner.Inventory?.GetItem(eInventorySlot.LeftHandWeapon);
             _effectiveness = _owner.Effectiveness;
 
-            if (!_attackComponent.AttackState)
-            {
-                _owner.TempProperties.removeProperty(LAST_ATTACK_DATA);
-
-                if (_attackData?.Target != null)
-                    _attackData.Target.attackComponent.RemoveAttacker(_owner);
-
-                _attackComponent.attackAction?.CleanUp();
-                return;
-            }
-
-            if (_owner.ObjectState != eObjectState.Active)
-            {
-                _attackComponent.attackAction?.CleanUp();
-                return;
-            }
-
             if (_owner.ActiveWeaponSlot != eActiveWeaponSlot.Distance)
             {
+                _target = _owner.TargetObject;
+
                 if (PrepareMeleeAttack())
                 {
                     PerformMeleeAttack();
@@ -99,6 +86,9 @@ namespace DOL.GS
             }
             else
             {
+                // Must be done here because RangeAttackTarget is changed in CheckRangeAttackState.
+                _target = _owner.rangeAttackComponent.Target;
+
                 if (PrepareRangedAttack())
                 {
                     PerformRangedAttack();
@@ -116,6 +106,30 @@ namespace DOL.GS
 
         public virtual void OnAimInterrupt(GameObject attacker) { }
 
+        protected virtual bool CheckAttackState()
+        {
+            if (_owner.ObjectState != eObjectState.Active)
+            {
+                _attackComponent.attackAction?.CleanUp();
+                return false;
+            }
+
+            _attackData = _owner.TempProperties.getProperty<object>(LAST_ATTACK_DATA, null) as AttackData;
+
+            if (!_attackComponent.AttackState)
+            {
+                _owner.TempProperties.removeProperty(LAST_ATTACK_DATA);
+
+                if (_attackData?.Target != null)
+                    _attackData.Target.attackComponent.RemoveAttacker(_owner);
+
+                _attackComponent.attackAction.CleanUp();
+                return false;
+            }
+
+            return true;
+        }
+
         protected virtual bool CanPerformAction()
         {
             if (_owner.IsMezzed || _owner.IsStunned)
@@ -132,8 +146,6 @@ namespace DOL.GS
 
         protected virtual bool PrepareMeleeAttack()
         {
-            _target = _owner.TargetObject;
-
             if (_attackData != null && _attackData.AttackResult is eAttackResult.Fumbled)
             {
                 // Skip this attack if the last one fumbled.
@@ -178,8 +190,6 @@ namespace DOL.GS
 
         protected virtual bool PrepareRangedAttack()
         {
-            // Must be done here because RangeAttackTarget is changed in CheckRangeAttackState.
-            _target = _owner.rangeAttackComponent.Target;
             eCheckRangeAttackStateResult rangeCheckresult = _owner.rangeAttackComponent.CheckRangeAttackState(_target);
 
             if (rangeCheckresult == eCheckRangeAttackStateResult.Hold)
@@ -382,7 +392,7 @@ namespace DOL.GS
             return true;
         }
 
-        public void CleanUp()
+        public virtual void CleanUp()
         {
             _owner.attackComponent.attackAction = null;
         }
