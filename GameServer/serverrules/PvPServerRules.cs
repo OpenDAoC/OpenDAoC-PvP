@@ -71,7 +71,7 @@ namespace DOL.GS.ServerRules
 		/// <summary>
 		/// Level at which players safety flag has no effect
 		/// </summary>
-		protected int m_safetyLevel = 10;
+		protected int m_safetyLevel = 5;
 
 		/// <summary>
 		/// Invoked on Player death and deals out
