@@ -5415,6 +5415,9 @@ namespace DOL.GS
         /// <param name="notify"></param>
         public override void GainExperience(eXPSource xpSource, long expTotal, long expCampBonus, long expGroupBonus, long expOutpostBonus, long atlasBonus, bool sendMessage, bool allowMultiply, bool notify)
         {
+            if (Level >= Properties.MAX_PLAYER_LEVEL)
+                return;
+            
             if (!GainXP && expTotal > 0)
                 return;
 

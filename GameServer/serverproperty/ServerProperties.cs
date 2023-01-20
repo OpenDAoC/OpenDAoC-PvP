@@ -2955,6 +2955,9 @@ namespace DOL.GS.ServerProperties
         
         [ServerProperty("titan", "disable_SI_teleports", "Should teleports/zone points for Shrouded Isles be disabled?", false)]
         public static bool DISABLE_SI_TELEPORT;
+        
+        [ServerProperty("atlas", "max_player_level", "Maximum player level", 50)]
+        public static int MAX_PLAYER_LEVEL;
 
 		#endregion
 		public static IDictionary<string, object> AllCurrentProperties
