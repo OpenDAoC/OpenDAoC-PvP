@@ -8440,7 +8440,7 @@ namespace DOL.GS
 
             var message = $"{victimName} was just killed by {killerName}";
             
-            var victimGuild = Guild != null ? "<" + Guild.Name + ">" : "No Guild";
+            var victimGuild = Guild != null ? "<" + Guild.Name + ">" : "";
             
             var killerGuild = killer.Guild != null ? "<" + killer.Guild.Name + ">" : "";
             
