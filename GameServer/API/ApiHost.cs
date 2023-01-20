@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using DOL.GS.ServerProperties;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -19,7 +20,7 @@ namespace DOL.GS.API
 
             var contentRoot = Directory.GetCurrentDirectory();
 
-            // builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(9874));
+            builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(Properties.ATLAS_API_PORT));
 
             var webRoot = Path.Combine(contentRoot, "wwwroot", "docs");
 

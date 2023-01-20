@@ -2807,6 +2807,12 @@ namespace DOL.GS.ServerProperties
 		public static bool ATLAS_API;
 		
 		/// <summary>
+		/// Enables the API endpoints on the port :5000
+		/// </summary>
+		[ServerProperty("atlas", "atlas_api_port", "API server listening port", 5000)]
+		public static int ATLAS_API_PORT;
+		
+		/// <summary>
 		/// Maximum number of charges allowed
 		/// </summary>
 		[ServerProperty("atlas", "max_charge_items", "Maximum number of charges allowed", 2)]
