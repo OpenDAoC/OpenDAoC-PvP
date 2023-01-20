@@ -80,6 +80,12 @@ namespace DOL.GS.Commands
         {
             if (IsSpammingCommand(client.Player, "hardcore"))
                 return;
+
+            if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP)
+            {
+                client.Out.SendMessage("Hardcore mode is currently disabled on Titan.", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
+                return;
+            }
             
             if (client.Player.RealmPoints > 0)
                 return;

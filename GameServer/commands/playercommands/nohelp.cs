@@ -24,6 +24,12 @@ namespace DOL.GS.Commands
 			if (IsSpammingCommand(client.Player, "nohelp"))
 				return;
 			
+			if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP)
+			{
+				client.Out.SendMessage("Solo mode is currently disabled on Titan.", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
+				return;
+			}
+			
 			if (!client.Player.NoHelp)
 			{
 				if (client.Player.RealmPoints > 0)
