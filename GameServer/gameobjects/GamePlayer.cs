@@ -13893,7 +13893,7 @@ namespace DOL.GS
             this.TempProperties.setProperty(REALM_LOYALTY_KEY, lastRealmLoyaltyUpdateTime);
             this.TempProperties.setProperty(CURRENT_LOYALTY_KEY, loyaltyDays);
             
-            AccountXMoney MoneyForRealm = DOLDB<AccountXMoney>.SelectObject(DB.Column("AccountID").IsEqualTo(this.Client.Account.ObjectId).And(DB.Column("Realm").IsEqualTo(this.Realm)));
+            AccountXMoney MoneyForRealm = DOLDB<AccountXMoney>.SelectObject(DB.Column("AccountID").IsEqualTo(this.Client.Account.ObjectId));
 
             if (MoneyForRealm == null)
             {
@@ -13905,35 +13905,32 @@ namespace DOL.GS
 
                 AccountXMoney newMoney = new AccountXMoney();
                 newMoney.AccountId = this.Client.Account.ObjectId;
-                newMoney.Realm = (int)this.Realm;
+                newMoney.Realm = 1;
                 
                 foreach (DOLCharacters character in this.Client.Account.Characters) // cycling through their toons
                 {
-                    if ((eRealm)character.Realm == this.Realm) // account money is realm bound
+                    realmCopper += character.Copper;
+                    realmSilver += character.Silver;
+                    realmGold += character.Gold;
+                    realmPlatinum += character.Platinum;
+                    realmMithril += character.Mithril;
+
+                    if (realmCopper > 100)
                     {
-                        realmCopper += character.Copper;
-                        realmSilver += character.Silver;
-                        realmGold += character.Gold;
-                        realmPlatinum += character.Platinum;
-                        realmMithril += character.Mithril;
-
-                        if (realmCopper > 100)
-                        {
-                            realmCopper -= 100;
-                            realmSilver += 1;
-                        }
-                        if (realmSilver > 100)
-                        {
-                            realmSilver -= 100;
-                            realmGold += 1;
-                        }
-                        if (realmGold > 1000)
-                        {
-                            realmGold -= 1000;
-                            realmPlatinum += 1;
-                        }
-
+                        realmCopper -= 100;
+                        realmSilver += 1;
                     }
+                    if (realmSilver > 100)
+                    {
+                        realmSilver -= 100;
+                        realmGold += 1;
+                    }
+                    if (realmGold > 1000)
+                    {
+                        realmGold -= 1000;
+                        realmPlatinum += 1;
+                    }
+                        
                 }
                 
                 newMoney.Copper = realmCopper;
@@ -14155,13 +14152,13 @@ namespace DOL.GS
                     GameServer.Database.SaveObject(realmLoyalty);
                 }
 
-                AccountXMoney MoneyForRealm = DOLDB<AccountXMoney>.SelectObject(DB.Column("AccountID").IsEqualTo(this.Client.Account.ObjectId).And(DB.Column("Realm").IsEqualTo(this.Realm)));
+                AccountXMoney MoneyForRealm = DOLDB<AccountXMoney>.SelectObject(DB.Column("AccountID").IsEqualTo(this.Client.Account.ObjectId));
 
                 if (MoneyForRealm == null)
                 {
                     AccountXMoney newMoney = new AccountXMoney();
                     newMoney.AccountId = this.Client.Account.ObjectId;
-                    newMoney.Realm = (int)this.Realm;
+                    newMoney.Realm = 1;
                     newMoney.Copper = DBCharacter.Copper;
                     newMoney.Silver = DBCharacter.Silver;
                     newMoney.Gold = DBCharacter.Gold;
