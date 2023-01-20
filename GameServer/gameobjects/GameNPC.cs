@@ -5236,8 +5236,6 @@ namespace DOL.GS
 					m_spellTargetLosChecks.TryRemove(element.Key, out _);
 			}
 
-			int a = 55;
-
 			if (IsIncapacitated)
 				return false;
 
@@ -5290,9 +5288,12 @@ namespace DOL.GS
 			else
 			{
 				if (m_spellTargetLosChecks.TryAdd(TargetObject, new Tuple<Spell, SpellLine, long>(spellToCast, line, GameLoop.GameLoopTime)))
+				{
 					LosChecker.Out.SendCheckLOS(this, TargetObject, new CheckLOSResponse(StartSpellAttackCheckLOS));
+					return true;
+				}
 				
-				return true;
+				return false;
 			}
 		}
 
