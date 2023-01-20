@@ -5021,7 +5021,7 @@ namespace DOL.GS
         {
             get
             {
-                return base.ExperienceValue * 4;
+                return base.ExperienceValue * 20;
             }
         }
 
