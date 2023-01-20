@@ -8429,6 +8429,47 @@ namespace DOL.GS
             client.SendToDiscord(discordMessage);
         }
         
+        public void BroadcastPVPDeathOnDiscord(GamePlayer killer)
+        {
+            int color = 0;
+
+            string victimName = Name + " " + LastName;
+            
+            string killerName = killer.Name + " " + killer.LastName;
+
+            var message = $"{victimName} was just killed by {killerName}";
+            
+            var victimGuild = Guild != null ? "<" + Guild.Name + ">" : "No Guild";
+            
+            var killerGuild = killer.Guild != null ? "<" + killer.Guild.Name + ">" : "";
+            
+            var victimString = $"{victimName} ({Level} {CharacterClass.Name})";
+            var killerString = $"{killerName} ({killer.Level} {killer.CharacterClass.Name})";
+            
+            var client = new DiscordWebhookClient(Properties.DISCORD_PVP_WEBHOOK_ID);
+
+            // Create your DiscordMessage with all parameters of your message.
+            var discordMessage = new DiscordMessage(
+                "",
+                username: "Atlas Obituary",
+                avatarUrl: "https://cdn.discordapp.com/attachments/919610633656369214/928726197645496382/skull2.png",
+                tts: false,
+                embeds: new[]
+                {
+                    new DiscordMessageEmbed(
+                        color: color,
+                        description: message,
+                        fields: new[]
+                        {
+                            new DiscordMessageEmbedField("Victim", $"{victimString} \n  {victimGuild}", true),
+                            new DiscordMessageEmbedField("Killer", $"{killerString} \n  {killerGuild}", true),
+                        }
+                    )
+                }
+            );
+            client.SendToDiscord(discordMessage);
+        }
+        
 
         /// <summary>
         /// Called when the player dies
@@ -8574,6 +8615,11 @@ namespace DOL.GS
                     if (player == this)
                         player.Out.SendMessage(playerMessage, messageType, eChatLoc.CL_SystemWindow);
                     else player.Out.SendMessage(publicMessage, messageType, eChatLoc.CL_SystemWindow);
+            }
+            
+            if (Properties.DISCORD_ACTIVE && !string.IsNullOrEmpty(Properties.DISCORD_PVP_WEBHOOK_ID))
+            {
+                BroadcastPVPDeathOnDiscord(killer as GamePlayer);
             }
 
             //Dead ppl. dismount ...

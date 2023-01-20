@@ -447,6 +447,12 @@ namespace DOL.GS.ServerProperties
 		public static string DISCORD_RVR_WEBHOOK_ID;
 		
 		/// <summary>
+		/// PvPWebhook ID
+		/// </summary>
+		[ServerProperty("atlas", "Discord_PVP_Webhook_ID", "The id of the webhook for PVP kills updates", "")]
+		public static string DISCORD_PVP_WEBHOOK_ID;
+
+		/// <summary>
 		/// RegionWebhook ID
 		/// </summary>
 		[ServerProperty("atlas", "Discord_REGION_Webhook_ID", "The id of the webhook for region chats", "")]
