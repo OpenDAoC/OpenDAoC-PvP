@@ -119,14 +119,17 @@ namespace DOL.GS.Scripts
                       "Albion:\n" +
                       "[Castle Sauvage] in Camelot Hills or \n" +
                       "[Snowdonia Fortress] in Black Mtns. North\n" +
+                      "[Cotswold] village \n" +
                       "[Avalon Marsh] wharf\n" +
                       "Midgard:\n" +
                       "[Svasud Faste] in Mularn or \n" +
                       "[Vindsaul Faste] in West Svealand,\n" +
+                      "[Mularn] village \n" +
                       "[Gotar] beach near Nailiten\n" +
                       "Hibernia: \n" +
                       "[Druim Ligen] in Connacht or \n" +
                       "[Druim Cain] in Bri Leith\n" +
+                      "[Mag Mell] village \n" + 
                       "[Shannon Estuary] watchtower\n\n" +
                       (ServerProperties.Properties.DISABLE_SI_TELEPORT ? "" : "[Gothwaite Harbor]  [Aegirhamn]  or [Domnann] in the [Shrouded Isles]\n") +
                       //"[Gothwaite Harbor]  [Aegirhamn]  or [Domnann] in the [Shrouded Isles]\n" +
