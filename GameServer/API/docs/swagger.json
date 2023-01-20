@@ -579,7 +579,7 @@
   },
   "servers": [
     {
-      "url": "https://api.atlasfreeshard.com/"
+      "url": "https://titan.api.atlasfreeshard.com/"
     }
   ],
   "components": {
