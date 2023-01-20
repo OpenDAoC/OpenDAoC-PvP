@@ -87,6 +87,7 @@ namespace DOL.GS
         private PlayerDeck _randomNumberDeck;
 
         public Dictionary<GameLiving, long> PlayerAttackImmunityDict = new Dictionary<GameLiving, long>();
+        public Dictionary<GamePlayer, long> RecentlyKilledPlayers = new Dictionary<GamePlayer, long>();
 
         #region Client/Character/VariousFlags
 

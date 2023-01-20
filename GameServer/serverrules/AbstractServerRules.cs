@@ -1804,12 +1804,16 @@ namespace DOL.GS.ServerRules
 			}
 
 			killedPlayer.LastDeathRealmPoints = 0;
+			List<GamePlayer> playersToSkip = new List<GamePlayer>();
+			
 			// "player has been killed recently"
 			if (killedPlayer.DeathTime + Properties.RP_WORTH_SECONDS > killedPlayer.PlayedTime)
 			{
 				foreach (DictionaryEntry gainer in XPGainerList)
 				{
-					if (gainer.Key is GamePlayer player)
+					GamePlayer player = gainer.Key as GamePlayer;
+					
+					if (player != null)
 					{
 						player.Out.SendMessage(killedPlayer.Name + " has been killed recently and is worth no realm points!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
 						player.Out.SendMessage(killedPlayer.Name + " has been killed recently and is worth no experience!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
@@ -1825,7 +1829,7 @@ namespace DOL.GS.ServerRules
 			foreach (DictionaryEntry de in XPGainerList)
 			{
 				GameObject obj = (GameObject)de.Key;
-				if (obj is GamePlayer)
+				if (obj is GamePlayer player)
 				{
 					//If a gameplayer with privlevel > 1 attacked the
 					//mob, then the players won't gain xp ...
@@ -1833,6 +1837,29 @@ namespace DOL.GS.ServerRules
 					{
 						dealNoXP = true;
 						break;
+					}
+					
+					if (player?.RecentlyKilledPlayers != null)
+					{
+						//if we've killed them before, check when
+						if (player.RecentlyKilledPlayers.ContainsKey(killedPlayer))
+						{
+							//if it was over 5 minutes ago, set a new kill track
+							if (player.RecentlyKilledPlayers[killedPlayer]  + 5 * 60 * 1000 <= GameLoop.GameLoopTime) //5 * 60 * 1000 = 5 mins
+							{
+								player.RecentlyKilledPlayers[killedPlayer] = GameLoop.GameLoopTime;
+							}
+							else
+							{
+								//if it was recently, skip them for xp
+								playersToSkip.Add(player);
+							}
+						}
+						else
+						{
+							//if not killed before, start tracking kill
+							player.RecentlyKilledPlayers.Add(killedPlayer, GameLoop.GameLoopTime);
+						}
 					}
 				}
 				totalDamage += (float)de.Value;
@@ -1894,6 +1921,14 @@ namespace DOL.GS.ServerRules
 				if (living == null) continue;
 				if (living.ObjectState != GameObject.eObjectState.Active) continue;
 				if (expGainPlayer == null) continue;
+				
+				
+				if (playersToSkip.Contains(expGainPlayer))
+				{
+					expGainPlayer?.Out.SendMessage($"You have killed {killedPlayer.Name} within the last 5 minutes and gain no reward.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					continue;
+				}
+				
 				/*
 				 * http://www.camelotherald.com/more/2289.shtml
 				 * Dead players will now continue to retain and receive their realm point credit
