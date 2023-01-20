@@ -15,9 +15,8 @@ namespace DOL.GS.Scripts
     public class BattlegroundEventLoot : GameNPC
 	{
 		private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-		private static int freeLootLevelOffset = 2;
-		private int playerRewardOffset = 6;
-		
+		private static int freeLootLevelOffset = 1;
+
 		private static string _currencyID = ServerProperties.Properties.ALT_CURRENCY_ID;
         public override bool AddToWorld()
         {
@@ -90,11 +89,12 @@ namespace DOL.GS.Scripts
 
 				GenerateArmor(player);
 
+				/*
 				DOLCharactersXCustomParam charFreeEventEquip = new DOLCharactersXCustomParam();
 				charFreeEventEquip.DOLCharactersObjectId = player.ObjectId;
 				charFreeEventEquip.KeyName = customKey;
 				charFreeEventEquip.Value = "1";
-				GameServer.Database.AddObject(charFreeEventEquip);
+				GameServer.Database.AddObject(charFreeEventEquip);*/
 			} 
 			else if (str.Equals("weapons")) {
 				
@@ -109,11 +109,12 @@ namespace DOL.GS.Scripts
 				
 				GenerateWeaponsForClass(charclass, player);
 				
+				/*
 				DOLCharactersXCustomParam charFreeEventEquip = new DOLCharactersXCustomParam();
 				charFreeEventEquip.DOLCharactersObjectId = player.ObjectId;
 				charFreeEventEquip.KeyName = customKey;
 				charFreeEventEquip.Value = "1";
-				GameServer.Database.AddObject(charFreeEventEquip);
+				GameServer.Database.AddObject(charFreeEventEquip);*/
 			} else if (str.Equals("gems"))
             {
 				const string customKey = "free_event_gems";
@@ -171,11 +172,12 @@ namespace DOL.GS.Scripts
 				
 				
 
+				/*
 				DOLCharactersXCustomParam charFreeEventEquip = new DOLCharactersXCustomParam();
 				charFreeEventEquip.DOLCharactersObjectId = player.ObjectId;
 				charFreeEventEquip.KeyName = customKey;
 				charFreeEventEquip.Value = "1";
-				GameServer.Database.AddObject(charFreeEventEquip);
+				GameServer.Database.AddObject(charFreeEventEquip);*/
 			}
 			else if (str.Equals("coin"))
 			{
@@ -189,7 +191,7 @@ namespace DOL.GS.Scripts
 					player.Out.SendMessage("Sorry " + player.Name + ", I don't have enough money left to give you more.\n\n Go fight for your Realm to get some!", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
 					return false;
 				}
-			
+				
 				AccountXCustomParam charFreeEventMoney = new AccountXCustomParam();
 				charFreeEventMoney.Name = player.Client.Account.Name;
 				charFreeEventMoney.KeyName = customKey;
@@ -200,7 +202,7 @@ namespace DOL.GS.Scripts
 			}
 			else if (str.Equals("Atlas Orbs"))
 			{
-
+				return false;
 				const string orbKey = "free_orbs";
 				string customKey = orbKey + player.Realm;
 				var hasFreeOrbs = DOLDB<AccountXCustomParam>.SelectObject(DB.Column("Name").IsEqualTo(player.Client.Account.Name).And(DB.Column("KeyName").IsEqualTo(customKey)));
@@ -234,7 +236,7 @@ namespace DOL.GS.Scripts
 			return true;
 		}
 
-        private static eObjectType GetArmorType(eRealm realm, eCharacterClass charClass, byte level) {
+        protected static eObjectType GetArmorType(eRealm realm, eCharacterClass charClass, byte level) {
             switch (realm) {
 				case eRealm.Albion:
 					return GeneratedUniqueItem.GetAlbionArmorType(charClass, level);
