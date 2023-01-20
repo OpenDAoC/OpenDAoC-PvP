@@ -13,7 +13,7 @@ info:
     <h3>0.2.1</h3>
     Added `/news/all`, `/news/type/{type}` and `/news/realm/{realm}` endpoints<br>
   version: 0.2.2
-  title: AtlasAPI
+  title: TitanAPI
   termsOfService: https://www.atlasfreeshard.com
   license:
     name: Apache 2.0

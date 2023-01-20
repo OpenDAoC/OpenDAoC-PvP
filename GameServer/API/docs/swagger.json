@@ -3,7 +3,7 @@
   "info": {
     "description": "Use this documentation to navigate the available Atlas APIs <br> <h2>Recent Changes</h2> <h3>0.2.2</h3> Added `/player/{playerName}/tradeskills` endpoint to show the detailed players tradeskills<br> Added `/player/{playerName}/specs` endpoint to show the detailed player specializations and RAs<br> <h3>0.2.1</h3> Added `/news/all`, `/news/type/{type}` and `/news/realm/{realm}` endpoints<br>",
     "version": "0.2.2",
-    "title": "AtlasAPI",
+    "title": "TitanAPI",
     "termsOfService": "https://www.atlasfreeshard.com",
     "license": {
       "name": "Apache 2.0",
