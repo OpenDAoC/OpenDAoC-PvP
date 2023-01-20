@@ -537,8 +537,8 @@ namespace DOL.AI.Brain
 							break;
 						}
 			}
-			bool checkingSpellLOS = Body.TempProperties.getProperty<Spell>("LOSCURRENTSPELL", null) != null; //Check if pet is checking for spell LoS
-			return casted || Body.IsCasting || checkingSpellLOS;
+
+			return casted || Body.IsCasting;
 		}
 
 		/// <summary>
@@ -623,7 +623,6 @@ namespace DOL.AI.Brain
                 case (byte)eSpellType.Bladeturn:
                     {
 						string target = spell.Target.ToUpper();
-						spell.IsSpec = true;
 
 						// Buff self
 						if (!LivingHasEffect(Body, spell))

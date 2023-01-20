@@ -1,13 +1,6 @@
-using DOL.GS;
-using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
-using DOL.GS.PropertyCalc;
 using DOL.GS.Spells;
-using DOL.GS.Styles;
 using DOL.Language;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace DOL.GS
 {
@@ -43,6 +36,11 @@ namespace DOL.GS
         {
             this.owner = owner;
         }
+
+        public void Tick(long time)
+        {
+            spellHandler?.Tick(time);
+        }
           
         public bool StartCastSpell(Spell spell, SpellLine line, ISpellCastingAbilityHandler spellCastingAbilityHandler = null)
         {
@@ -65,14 +63,9 @@ namespace DOL.GS
             // Abilities that cast spells (i.e. Realm Abilities such as Volcanic Pillar) need to set this so the associated ability gets disabled if the cast is successful.
             m_newSpellHandler.Ability = spellCastingAbilityHandler;
 
-            if (spellHandler != null && spellHandler.Spell != null && !spellHandler.SpellLine.IsBaseLine)
-            {
-                spellHandler.Spell.IsSpec = true;
-            }
-            if (instantSpellHandler != null && instantSpellHandler.Spell != null && !instantSpellHandler.SpellLine.IsBaseLine)
-            {
-                instantSpellHandler.Spell.IsSpec = true;
-            }
+            // Performing the first tick here since 'SpellHandler' relies on the owner's target, which may get cleared before 'Tick()' is called by the casting service.
+            // Eventually, the target should instead be passed to 'ScriptMgr.CreateSpellHandler()', and SpellHandler.Tick() use it instead of 'GameLiving.TargetObject'.
+            m_newSpellHandler.Tick(GameLoop.GameLoopTime);
 
             if (spellHandler != null)
             {
@@ -135,16 +128,6 @@ namespace DOL.GS
                     necroPetHandler.SetConAndHitsBonus();
             }
 
-            if (m_newSpellHandler.Spell.IsInstantCast)
-                instantSpellHandler.Tick(GameLoop.GameLoopTime);
-            // Commenting out the spellHandler.Tick as the CastingService should call that for every server tick. 
-            // We were having the occasional issue of double spell casts when both Ticks happened at same time
-            else
-            {
-                if (owner is GameEpicBoss)
-                    spellHandler.Tick(GameLoop.GameLoopTime);
-            }
-
             return true;
         }
 
@@ -200,6 +183,5 @@ namespace DOL.GS
             }
             return true;
         }
-
     }
 }
