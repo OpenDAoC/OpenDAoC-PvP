@@ -12216,7 +12216,9 @@ namespace DOL.GS
             }
             if (attackComponent.AttackState)
             {
-                if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
+                var snap = this.effectListComponent.GetAllEffects()
+                    .FirstOrDefault(x => x.GetType() == typeof(SnapshotECSEffect));
+                if (ActiveWeaponSlot == eActiveWeaponSlot.Distance && snap == null)
                 {
                     string attackTypeMsg = (ActiveWeapon.Object_Type == (int)eObjectType.Thrown ? "throw" : "shot");
                     Out.SendMessage("You move and interrupt your " + attackTypeMsg + "!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);

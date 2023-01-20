@@ -129,6 +129,7 @@ namespace DOL.GS
         RapidFire,
         SureShot,
         TrueShot,
+        Snapshot,
         Stag,
         TripleWield,
         Camouflage,
