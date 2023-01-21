@@ -8434,13 +8434,13 @@ namespace DOL.GS
         {
             if (killer == null) return;
             
-            int color = 0;
+            var color = 0;
 
-            string victimName = Name + " " + LastName;
+            var victimName = Name + " " + LastName;
             
-            string killerName = killer.Name + " " + killer.LastName;
+            var killerName = killer.Name + " " + killer.LastName;
 
-            var message = $"{victimName} was just killed by {killerName}";
+            var message = $"{victimName} was just killed by {killerName} in {CurrentZone.Description}";
             
             var victimGuild = Guild != null ? "<" + Guild.Name + ">" : "";
             
@@ -8466,6 +8466,7 @@ namespace DOL.GS
                         {
                             new DiscordMessageEmbedField("Victim", $"{victimString} \n  {victimGuild}", true),
                             new DiscordMessageEmbedField("Killer", $"{killerString} \n  {killerGuild}", true),
+                            new DiscordMessageEmbedField("Location", $"{CurrentZone.Description} ({CurrentRegion.Description})", false)
                         }
                     )
                 }
@@ -8533,16 +8534,16 @@ namespace DOL.GS
                 else
                 {
                     messageDistance = 0;
-                    if (realmDeath)
-                    {
+                    // if (realmDeath)
+                    // {
                         playerMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledByLocation", GetName(0, true), killer.GetName(1, false), location);
                         publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledByLocation", GetName(0, true), killer.GetName(1, false), location);
-                    }
-                    else
-                    {
-                        playerMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
-                        publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
-                    }
+                    // }
+                    // else
+                    // {
+                    //     playerMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
+                    //     publicMessage = LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.Die.KilledBy", GetName(0, true), killer.GetName(1, false));
+                    // }
 
                     //if(ConquestService.ConquestManager.IsPlayerInConquestArea(this) && killer.Realm != this.Realm && killer is GamePlayer && killer != this.DuelTarget)
                         //ConquestService.ConquestManager.AddContributor(this);
