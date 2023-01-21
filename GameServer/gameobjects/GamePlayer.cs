@@ -8432,6 +8432,8 @@ namespace DOL.GS
         
         public void BroadcastPVPDeathOnDiscord(GamePlayer killer)
         {
+            if (killer == null) return;
+            
             int color = 0;
 
             string victimName = Name + " " + LastName;
