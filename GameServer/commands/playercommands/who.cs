@@ -288,7 +288,7 @@ namespace DOL.GS.Commands
 					log.Error("no character class spec in who commandhandler for player " + player.Name);
 			}
 
-			if (player.CurrentZone != null && GameServer.Instance.Configuration.ServerType != eGameServerType.GST_PvP)
+			if (player.CurrentZone != null && GameServer.Instance.Configuration.ServerType != eGameServerType.GST_PvP || player.CurrentZone != null && player.Client.Account.PrivLevel > 1)
 			{
 				// If '/who' source is a Player and target is plvl 3, do not return zone description (only return for Admins if Admin is source)
 				if (source.Account.PrivLevel == (uint)ePrivLevel.Player && player.Client.Account.PrivLevel == (uint)ePrivLevel.Player || source.Account.PrivLevel == (uint)ePrivLevel.Admin)
