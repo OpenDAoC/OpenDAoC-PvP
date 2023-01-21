@@ -53,7 +53,7 @@ namespace DOL.GS.Commands
 			int result = 0;
 			GameClient targetClient;
 			
-			if (client.Account.PrivLevel > 1)
+			if (client.Account.PrivLevel > 1 || GameServer.Instance.Configuration.ServerType != eGameServerType.GST_Normal)
 			{
 				targetClient = WorldMgr.GuessClientByPlayerNameAndRealm(targetName, 0, false, out result);
 			}
