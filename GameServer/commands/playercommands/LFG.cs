@@ -66,7 +66,7 @@ namespace DOL.GS.Commands
         {
             foreach (GameClient c in WorldMgr.GetAllPlayingClients())
             {
-                if (player.Realm == c.Player.Realm || c.Account.PrivLevel > 1)
+                if (player.Realm == c.Player.Realm || c.Account.PrivLevel > 1 || GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP)
                 {
                     if (c.Player.SerializedIgnoreList.Contains(player.Name)) continue;
                     c.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "Scripts.Players.LFG.Message", player.Name + " (" + player.Level + ", " + player.CharacterClass.Name + ")", message), eChatType.CT_LFG, eChatLoc.CL_ChatWindow);
