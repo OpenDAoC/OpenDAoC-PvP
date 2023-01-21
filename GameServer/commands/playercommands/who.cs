@@ -54,7 +54,7 @@ namespace DOL.GS.Commands
 {
 	[CmdAttribute(
 		"&who",
-		ePrivLevel.GM,
+		ePrivLevel.Player,
 		"Shows who is online",
 		//help:
 		//"/who  Can be modified with [playername], [class], [#] level, [location], [##] [##] level range",
