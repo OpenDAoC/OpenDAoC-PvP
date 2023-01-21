@@ -424,8 +424,8 @@ namespace DOL.GS.ServerRules
 
 			if (quiet == false) MessageToLiving(source, target.GetName(0, true) + " is not a member of your realm!");
 
-			if (source is GameNPC && target is GamePlayer)
-				return true;
+			// if (source is GameNPC && target is GamePlayer)
+			// 	return true;
 			
 			return false;
 		}
