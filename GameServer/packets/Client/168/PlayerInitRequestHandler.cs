@@ -125,6 +125,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 				}
 				else if (player.Level == 1)
 				{
+					player.Out.SendMessage(ServerProperties.Properties.STARTING_MSG, eChatType.CT_System, eChatLoc.CL_SystemWindow);
 					player.Out.SendStarterHelp();
 				}
 				

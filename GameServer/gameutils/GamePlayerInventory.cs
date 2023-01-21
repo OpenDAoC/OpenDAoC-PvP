@@ -616,6 +616,14 @@ namespace DOL.GS
 				m_items.TryGetValue(fromSlot, out fromItem);
 				m_items.TryGetValue(toSlot, out toItem);
 
+				if ((fromItem is GameInventoryItemLootable && toItem is not GameInventoryItemLootable)
+				    || toItem is GameInventoryItemLootable && fromItem is not GameInventoryItemLootable)
+				{
+					m_player.Out.SendMessage("These items are not stackable!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+					m_player.Out.SendInventorySlotsUpdate(null);
+					return false;
+				}
+				
 				updatedSlots = new eInventorySlot[2];
 				updatedSlots[0] = fromSlot;
 				updatedSlots[1] = toSlot;
