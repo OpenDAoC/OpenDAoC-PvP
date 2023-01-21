@@ -389,6 +389,7 @@ namespace DOL.GS
                                                 dropChance /= 2;
                                                 break;
                                         }
+                                        Console.WriteLine($"XP item chance: {dropChance} mobCon: {mobCon}");
 
                                         loot.AddRandom(dropChance, drop);
                                     }
@@ -439,7 +440,7 @@ namespace DOL.GS
 
                                         var numRelics = RelicMgr.GetRelicCount(player.Guild);
                                         int dropChance = Convert.ToInt32(ServerProperties.Properties.BASE_XP_ITEM_DROPCHANCE);
-                                        dropChance = 100; //TODO remove me
+                                        //dropChance = 100; //TODO remove me
                                         if (numRelics > 0) dropChance += 5 * numRelics; //5% drop chance bonus per relic
                                         double mobCon = playerToUse.GetConLevel(mob);
                                         switch (mobCon)
@@ -463,6 +464,7 @@ namespace DOL.GS
                                                 dropChance /= 2;
                                                 break;
                                         }
+                                        Console.WriteLine($"XP item chance: {dropChance} mobCon: {mobCon}");
 
                                         if (dropChance >= 100)
                                         {
