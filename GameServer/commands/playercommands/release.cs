@@ -59,6 +59,13 @@
 	            return;
             }
             
+            if (args.Length > 1 && args[1].ToLower() == "bind")
+            {
+	           
+	            client.Player.Release(eReleaseType.Normal, false);
+	            return;
+            }
+            
 			client.Player.Release(eReleaseType.City, false);
 		}
 	}
