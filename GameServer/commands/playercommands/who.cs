@@ -88,15 +88,7 @@ namespace DOL.GS.Commands
 		{
 			if (IsSpammingCommand(client.Player, "who") && client.Account.PrivLevel == 1)
 				return;
-
-			// Command may only be used by Titan team members
-			if (client.Account.PrivLevel == 1)
-			{
-				// Message: "That command has been disabled for this server."
-				ChatUtil.SendGMMessage(client, "PlayerCommands.Removed.Err.NoUse", null);
-				return;
-			}
-
+			
 			int listStart = 1;
 			ArrayList filters = null;
 			ArrayList clientsList = new ArrayList();
@@ -277,10 +269,6 @@ namespace DOL.GS.Commands
 				result.Append(">");
 			}
 
-			// simle format for PvP
-			if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP && PrivLevel == 1)
-				return result.ToString();
-
 			result.Append(" the Level ");
 			result.Append(player.Level);
 			if (player.ClassNameFlag)
@@ -300,7 +288,7 @@ namespace DOL.GS.Commands
 					log.Error("no character class spec in who commandhandler for player " + player.Name);
 			}
 
-			if (player.CurrentZone != null)
+			if (player.CurrentZone != null && GameServer.Instance.Configuration.ServerType != eGameServerType.GST_PvP)
 			{
 				// If '/who' source is a Player and target is plvl 3, do not return zone description (only return for Admins if Admin is source)
 				if (source.Account.PrivLevel == (uint)ePrivLevel.Player && player.Client.Account.PrivLevel == (uint)ePrivLevel.Player || source.Account.PrivLevel == (uint)ePrivLevel.Admin)
