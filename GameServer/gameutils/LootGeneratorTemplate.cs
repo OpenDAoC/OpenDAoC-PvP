@@ -389,7 +389,7 @@ namespace DOL.GS
                                                 dropChance /= 2;
                                                 break;
                                         }
-                                        Console.WriteLine($"XP item chance: {dropChance} mobCon: {mobCon}");
+                                        //Console.WriteLine($"XP item chance: {dropChance} mobCon: {mobCon}");
 
                                         loot.AddRandom(dropChance, drop);
                                     }
@@ -464,7 +464,7 @@ namespace DOL.GS
                                                 dropChance /= 2;
                                                 break;
                                         }
-                                        Console.WriteLine($"XP item chance: {dropChance} mobCon: {mobCon}");
+                                        // Console.WriteLine($"XP item chance: {dropChance} mobCon: {mobCon}");
 
                                         if (dropChance >= 100)
                                         {
