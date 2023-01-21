@@ -45,7 +45,7 @@ namespace DOL.GS
             player.Out.SendMessage(message, eChatType.CT_Say, eChatLoc.CL_PopupWindow);
 
             ItemTemplate vaultItem = GetDummyVaultItem(player);
-            AccountVault vault = new AccountVault(player, this, player.Client.Account.Name + "_" + player.Realm.ToString(), 0, vaultItem);
+            AccountVault vault = new AccountVault(player, this, player.Client.Account.Name, 0, vaultItem);
             player.ActiveInventoryObject = vault;
             player.Out.SendInventoryItemsUpdate(vault.GetClientInventory(player), eInventoryWindowType.HouseVault);
             return true;
@@ -63,13 +63,13 @@ namespace DOL.GS
 
             if (text == "first")
             {
-                AccountVault vault = new AccountVault(player, this, player.Client.Account.Name + "_" + player.Realm.ToString(), 0, GetDummyVaultItem(player));
+                AccountVault vault = new AccountVault(player, this, player.Client.Account.Name, 0, GetDummyVaultItem(player));
                 player.ActiveInventoryObject = vault;
                 player.Out.SendInventoryItemsUpdate(vault.GetClientInventory(player), eInventoryWindowType.HouseVault);
             }
             else if (text == "second")
             {
-                AccountVault vault = new AccountVault(player, this, player.Client.Account.Name + "_" + player.Realm.ToString(), 1, GetDummyVaultItem(player));
+                AccountVault vault = new AccountVault(player, this, player.Client.Account.Name, 1, GetDummyVaultItem(player));
                 player.ActiveInventoryObject = vault;
                 player.Out.SendInventoryItemsUpdate(vault.GetClientInventory(player), eInventoryWindowType.HouseVault);
             }
@@ -82,7 +82,7 @@ namespace DOL.GS
             ItemTemplate vaultItem = new ItemTemplate();
             vaultItem.Object_Type = (int)eObjectType.HouseVault;
             vaultItem.Name = "Vault";
-            vaultItem.ObjectId = player.Client.Account.Name + "_" + player.Realm.ToString();
+            vaultItem.ObjectId = player.Client.Account.Name;
             switch (player.Realm)
             {
                 case eRealm.Albion:
@@ -137,7 +137,7 @@ namespace DOL.GS
             dbh.HouseNumber = player.ObjectID;
             dbh.Name = "Account Vault";
             //dbh.Name = "Maison de " + player.Name;
-            dbh.OwnerID = player.Client.Account.Name + "_" + player.Realm.ToString();
+            dbh.OwnerID = player.Client.Account.Name;
             dbh.RegionID = player.CurrentRegionID;
             CurrentHouse = new House(dbh);
         }
@@ -367,7 +367,7 @@ namespace DOL.GS
 
         public override string GetOwner(GamePlayer player)
         {
-            return player.Client.Account.Name + "_" + player.Realm.ToString();
+            return player.Client.Account.Name;
         }
 
         /// <summary>
