@@ -119,7 +119,7 @@ namespace DOL.GS.Scripts
                       "Albion:\n" +
                       "[Castle Sauvage] in Camelot Hills or \n" +
                       "[Snowdonia Fortress] in Black Mtns. North\n" +
-                      "[Cotswold] village \n" +
+                      "[Cotswold Village] \n" +
                       "[Avalon Marsh] wharf\n" +
                       "Midgard:\n" +
                       "[Svasud Faste] in Mularn or \n" +
