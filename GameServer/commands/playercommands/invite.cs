@@ -17,6 +17,7 @@
  *
  */
 
+using System.Collections.Generic;
 using System.Linq;
 using DOL.GS.PacketHandler;
 
@@ -71,10 +72,21 @@ namespace DOL.GS.Commands
 			}
 			else
 			{ // Inviting by name
-				var matchingClients = WorldMgr.GetClientByPlayerNameAndRealm(targetName, client.Player.Realm, true);
+
+				IList<GameClient> matchingClients = new List<GameClient>();
+				
+				if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP)
+				{
+					matchingClients.Add(WorldMgr.GetClientByPlayerName(targetName, true, true));
+				}
+				else
+				{
+					matchingClients = WorldMgr.GetClientByPlayerNameAndRealm(targetName, client.Player.Realm, true);
+				}
+				
 				GameClient targetClient = null;
 
-				if (matchingClients != null)
+				if (matchingClients != null && matchingClients.Count > 0)
 				{
 					if (matchingClients.Count == 1) targetClient = matchingClients.First();
 					else
