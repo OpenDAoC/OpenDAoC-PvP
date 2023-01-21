@@ -16064,6 +16064,14 @@ namespace DOL.GS
             return true;
         }
 
+        public void StopInvulnerabilityTimer()
+        {
+            if (m_invulnerabilityTimer == null) return;
+            
+            m_invulnerabilityTick = 0;
+            m_invulnerabilityTimer.Stop();
+        }
+
         /// <summary>
         /// True if player is invulnerable to any attack
         /// </summary>

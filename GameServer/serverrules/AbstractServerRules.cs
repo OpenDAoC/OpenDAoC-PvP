@@ -391,13 +391,13 @@ namespace DOL.GS.ServerRules
 			if (defender is GameNPC)
 				if ((((GameNPC)defender).Flags & GameNPC.eFlags.PEACE) != 0)
 					return false;
+			
 			// Players can't attack mobs while they have immunity
 			if (playerAttacker != null && defender != null)
 			{
 				if ((defender is GameNPC) && (playerAttacker.IsInvulnerableToAttack))
 				{
-					if (quiet == false) MessageToLiving(attacker, "You can't attack until your PvP invulnerability timer wears off!");
-					return false;
+					playerAttacker.StopInvulnerabilityTimer();
 				}
 			}
 
