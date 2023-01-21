@@ -910,6 +910,7 @@ namespace DOL.GS
 					//"The Lute of the Initiate must be readied in the 2-handed slot!"
 				}
 
+				/*
 				if (valid && (fromItem.Realm > 0 && (int) m_player.Realm != fromItem.Realm) &&
 				    (toSlot >= eInventorySlot.HorseArmor && toSlot <= eInventorySlot.HorseBarding))
 				{
@@ -919,7 +920,7 @@ namespace DOL.GS
 					}
 
 					m_player.Out.SendMessage("You cannot put an item from this realm!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-				}
+				}*/
 
 				if (valid && toItem != null)
 				{

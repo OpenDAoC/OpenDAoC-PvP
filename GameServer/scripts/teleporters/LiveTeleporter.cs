@@ -438,6 +438,7 @@ namespace DOL.GS.Scripts
                 case "gwyntell":
                 case "caer diogel":
                 case "caer sidi":
+                case "camelot":
                     return 1;
                 case "mularn":
                 case "fort veldon":
@@ -453,6 +454,7 @@ namespace DOL.GS.Scripts
                 case "vindsaul faste":
                 case "gotar":
                 case "tuscaran glacier":
+                case "jordheim":
                     return 2;
                 case "mag mell":
                 case "tir na mbeo":
@@ -468,6 +470,7 @@ namespace DOL.GS.Scripts
                 case "druim cain":
                 case "shannon estuary":
                 case "galladoria":
+                case "tir na nog":
                     return 3;
                     break;
                 default: return 0;
