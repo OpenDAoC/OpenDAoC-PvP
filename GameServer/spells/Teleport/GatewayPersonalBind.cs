@@ -74,7 +74,13 @@ namespace DOL.GS.Spells
 			}
 			if(player.CurrentRegion.ID == 497 && player.Client.Account.PrivLevel == 1)
             {
-				player.Out.SendMessage("You can't use Bind Stone in Jail!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				player.Out.SendMessage("You can't use your bindstone in Jail!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				return false;
+			}
+
+			if (player.CurrentRegion.IsDungeon)
+			{
+				player.Out.SendMessage("You can't use bindstones within a dungeon.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				return false;
 			}
 
