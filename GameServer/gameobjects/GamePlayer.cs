@@ -2828,7 +2828,7 @@ namespace DOL.GS
             var rate = EnduranceRegenerationPeriod;
             if (IsSitting)
                 rate /= 2;
-            return 500 + Util.Random(rate);
+            return rate;
         }
 
         /// <summary>
