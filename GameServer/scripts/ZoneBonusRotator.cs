@@ -401,6 +401,12 @@ namespace DOL.GS.Scripts
                     currentMidgardZone = midRandoZone[Util.Random(midRandoZone.Count - 1)];
                     break;
             }
+            
+            foreach (GameClient client in WorldMgr.GetAllClients())
+            {
+                TellClient(client);
+            }
+            
         }
 
         private static void GetNextPvEZones()
@@ -569,8 +575,7 @@ namespace DOL.GS.Scripts
         private static void TellClient(GameClient client)
         {
             // client.Out.SendMessage(GetText(), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-            client.Out.SendMessage("Bonus zones updated.", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-
+            client.Out.SendMessage("Titanic power pulses through the realms, and new zones surge with power!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
         }
 
         private static string GetLevelRange(int zoneID)
