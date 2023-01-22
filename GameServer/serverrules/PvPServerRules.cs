@@ -254,9 +254,9 @@ namespace DOL.GS.ServerRules
 					
 					if(playerAttacker.PlayerAttackImmunityDict.ContainsKey(playerDefender))
 					{
-						if (playerAttacker.PlayerAttackImmunityDict[playerDefender] + 600000 > GameLoop.GameLoopTime)
+						if (playerAttacker.PlayerAttackImmunityDict[playerDefender] + 60000 > GameLoop.GameLoopTime)
 						{
-							var seconds = (playerAttacker.PlayerAttackImmunityDict[playerDefender] + 600000 - GameLoop.GameLoopTime) / 1000;
+							var seconds = (playerAttacker.PlayerAttackImmunityDict[playerDefender] + 60000 - GameLoop.GameLoopTime) / 1000;
 							if (quiet == false) MessageToLiving(attacker, $"You have recently grouped with this player and cannot attack them for another {seconds} seconds.");
 							return false;	
 						}
