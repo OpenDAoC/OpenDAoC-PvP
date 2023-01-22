@@ -902,12 +902,15 @@ namespace DOL.GS
                     if (GameLoop.GameLoopTime - LastAttackTickPvE > 40000)
                         LastAttackTickPvE = GameLoop.GameLoopTime - 40000;
                 }
+                
+                if (this.CurrentRegionID is 10 or 101 or 201 && GameLoop.GameLoopTime - LastAttackTickPvE > 5000)
+                    LastAttackTickPvE = GameLoop.GameLoopTime - 55000;
+                
                 long lastCombatAction = LastAttackTick;
                 if (lastCombatAction < LastAttackedByEnemyTick)
                 {
                     lastCombatAction = LastAttackedByEnemyTick;
                 }
-
                 return (int)(60 - (GameLoop.GameLoopTime - lastCombatAction + 500) / 1000); // 500 is for rounding
             }
             set
