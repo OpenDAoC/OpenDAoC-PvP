@@ -166,6 +166,13 @@ namespace DOL.GS.Scripts
             currentZones.Add(currentMidgardZoneSI);
             return currentZones;
         }
+
+        public static bool IsActiveZone(int zoneId)
+        {
+            return currentAlbionZone == zoneId ||
+                   currentHiberniaZone == zoneId ||
+                   currentMidgardZone == zoneId;
+        }
         
         public static void PlayerEntered(DOLEvent e, object sender, EventArgs arguments)
         {
@@ -182,11 +189,11 @@ namespace DOL.GS.Scripts
             GetNextSurgeZone();
 
             albDBZone = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentAlbionZone));
-            albDBZoneSI = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentAlbionZoneSI));
+            //albDBZoneSI = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentAlbionZoneSI));
             midDBZone = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentMidgardZone));
-            midDBZoneSI = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentMidgardZoneSI));
+            //midDBZoneSI = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentMidgardZoneSI));
             hibDBZone = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentHiberniaZone));
-            hibDBZoneSI = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentHiberniaZoneSI));
+            //hibDBZoneSI = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentHiberniaZoneSI));
 
             // Set XP Bonuses in DB
             albDBZone.Experience = PvEExperienceBonusAmount;
@@ -338,11 +345,11 @@ namespace DOL.GS.Scripts
                     currentHiberniaZone = hibHighZones[Util.Random(hibHighZones.Count - 1)];
                     break;
                 case 3:
-                    var midHighZones = midgardHighZones.Where(x => midgardHighZones.Contains(x)).ToList();
+                    var midHighZones = midgardHighZones.Where(x => midgardClassicZones.Contains(x)).ToList();
                     currentMidgardZone = midHighZones[Util.Random(midHighZones.Count - 1)];
                     break;
             }
-            
+
             //second zone guarantees a low level zone
             switch (realms[1])
             {
@@ -355,7 +362,7 @@ namespace DOL.GS.Scripts
                     currentHiberniaZone = hibLowZones[Util.Random(hibLowZones.Count - 1)];
                     break;
                 case 3:
-                    var midLowZones = midgardLowbieZones.Where(x => midgardHighZones.Contains(x)).ToList();
+                    var midLowZones = midgardLowbieZones.Where(x => midgardClassicZones.Contains(x)).ToList();
                     currentMidgardZone = midLowZones[Util.Random(midLowZones.Count - 1)];
                     break;
             }
@@ -401,7 +408,7 @@ namespace DOL.GS.Scripts
                     currentMidgardZone = midRandoZone[Util.Random(midRandoZone.Count - 1)];
                     break;
             }
-            
+
             foreach (GameClient client in WorldMgr.GetAllClients())
             {
                 TellClient(client);
@@ -665,28 +672,28 @@ namespace DOL.GS.Scripts
         {
             List<string> temp = new List<string>();
             
-            temp.Add("");
             temp.Add("Titanic power surges through the following zones:");
+            //temp.Add("");
             //temp.Add("Current Albion Zones: ");
-            temp.Add("Albion: " + albDBZone.Name + " " + GetLevelRange(albDBZone.ZoneID) + " (XP +" + albDBZone.Experience + "%)");
+            temp.Add("Albion: " + albDBZone.Name + " " + GetLevelRange(albDBZone.ZoneID));
             //temp.Add("SI Zone: " + albDBZoneSI.Name + " " + GetLevelRange(albDBZoneSI.ZoneID) + " (XP +" + albDBZoneSI.Experience + "%)");
-            temp.Add("");
+            //temp.Add("");
             //temp.Add("Current Midgard Zones: ");
-            temp.Add("Midgard: " + midDBZone.Name + " " + GetLevelRange(midDBZone.ZoneID) + " (XP +" + midDBZone.Experience + "%)");
+            temp.Add("Midgard: " + midDBZone.Name + " " + GetLevelRange(midDBZone.ZoneID));
             //temp.Add("SI Zone: " + midDBZoneSI.Name + " " + GetLevelRange(midDBZoneSI.ZoneID) + " (XP +" + midDBZoneSI.Experience + "%)");
-            temp.Add("");
+            //temp.Add("");
             //temp.Add("Current Hibernia Zones: ");
-            temp.Add("Hibernia: " + hibDBZone.Name + " " + GetLevelRange(hibDBZone.ZoneID) + " (XP +" + hibDBZone.Experience + "%)");
+            temp.Add("Hibernia: " + hibDBZone.Name + " " + GetLevelRange(hibDBZone.ZoneID));
             //temp.Add("SI Zone: " + hibDBZoneSI.Name + " " + GetLevelRange(hibDBZoneSI.ZoneID) + " (XP +" + hibDBZoneSI.Experience + "%)");
 
             temp.Add("");
             temp.Add("Bonus XP: " + PvEExperienceBonusAmount + "%");
             temp.Add("Bonus RP: " + RPBonusAmount + "%");
             temp.Add("Bonus BP: " + BPBonusAmount + "%");
-            temp.Add("NPCs have a small chance to drop XP items");
+            temp.Add("Bonus chance for XP items from NPC kills");
             //var rvr = _lastRvRChangeTick + RvRTimer - GameLoop.GameLoopTime;
             //temp.Add("RvR Time Remaining: " + TimeSpan.FromMilliseconds(rvr).Hours + "h " + TimeSpan.FromMilliseconds(rvr).Minutes + "m " + TimeSpan.FromMilliseconds(rvr).Seconds + "s");
-            
+            temp.Add("");
             var pve = _lastPvEChangeTick + PvETimer - GameLoop.GameLoopTime;
             temp.Add("Time Remaining: " + TimeSpan.FromMilliseconds(pve).Hours + "h " + TimeSpan.FromMilliseconds(pve).Minutes + "m " + TimeSpan.FromMilliseconds(pve).Seconds + "s");
 
@@ -695,8 +702,8 @@ namespace DOL.GS.Scripts
 
             temp.Add("Permanent Bonuses:");
             temp.Add("All Dungeons: 25%");
-            temp.Add("RvR Dungeons: 50%");
-            temp.Add("Darkness Falls: 75%");
+            //temp.Add("RvR Dungeons: 50%");
+            //temp.Add("Darkness Falls: 75%");
             
             temp.Add("");
             temp.Add("");
