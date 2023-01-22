@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DOL.Database;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DOL.GS {
 
@@ -13,7 +14,7 @@ namespace DOL.GS {
     public class ROGMobGenerator : LootGeneratorBase {
 
         //base chance in %
-        public static ushort BASE_ROG_CHANCE = 14;
+        public static ushort BASE_ROG_CHANCE = (ushort) ServerProperties.Properties.ROG_BASE_DROP_CHANCE;
 
 
         /// <summary>
@@ -201,13 +202,50 @@ namespace DOL.GS {
             ItemTemplate item = null;
                 
                 
-            GeneratedUniqueItem tmp = AtlasROGManager.GenerateMonsterLootROG(player.Realm, classForLoot, lootLevel, player.CurrentZone?.IsOF ?? false);
+            GeneratedUniqueItem tmp = AtlasROGManager.GenerateMonsterLootROG(GetRealmFromClass(classForLoot), classForLoot, lootLevel, player.CurrentZone?.IsOF ?? false);
             tmp.GenerateItemQuality(killedcon);
             //tmp.CapUtility(mob.Level + 1);
             item = tmp;
             item.MaxCount = 1;
 
             return item;
+        }
+        
+        private eRealm GetRealmFromClass(eCharacterClass charClass){
+            switch (charClass)
+            {
+                 case eCharacterClass.Armsman:
+                 case eCharacterClass.Paladin:
+                 case eCharacterClass.Mercenary:
+                 case eCharacterClass.Reaver:
+                 case eCharacterClass.Cleric:
+                 case eCharacterClass.Friar:
+                 case eCharacterClass.Infiltrator:
+                 case eCharacterClass.Minstrel:
+                 case eCharacterClass.Scout:
+                 case eCharacterClass.Cabalist:
+                 case eCharacterClass.Sorcerer:
+                 case eCharacterClass.Theurgist:
+                 case eCharacterClass.Wizard:
+                 case eCharacterClass.Necromancer:
+                     return eRealm.Albion;
+                 case eCharacterClass.Bard:
+                 case eCharacterClass.Druid:
+                 case eCharacterClass.Warden:
+                 case eCharacterClass.Blademaster:
+                 case eCharacterClass.Hero:
+                 case eCharacterClass.Champion:
+                 case eCharacterClass.Eldritch:
+                 case eCharacterClass.Enchanter:
+                 case eCharacterClass.Mentalist:
+                 case eCharacterClass.Nightshade:
+                 case eCharacterClass.Ranger:
+                 case eCharacterClass.Animist:
+                 case eCharacterClass.Valewalker:
+                     return eRealm.Hibernia;
+                 default:
+                     return eRealm.Midgard;
+            }
         }
 
         private eCharacterClass GetRandomClassFromGroup(Group group)
