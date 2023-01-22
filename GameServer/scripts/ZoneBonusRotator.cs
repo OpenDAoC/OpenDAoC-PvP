@@ -582,7 +582,7 @@ namespace DOL.GS.Scripts
         private static void TellClient(GameClient client)
         {
             // client.Out.SendMessage(GetText(), eChatType.CT_Important, eChatLoc.CL_SystemWindow);
-            client.Out.SendMessage("Titanic power pulses through the realms, and new zones surge with power!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
+            client.Out.SendMessage("Titanic power pulses through the realms and new zones surge with power!", eChatType.CT_Important, eChatLoc.CL_SystemWindow);
         }
 
         private static string GetLevelRange(int zoneID)
