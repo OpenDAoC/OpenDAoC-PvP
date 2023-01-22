@@ -101,11 +101,9 @@ namespace DOL.GS {
                         chance -= 3;
                     
                     if (mob.Level < 5)
-                    {
-                        chance += 75;
-                    }
-                    else if (mob.Level < 10)
-                        chance += (100 - mob.Level * 10);
+                        chance += 75 - 15 * mob.Level;
+                    
+                    
 
                     int numDrops = 0;
                     //roll for an item for each player in the group
@@ -152,11 +150,7 @@ namespace DOL.GS {
                     ItemTemplate item = null;
 
                     if (mob.Level < 5)
-                    {
-                        chance += 75;
-                    }
-                    else if (mob.Level < 10)
-                        chance += (100 - mob.Level * 10);
+                        chance += 75 - 15 * mob.Level;
 
                     if (Util.Chance(chance))
                     {
