@@ -680,10 +680,6 @@ namespace DOL.AI.Brain
 				// Aggro must be generated before calling Think(), otherwise the mob won't attack immediately.
 				// Ensure that non damaging hits still result in the mob reacting.
 				ConvertDamageToAggroAmount(ad.Attacker, Math.Max(1, damage));
-
-				if (this is CommanderBrain commanderBrain)
-					commanderBrain.Attack(ad.Attacker);
-
 				FSM.SetCurrentState(eFSMStateType.AGGRO);
 				FSM.Think();
 			}
@@ -695,10 +691,12 @@ namespace DOL.AI.Brain
 		/// Converts a damage amount into an aggro amount, and splits it between the pet and its owner if necessary.
 		/// Assumes damage to be superior than 0.
 		/// </summary>
-		private void ConvertDamageToAggroAmount(GameLiving attacker, int damage)
+		protected virtual void ConvertDamageToAggroAmount(GameLiving attacker, int damage)
 		{
-			if (attacker is GameNPC NpcAttacker && NpcAttacker.Brain is IControlledBrain controlledBrain)
+			if (attacker is GameNPC NpcAttacker && NpcAttacker.Brain is ControlledNpcBrain controlledBrain)
 			{
+                damage = controlledBrain.ModifyDamageWithTaunt(damage);
+
 				// Aggro is split between the owner (25%) and their pet (75%).
 				// We must ensure that the same amount of aggro isn't added for both, otherwise an out-of-combat mob could attack the owner when their pet engages it.
 				// This is one relatively fast way of doing it, and should (?) work as long as the split isn't 50 / 50.
@@ -1191,18 +1189,7 @@ namespace DOL.AI.Brain
             }
 
             if (Body.TargetObject != null && (spell.Duration == 0 || (Body.TargetObject is GameLiving living && LivingHasEffect(living, spell) == false)))
-            {
                 casted = Body.CastSpell(spell, m_mobSpellLine);
-
-                if (casted && spell.CastTime > 0)
-                {
-                    if (Body.IsMoving)
-                        Body.StopFollowing();
-
-                    if (Body.TargetObject != Body)
-                        Body.TurnTo(Body.TargetObject);
-                }
-            }
 
             Body.TargetObject = lastTarget;
 

@@ -872,18 +872,7 @@ namespace DOL.AI.Brain
 			}
 
 			if (Body.TargetObject != null)
-            {
 				casted = Body.CastSpell(spell, m_mobSpellLine, true);
-
-				if (casted && spell.CastTime > 0)
-				{
-					if (Body.IsMoving)
-						Body.StopFollowing();
-
-					if (Body.TargetObject != Body)
-						Body.TurnTo(Body.TargetObject);
-				}
-			}
 
 			return casted;
 		}
@@ -1146,10 +1135,9 @@ namespace DOL.AI.Brain
 			AttackMostWanted();
 		}
 
-		protected override void BringFriends(GameLiving trigger)
-		{
-			// don't
-		}
+		public virtual int ModifyDamageWithTaunt(int damage) { return damage; }
+
+		protected override void BringFriends(GameLiving trigger) { }
 
 		public override bool CheckFormation(ref int x, ref int y, ref int z) { return false; }
 
