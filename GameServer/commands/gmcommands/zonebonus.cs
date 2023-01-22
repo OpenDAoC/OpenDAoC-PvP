@@ -15,7 +15,7 @@ namespace DOL.GS.Commands
 		{
 			ZoneBonusRotator.GetZones();
 			ZoneBonusRotator.UpdatePvEZones();
-			ZoneBonusRotator.UpdateRvRZones();
+			//ZoneBonusRotator.UpdateRvRZones();
 		}
 	}
 }

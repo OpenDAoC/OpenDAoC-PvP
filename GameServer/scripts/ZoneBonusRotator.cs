@@ -66,17 +66,17 @@ namespace DOL.GS.Scripts
         private static SimpleScheduler scheduler = new SimpleScheduler();
 
         public static int PvETimer { get; set; }
-        public static int RvRTimer { get; set; } 
+        //public static int RvRTimer { get; set; } 
         public static int PvEExperienceBonusAmount { get; set; }
-        public static int RvRExperienceBonusAmount { get; set; } 
+        //public static int RvRExperienceBonusAmount { get; set; } 
         public static int RPBonusAmount { get; set; } 
         public static int BPBonusAmount { get; set; }
 
         public static long _lastRvRChangeTick { get; set; }
         public static long _lastPvEChangeTick { get; set; }
 
-        private static int RvRTickTime = 2700;
-        private static int PvETickTime = 7200;
+        //private static int RvRTickTime = 2700;
+        private static int PvETickTime = 3600;
 
         [GameServerStartedEvent]
         public static void OnServerStart(DOLEvent e, object sender, EventArgs arguments)
@@ -99,15 +99,15 @@ namespace DOL.GS.Scripts
         public static void Initialize()
         {
             PvETimer = PvETickTime * 1000;
-            RvRTimer = RvRTickTime * 1000;
+            //RvRTimer = RvRTickTime * 1000;
             PvEExperienceBonusAmount = 50;
-            RvRExperienceBonusAmount = 100;
+            //RvRExperienceBonusAmount = 100;
             RPBonusAmount = 20;
             BPBonusAmount = 25;
 
             GetZones();
             UpdatePvEZones();
-            UpdateRvRZones();
+            //UpdateRvRZones();
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace DOL.GS.Scripts
 
             ClearPvEZones();
 
-            GetNextPvEZones();
+            GetNextSurgeZone();
 
             albDBZone = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentAlbionZone));
             albDBZoneSI = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(currentAlbionZoneSI));
@@ -224,7 +224,6 @@ namespace DOL.GS.Scripts
 
         internal static int UpdateRvRZones()
         {
-
             _lastRvRChangeTick = GameLoop.GameLoopTime;
 
             ClearRvRZones();
@@ -238,12 +237,12 @@ namespace DOL.GS.Scripts
                     foreach (int i in albionRvRZones)
                     {
                         Zones zone = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(i));
-                        zone.Experience = RvRExperienceBonusAmount;
+                        //zone.Experience = RvRExperienceBonusAmount;
                         zone.Realmpoints = RPBonusAmount;
                         zone.Bountypoints = BPBonusAmount;
                         GameServer.Database.SaveObject(zone);
 
-                        WorldMgr.Zones[(ushort)i].BonusExperience = RvRExperienceBonusAmount;
+                        //WorldMgr.Zones[(ushort)i].BonusExperience = RvRExperienceBonusAmount;
                         WorldMgr.Zones[(ushort)i].BonusRealmpoints = RPBonusAmount;
                         WorldMgr.Zones[(ushort)i].BonusBountypoints = BPBonusAmount;
                     }
@@ -252,12 +251,12 @@ namespace DOL.GS.Scripts
                     foreach (int i in midgardRvRZones)
                     {
                         Zones zone = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(i));
-                        zone.Experience = RvRExperienceBonusAmount;
+                        //zone.Experience = RvRExperienceBonusAmount;
                         zone.Realmpoints = RPBonusAmount;
                         zone.Bountypoints = BPBonusAmount;
                         GameServer.Database.SaveObject(zone);
 
-                        WorldMgr.Zones[(ushort)i].BonusExperience = RvRExperienceBonusAmount;
+                        //WorldMgr.Zones[(ushort)i].BonusExperience = RvRExperienceBonusAmount;
                         WorldMgr.Zones[(ushort)i].BonusRealmpoints = RPBonusAmount;
                         WorldMgr.Zones[(ushort)i].BonusBountypoints = BPBonusAmount;
                     }
@@ -266,12 +265,12 @@ namespace DOL.GS.Scripts
                     foreach (int i in hiberniaRvRZones)
                     {
                         Zones zone = DOLDB<Zones>.SelectObject(DB.Column("ZoneID").IsEqualTo(i));
-                        zone.Experience = RvRExperienceBonusAmount;
+                        //zone.Experience = RvRExperienceBonusAmount;
                         zone.Realmpoints = RPBonusAmount;
                         zone.Bountypoints = BPBonusAmount;
                         GameServer.Database.SaveObject(zone);
 
-                        WorldMgr.Zones[(ushort)i].BonusExperience = RvRExperienceBonusAmount;
+                        //WorldMgr.Zones[(ushort)i].BonusExperience = RvRExperienceBonusAmount;
                         WorldMgr.Zones[(ushort)i].BonusRealmpoints = RPBonusAmount;
                         WorldMgr.Zones[(ushort)i].BonusBountypoints = BPBonusAmount;
                     }
@@ -283,7 +282,7 @@ namespace DOL.GS.Scripts
                 TellClient(client);
             }
 
-            scheduler.Start(UpdateRvRZones, RvRTimer);
+            //scheduler.Start(UpdateRvRZones, RvRTimer);
 
             
 
@@ -313,6 +312,95 @@ namespace DOL.GS.Scripts
                 rand = Util.Random(2) + 1;
             }
             currentRvRRealm = rand;
+        }
+
+        private static void GetNextSurgeZone()
+        {
+            int[] realms = {1, 2, 3};
+            
+            //quick shuffle of the realms for randomization
+            Random rand = new Random();
+            for (int i = realms.Length - 1; i >= 1; i--)
+            {
+                int j = rand.Next(i + 1);
+                (realms[j], realms[i]) = (realms[i], realms[j]);
+            }
+
+            //first zone gets set as our high level zone
+            switch (realms[0])
+            {
+                case 1:
+                    var albHighZones = albionHighZones.Where(x => albionClassicZones.Contains(x)).ToList();
+                    currentAlbionZone = albHighZones[Util.Random(albHighZones.Count - 1)];
+                    break;
+                case 2:
+                    var hibHighZones = hiberniaHighZones.Where(x => hiberniaClassicZones.Contains(x)).ToList();
+                    currentHiberniaZone = hibHighZones[Util.Random(hibHighZones.Count - 1)];
+                    break;
+                case 3:
+                    var midHighZones = midgardHighZones.Where(x => midgardHighZones.Contains(x)).ToList();
+                    currentMidgardZone = midHighZones[Util.Random(midHighZones.Count - 1)];
+                    break;
+            }
+            
+            //second zone guarantees a low level zone
+            switch (realms[1])
+            {
+                case 1:
+                    var albLowZones = albionLowbieZones.Where(x => albionClassicZones.Contains(x)).ToList();
+                    currentAlbionZone = albLowZones[Util.Random(albLowZones.Count - 1)];
+                    break;
+                case 2:
+                    var hibLowZones = hiberniaLowbieZones.Where(x => hiberniaClassicZones.Contains(x)).ToList();
+                    currentHiberniaZone = hibLowZones[Util.Random(hibLowZones.Count - 1)];
+                    break;
+                case 3:
+                    var midLowZones = midgardLowbieZones.Where(x => midgardHighZones.Contains(x)).ToList();
+                    currentMidgardZone = midLowZones[Util.Random(midLowZones.Count - 1)];
+                    break;
+            }
+
+            //last realm has random chance of being either
+            bool useLow = Util.Chance(50);
+            switch (realms[2])
+            {
+                case 1:
+                    List<int> albRandoZone = null;
+                    if (useLow)
+                    {
+                        albRandoZone = albionLowbieZones.Where(x => albionClassicZones.Contains(x)).ToList();
+                    }
+                    else
+                    {
+                        albRandoZone = albionHighZones.Where(x => albionClassicZones.Contains(x)).ToList();
+                    }
+                    currentAlbionZone = albRandoZone[Util.Random(albRandoZone.Count - 1)];
+                    break;
+                case 2:
+                    List<int> hibRandoZone = null;
+                    if (useLow)
+                    {
+                        hibRandoZone = hiberniaLowbieZones.Where(x => hiberniaClassicZones.Contains(x)).ToList();
+                    }
+                    else
+                    {
+                        hibRandoZone = hiberniaHighZones.Where(x => hiberniaClassicZones.Contains(x)).ToList();
+                    }
+                    currentHiberniaZone = hibRandoZone[Util.Random(hibRandoZone.Count - 1)];
+                    break;
+                case 3:
+                    List<int> midRandoZone = null;
+                    if (useLow)
+                    {
+                        midRandoZone = midgardLowbieZones.Where(x => midgardClassicZones.Contains(x)).ToList();
+                    }
+                    else
+                    {
+                        midRandoZone = midgardHighZones.Where(x => midgardClassicZones.Contains(x)).ToList();
+                    }
+                    currentMidgardZone = midRandoZone[Util.Random(midRandoZone.Count - 1)];
+                    break;
+            }
         }
 
         private static void GetNextPvEZones()
@@ -348,7 +436,7 @@ namespace DOL.GS.Scripts
             else
                 currentHiberniaZoneSI = 0;
             */
-            bool UseClassicAlbHighZones = Util.Chance(50);
+            bool UseClassicAlbHighZones = Util.Chance(33);
             if (UseClassicAlbHighZones)
             {
                 List<int> ClassicHighZones = new List<int>();
@@ -571,42 +659,31 @@ namespace DOL.GS.Scripts
         public static List<string> GetTextList()
         {
             List<string> temp = new List<string>();
-            string realm = "";
-            switch (currentRvRRealm)
-            {
-                case 1:
-                    realm = "Albion";
-                    break;
-                case 2:
-                    realm = "Midgard";
-                    break;
-                case 3:
-                    realm = "Hibernia";
-                    break;
-            }
-            temp.Add("Current OF Bonus Region: " + realm);
-            temp.Add("Bonus RP: " + RPBonusAmount + "%");
-            temp.Add("Bonus BP: " + BPBonusAmount + "%");
-            temp.Add("Bonus XP: " + RvRExperienceBonusAmount + "%");
+            
             temp.Add("");
-            temp.Add("Current Albion Zones: ");
-            temp.Add("Classic Zone: " + albDBZone.Name + " " + GetLevelRange(albDBZone.ZoneID) + " (XP +" + albDBZone.Experience + "%)");
-            temp.Add("SI Zone: " + albDBZoneSI.Name + " " + GetLevelRange(albDBZoneSI.ZoneID) + " (XP +" + albDBZoneSI.Experience + "%)");
+            temp.Add("Titanic power surges through the following zones:");
+            //temp.Add("Current Albion Zones: ");
+            temp.Add("Albion: " + albDBZone.Name + " " + GetLevelRange(albDBZone.ZoneID) + " (XP +" + albDBZone.Experience + "%)");
+            //temp.Add("SI Zone: " + albDBZoneSI.Name + " " + GetLevelRange(albDBZoneSI.ZoneID) + " (XP +" + albDBZoneSI.Experience + "%)");
             temp.Add("");
-            temp.Add("Current Midgard Zones: ");
-            temp.Add("Classic Zone: " + midDBZone.Name + " " + GetLevelRange(midDBZone.ZoneID) + " (XP +" + midDBZone.Experience + "%)");
-            temp.Add("SI Zone: " + midDBZoneSI.Name + " " + GetLevelRange(midDBZoneSI.ZoneID) + " (XP +" + midDBZoneSI.Experience + "%)");
+            //temp.Add("Current Midgard Zones: ");
+            temp.Add("Midgard: " + midDBZone.Name + " " + GetLevelRange(midDBZone.ZoneID) + " (XP +" + midDBZone.Experience + "%)");
+            //temp.Add("SI Zone: " + midDBZoneSI.Name + " " + GetLevelRange(midDBZoneSI.ZoneID) + " (XP +" + midDBZoneSI.Experience + "%)");
             temp.Add("");
-            temp.Add("Current Hibernia Zones: ");
-            temp.Add("Classic Zone: " + hibDBZone.Name + " " + GetLevelRange(hibDBZone.ZoneID) + " (XP +" + hibDBZone.Experience + "%)");
-            temp.Add("SI Zone: " + hibDBZoneSI.Name + " " + GetLevelRange(hibDBZoneSI.ZoneID) + " (XP +" + hibDBZoneSI.Experience + "%)");
+            //temp.Add("Current Hibernia Zones: ");
+            temp.Add("Hibernia: " + hibDBZone.Name + " " + GetLevelRange(hibDBZone.ZoneID) + " (XP +" + hibDBZone.Experience + "%)");
+            //temp.Add("SI Zone: " + hibDBZoneSI.Name + " " + GetLevelRange(hibDBZoneSI.ZoneID) + " (XP +" + hibDBZoneSI.Experience + "%)");
 
             temp.Add("");
-            var rvr = _lastRvRChangeTick + RvRTimer - GameLoop.GameLoopTime;
-            temp.Add("RvR Time Remaining: " + TimeSpan.FromMilliseconds(rvr).Hours + "h " + TimeSpan.FromMilliseconds(rvr).Minutes + "m " + TimeSpan.FromMilliseconds(rvr).Seconds + "s");
+            temp.Add("Bonus XP: " + PvEExperienceBonusAmount + "%");
+            temp.Add("Bonus RP: " + RPBonusAmount + "%");
+            temp.Add("Bonus BP: " + BPBonusAmount + "%");
+            temp.Add("NPCs have a small chance to drop XP items");
+            //var rvr = _lastRvRChangeTick + RvRTimer - GameLoop.GameLoopTime;
+            //temp.Add("RvR Time Remaining: " + TimeSpan.FromMilliseconds(rvr).Hours + "h " + TimeSpan.FromMilliseconds(rvr).Minutes + "m " + TimeSpan.FromMilliseconds(rvr).Seconds + "s");
             
             var pve = _lastPvEChangeTick + PvETimer - GameLoop.GameLoopTime;
-            temp.Add("PvE Time Remaining: " + TimeSpan.FromMilliseconds(pve).Hours + "h " + TimeSpan.FromMilliseconds(pve).Minutes + "m " + TimeSpan.FromMilliseconds(pve).Seconds + "s");
+            temp.Add("Time Remaining: " + TimeSpan.FromMilliseconds(pve).Hours + "h " + TimeSpan.FromMilliseconds(pve).Minutes + "m " + TimeSpan.FromMilliseconds(pve).Seconds + "s");
 
             temp.Add("");
             temp.Add("");
