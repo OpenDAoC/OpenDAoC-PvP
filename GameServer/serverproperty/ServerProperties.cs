@@ -2971,7 +2971,12 @@ namespace DOL.GS.ServerProperties
         [ServerProperty("atlas", "max_player_level", "Maximum player level", 50)]
         public static int MAX_PLAYER_LEVEL;
 
+        [ServerProperty("rog", "rog_base_drop_chance", "Base drop chance in % for ROG loot", 14)]
+        public static int ROG_BASE_DROP_CHANCE;
+
 		#endregion
+		
+		
 		public static IDictionary<string, object> AllCurrentProperties
 		{
 			get; private set;
