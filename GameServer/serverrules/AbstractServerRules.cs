@@ -1373,7 +1373,7 @@ namespace DOL.GS.ServerRules
 			{
 				int scalingFactor = (int) Math.Ceiling((decimal) player.Group.MemberCount);
 				long tmpxp = (long) (xpReward * (1 + 0.125 * GetUniqueClassCount(player.Group)));
-				Console.WriteLine($"GroupMod {GetGroupModification(player.Group, player)}");
+				//Console.WriteLine($"GroupMod {GetGroupModification(player.Group, player)}");
 				xpReward = (long) (tmpxp / scalingFactor * GetGroupModification(player.Group, player));
 				//xpReward /= scalingFactor;
 			}
