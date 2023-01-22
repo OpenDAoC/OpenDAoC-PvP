@@ -8697,8 +8697,20 @@ namespace DOL.GS
                     {
                         Out.SendMessage($"The {lootable.Name} slips from your grasp as your vision darkens.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                         Inventory.RemoveItem(lootable);
-                        lootable.Drop(this);
+                        if (lootable.Count > 1)
+                        {
+                            for (int i = 0; i < lootable.Count; i++)
+                            {
+                                var lootableCopy = new GameInventoryItemLootable(lootable.Template);
+                                lootableCopy.Drop(this);
+                            }
+                        }
+                        else
+                        {
+                            lootable.Drop(this);
+                        }
                         itemsToRemove.Add(lootable); 
+                       
                     }
                 }
                 Out.SendInventoryItemsUpdate(itemsToRemove); //batch our item updates so we only have to send packets once, instead of once each in the foreach
