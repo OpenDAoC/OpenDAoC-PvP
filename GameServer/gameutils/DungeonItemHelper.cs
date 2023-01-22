@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DOL.Database;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DOL.GS;
 
@@ -87,6 +88,9 @@ public static class DungeonItemHelper
                     break;
                 case "vendomedallion":
                     items.Add(new DungeonItem(itemTemplate.Value, 18, 30, 126));
+                    break;
+                case "fragmentofpower":
+                    items.Add(new DungeonItem(itemTemplate.Value, 10, 49, 0));
                     break;
             }
         }

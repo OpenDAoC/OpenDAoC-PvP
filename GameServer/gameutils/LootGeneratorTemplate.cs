@@ -30,6 +30,7 @@ using System.Linq;
 using DOL.Database;
 using DOL.AI.Brain;
 using DOL.GS.PacketHandler;
+using DOL.GS.Scripts;
 using DOL.GS.Utils;
 
 namespace DOL.GS
@@ -352,13 +353,17 @@ namespace DOL.GS
                                         }
                                     }
                                 }
-
-                                if (killer is {CurrentZone: {IsDungeon: true}})
+                                
+                                if (killer is {CurrentZone: {IsDungeon: true}} 
+                                    || (killer.CurrentZone != null && ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)))
                                 {
                                     lock (player._xpGainersLock)
                                     {
+                                        var zoneToUse = ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)
+                                            ? 0
+                                            : killer.CurrentZone.ID;
                                         ItemTemplate drop =
-                                            GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonItemHelper.GetItemForZone(killer.CurrentZone.ID));
+                                            GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonItemHelper.GetItemForZone(zoneToUse).Id_nb);
 
                                         GamePlayer playerToUse = player;
                                         if (player.Group != null)
@@ -426,13 +431,18 @@ namespace DOL.GS
                                         loot.AddRandom(lootTemplate.Chance, drop, 1);
                                     }
                                 }
-
-                                if (killer is {CurrentZone: {IsDungeon: true}})
+                                
+                                if (killer is {CurrentZone: {IsDungeon: true}}
+                                    || (killer.CurrentZone != null && ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)))
                                 {
                                     lock (player._xpGainersLock)
                                     {
+                                        var zoneToUse = ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)
+                                            ? 0
+                                            : killer.CurrentZone.ID;
+                                        
                                         ItemTemplate drop =
-                                            GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonItemHelper.GetItemForZone(killer.CurrentZone.ID).Id_nb);
+                                            GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonItemHelper.GetItemForZone(zoneToUse).Id_nb);
 
                                         GamePlayer playerToUse = player;
                                         if (player.Group != null)
