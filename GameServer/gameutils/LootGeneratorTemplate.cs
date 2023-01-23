@@ -322,7 +322,6 @@ namespace DOL.GS
                     // TemplateName usually equals Mob name, so if you want to know what drops for a mob:
                     // select * from LootTemplate where templatename = 'mob name';
                     // It is possible to have TemplateName != MobName but this works only if there is an entry in MobXLootTemplate for the MobName.
-
                     if (killer is {CurrentZone: {IsDungeon: true}}
                         || (killer.CurrentZone != null && ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)))
                     {
@@ -345,19 +344,19 @@ namespace DOL.GS
                             double mobCon = playerToUse.GetConLevel(mob);
                             switch (mobCon)
                             {
-                                case >= 2:
+                                case >= 1.5:
                                     dropChance *= 5;
                                     break;
-                                case >= 1:
+                                case >= 0.5:
                                     dropChance *= 2;
                                     break;
-                                case >= 0:
+                                case >= -0.5:
                                     //keep base chance
                                     break;
-                                case >= -1:
+                                case >= -1.5:
                                     dropChance /= 2;
                                     break;
-                                case >= -2:
+                                case >= -2.5:
                                     dropChance /= 5;
                                     break;
                                 default:
