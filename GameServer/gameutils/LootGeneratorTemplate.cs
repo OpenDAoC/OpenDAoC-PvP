@@ -323,6 +323,53 @@ namespace DOL.GS
                     // select * from LootTemplate where templatename = 'mob name';
                     // It is possible to have TemplateName != MobName but this works only if there is an entry in MobXLootTemplate for the MobName.
 
+                    if (killer is {CurrentZone: {IsDungeon: true}}
+                        || (killer.CurrentZone != null && ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)))
+                    {
+                        lock (player._xpGainersLock)
+                        {
+                            var zoneToUse = ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)
+                                ? 0
+                                : killer.CurrentZone.ID;
+                            ItemTemplate drop =
+                                GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonItemHelper
+                                    .GetItemForZone(zoneToUse).Id_nb);
+
+                            GamePlayer playerToUse = player;
+                            if (player.Group != null)
+                                playerToUse = (GamePlayer) GetHighestLevelGroupmate(player);
+
+                            var numRelics = RelicMgr.GetRelicCount(player.Guild);
+                            int dropChance = Convert.ToInt32(ServerProperties.Properties.BASE_XP_ITEM_DROPCHANCE);
+                            if (numRelics > 0) dropChance += 5 * numRelics; //5% drop chance bonus per relic
+                            double mobCon = playerToUse.GetConLevel(mob);
+                            switch (mobCon)
+                            {
+                                case >= 2:
+                                    dropChance *= 5;
+                                    break;
+                                case >= 1:
+                                    dropChance *= 2;
+                                    break;
+                                case >= 0:
+                                    //keep base chance
+                                    break;
+                                case >= -1:
+                                    dropChance /= 2;
+                                    break;
+                                case >= -2:
+                                    dropChance /= 5;
+                                    break;
+                                default:
+                                    dropChance /= 2;
+                                    break;
+                            }
+                            //Console.WriteLine($"XP item chance: {dropChance} mobCon: {mobCon}");
+
+                            loot.AddRandom(dropChance, drop);
+                        }
+                    }
+
                     if (killedMobXLootTemplates == null)
                     {
                         // If there is no MobXLootTemplate entry then every item in this mobs LootTemplate can drop.
@@ -353,52 +400,6 @@ namespace DOL.GS
                                         }
                                     }
                                 }
-                                
-                                if (killer is {CurrentZone: {IsDungeon: true}} 
-                                    || (killer.CurrentZone != null && ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)))
-                                {
-                                    lock (player._xpGainersLock)
-                                    {
-                                        var zoneToUse = ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)
-                                            ? 0
-                                            : killer.CurrentZone.ID;
-                                        ItemTemplate drop =
-                                            GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonItemHelper.GetItemForZone(zoneToUse).Id_nb);
-
-                                        GamePlayer playerToUse = player;
-                                        if (player.Group != null)
-                                            playerToUse = (GamePlayer) GetHighestLevelGroupmate(player);
-
-                                        var numRelics = RelicMgr.GetRelicCount(player.Guild);
-                                        int dropChance = Convert.ToInt32(ServerProperties.Properties.BASE_XP_ITEM_DROPCHANCE);
-                                        if (numRelics > 0) dropChance += 5 * numRelics; //5% drop chance bonus per relic
-                                        double mobCon = playerToUse.GetConLevel(mob);
-                                        switch (mobCon)
-                                        {
-                                            case >=2:
-                                                dropChance *= 5;
-                                                break;
-                                            case >=1:
-                                                dropChance *= 2;
-                                                break;
-                                            case >=0:
-                                                //keep base chance
-                                                break;
-                                            case >=-1:
-                                                dropChance /= 2;
-                                                break;
-                                            case >=-2:
-                                                dropChance /= 5;
-                                                break;
-                                            default:
-                                                dropChance /= 2;
-                                                break;
-                                        }
-                                        //Console.WriteLine($"XP item chance: {dropChance} mobCon: {mobCon}");
-
-                                        loot.AddRandom(dropChance, drop);
-                                    }
-                                }
                             }
                         }
                     }
@@ -426,65 +427,9 @@ namespace DOL.GS
                                         GameServer.Database.FindObjectByKey<ItemTemplate>(lootTemplate.ItemTemplateID);
 
                                     if (drop != null && (drop.Realm == (int) player.Realm || drop.Realm == 0 ||
-                                                              player.CanUseCrossRealmItems))
+                                                         player.CanUseCrossRealmItems))
                                     {
                                         loot.AddRandom(lootTemplate.Chance, drop, 1);
-                                    }
-                                }
-                                
-                                if (killer is {CurrentZone: {IsDungeon: true}}
-                                    || (killer.CurrentZone != null && ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)))
-                                {
-                                    lock (player._xpGainersLock)
-                                    {
-                                        var zoneToUse = ZoneBonusRotator.IsActiveZone(killer.CurrentZone.ID)
-                                            ? 0
-                                            : killer.CurrentZone.ID;
-                                        
-                                        ItemTemplate drop =
-                                            GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonItemHelper.GetItemForZone(zoneToUse).Id_nb);
-
-                                        GamePlayer playerToUse = player;
-                                        if (player.Group != null)
-                                            playerToUse = (GamePlayer) GetHighestLevelGroupmate(player);
-
-                                        var numRelics = RelicMgr.GetRelicCount(player.Guild);
-                                        int dropChance = Convert.ToInt32(ServerProperties.Properties.BASE_XP_ITEM_DROPCHANCE);
-                                        //dropChance = 100; //TODO remove me
-                                        if (numRelics > 0) dropChance += 5 * numRelics; //5% drop chance bonus per relic
-                                        double mobCon = playerToUse.GetConLevel(mob);
-                                        switch (mobCon)
-                                        {
-                                            case >=2:
-                                                dropChance *= 5;
-                                                break;
-                                            case >=1:
-                                                dropChance *= 2;
-                                                break; 
-                                            case >=0:
-                                                //keep base chance
-                                                break;
-                                            case >=-1:
-                                                dropChance /= 2;
-                                                break;
-                                            case >=-2:
-                                                dropChance /= 5;
-                                                break;
-                                            default:
-                                                dropChance /= 2;
-                                                break;
-                                        }
-                                        // Console.WriteLine($"XP item chance: {dropChance} mobCon: {mobCon}");
-
-                                        if (dropChance >= 100)
-                                        {
-                                            loot.AddFixed(drop, 1);
-                                        }
-                                        else
-                                        {
-                                            loot.AddRandom(dropChance, drop);    
-                                        }
-                                        
                                     }
                                 }
                             }
