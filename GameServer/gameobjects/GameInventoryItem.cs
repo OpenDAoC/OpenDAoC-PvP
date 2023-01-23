@@ -409,7 +409,10 @@ namespace DOL.GS {
 
             if (this is GameInventoryItemLootable)
             {
-                delve.Add("This item shimmers ethereally, and is difficult to grasp. Dying with this item will cause it to fall to the ground at your death location. Leaving the dungeon will solidify the otherworldly magicks, and allow you to keep it permanently.");
+                if(this.Name.ToLower().Contains("titanic power"))
+                    delve.Add("This item shimmers ethereally, and is difficult to grasp. Dying with this item will cause it to fall to the ground at your death location. Changing zones will solidify the otherworldly magicks and allow you to keep it permanently.");
+                else
+                    delve.Add("This item shimmers ethereally, and is difficult to grasp. Dying with this item will cause it to fall to the ground at your death location. Leaving the dungeon will solidify the otherworldly magicks and allow you to keep it permanently.");
             }
 
             if ((Object_Type >= (int)eObjectType.GenericWeapon) && (Object_Type <= (int)eObjectType._LastWeapon) ||
