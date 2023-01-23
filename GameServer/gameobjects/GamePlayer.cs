@@ -5333,6 +5333,9 @@ namespace DOL.GS
 
         public void ForceGainExperience(long expTotal)
         {
+            if (Level >= Properties.MAX_PLAYER_LEVEL)
+                return;
+            
             if (IsLevelSecondStage)
             {
                 if (Experience + expTotal < ExperienceForCurrentLevelSecondStage)
