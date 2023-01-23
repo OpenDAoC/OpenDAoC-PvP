@@ -43,13 +43,6 @@ namespace DOL.GS.Spells
 	{
 		private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-		public eCastState CastState { get; set; }
-
-		public GameLiving GetTarget()
-        {
-			return m_spellTarget;
-        }
-
 		// Max number of Concentration spells that a single caster is allowed to cast.
 		public const int MAX_CONC_SPELLS = 50;
 
@@ -57,6 +50,10 @@ namespace DOL.GS.Spells
 		/// Maximum number of sub-spells to get delve info for.
 		/// </summary>
 		protected static readonly byte MAX_DELVE_RECURSION = 5;
+
+		public eCastState CastState { get; set; }
+
+		public GameLiving Target { get; set; }
 
 		protected DelayedCastTimer m_castTimer;
 		/// <summary>
@@ -71,10 +68,6 @@ namespace DOL.GS.Spells
 		/// The caster of the spell
 		/// </summary>
 		protected GameLiving m_caster;
-		/// <summary>
-		/// The target for this spell
-		/// </summary>
-		protected GameLiving m_spellTarget = null;
 		/// <summary>
 		/// Has the spell been interrupted
 		/// </summary>
@@ -308,7 +301,7 @@ namespace DOL.GS.Spells
 					SendEffectAnimation(Caster, 0, true, 1); // pulsing auras or songs
 				}
 
-				StartSpell(m_spellTarget);
+				StartSpell(Target);
 			}
 			else
 			{
@@ -506,7 +499,7 @@ namespace DOL.GS.Spells
 			if (Properties.AUTOSELECT_CASTER)
 				AutoSelectCaster(ref targetObject);
 
-			m_spellTarget = targetObject;
+			Target = targetObject;
 
 			Caster.Notify(GameLivingEvent.CastStarting, m_caster, new CastingEventArgs(this));
 
@@ -529,13 +522,13 @@ namespace DOL.GS.Spells
 				// Pet is the target, check if the caster is the pet.
 
 				if (Caster is GameNPC && (Caster as GameNPC).Brain is IControlledBrain)
-					m_spellTarget = Caster;
+					Target = Caster;
 
 				if (Caster is GamePlayer && Caster.ControlledBrain != null && Caster.ControlledBrain.Body != null)
 				{
-					if (m_spellTarget == null || !Caster.IsControlledNPC(m_spellTarget as GameNPC))
+					if (Target == null || !Caster.IsControlledNPC(Target as GameNPC))
 					{
-						m_spellTarget = Caster.ControlledBrain.Body;
+						Target = Caster.ControlledBrain.Body;
 					}
 				}
 			}
@@ -545,9 +538,9 @@ namespace DOL.GS.Spells
 				// is always the pet then.
 
 				if (Caster is GamePlayer && Caster.ControlledBrain != null)
-					m_spellTarget = Caster.ControlledBrain.Body;
+					Target = Caster.ControlledBrain.Body;
 				else
-					m_spellTarget = null;
+					Target = null;
 			}
 
 			if (Spell.Pulse != 0 && !Spell.IsFocus && CancelPulsingSpell(Caster, Spell.SpellType))
@@ -557,15 +550,15 @@ namespace DOL.GS.Spells
 				else
 					MessageToCaster("You stop playing your song.", eChatType.CT_Spell);
 			}
-			else if (GameServer.ServerRules.IsAllowedToCastSpell(Caster, m_spellTarget, Spell, m_spellLine))
+			else if (GameServer.ServerRules.IsAllowedToCastSpell(Caster, Target, Spell, m_spellLine))
 			{
-				if (CheckBeginCast(m_spellTarget))
+				if (CheckBeginCast(Target))
 				{
 					//Added to force non-Concentration spells cast on Necromancer to be cast on pet instead
-					if (!Spell.IsConcentration && Caster.TargetObject == m_spellTarget && (Caster.TargetObject as GamePlayer) != null 
+					if (!Spell.IsConcentration && Caster.TargetObject == Target && (Caster.TargetObject as GamePlayer) != null 
 						&& (Caster.TargetObject as GamePlayer).IsShade && Spell.SpellType != (byte)eSpellType.UniPortal)
                     {
-                        m_spellTarget = m_spellTarget.ControlledBrain.Body;
+                        Target = Target.ControlledBrain.Body;
                     }
 					
 					if (m_caster is GamePlayer && (m_caster as GamePlayer).IsOnHorse && !HasPositiveEffect)
@@ -575,7 +568,7 @@ namespace DOL.GS.Spells
 
 					if (!Spell.IsInstantCast)
 					{
-						StartCastTimer(m_spellTarget);
+						StartCastTimer(Target);
 
 						if ((Caster is GamePlayer && (Caster as GamePlayer).IsStrafing) || Caster.IsMoving)
 							CasterMoves();
@@ -587,7 +580,7 @@ namespace DOL.GS.Spells
 							SendCastAnimation(0);
 						}
 
-						FinishSpellCast(m_spellTarget);
+						FinishSpellCast(Target);
 					}
 				}
 				else
@@ -743,11 +736,26 @@ namespace DOL.GS.Spells
 			if (m_caster.ObjectState != GameObject.eObjectState.Active)
 				return false;
  
-            if (!m_caster.IsAlive)
+			if (!m_caster.IsAlive)
 			{
 				if (!quiet)
 					MessageToCaster("You are dead and can't cast!", eChatType.CT_System);
 				return false;
+			}
+
+			if (Caster is GameNPC npcOwner)
+			{
+				// Reset for LoS checks during cast.
+				m_caster.TargetInView = true;
+
+				if (!Spell.IsInstantCast)
+				{
+					if (npcOwner.IsMoving)
+						npcOwner.StopFollowing();
+				}
+
+				if (npcOwner != Target)
+					npcOwner.TurnTo(Target);
 			}
 
 			if (m_caster.LastPulseCast != null)
@@ -777,8 +785,8 @@ namespace DOL.GS.Spells
 
 			if (quickCast != null)
 				quickCast.ExpireTick = GameLoop.GameLoopTime + quickCast.Duration;
-			
-            if (m_caster is GamePlayer playerCaster)
+
+			if (m_caster is GamePlayer playerCaster)
 			{
 				long nextSpellAvailTime = m_caster.TempProperties.getProperty<long>(GamePlayer.NEXT_SPELL_AVAIL_TIME_BECAUSE_USE_POTION);
 
@@ -787,6 +795,7 @@ namespace DOL.GS.Spells
 					playerCaster.Out.SendMessage(LanguageMgr.GetTranslation(playerCaster.Client, "GamePlayer.CastSpell.MustWaitBeforeCast", (nextSpellAvailTime - m_caster.CurrentRegion.Time) / 1000), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 					return false;
 				}
+
 				if (playerCaster.Steed is GameSiegeRam)
 				{
 					if (!quiet)
@@ -795,7 +804,7 @@ namespace DOL.GS.Spells
 				}
 			}
 
-            /*
+			/*
 			GameSpellEffect Phaseshift = FindEffectOnTarget(Caster, "Phaseshift");
 			if (Phaseshift != null && (Spell.InstrumentRequirement == 0 || Spell.SpellType == (byte)eSpellType.Mesmerize))
 			{
@@ -803,8 +812,8 @@ namespace DOL.GS.Spells
 				return false;
 			}*/
 
-			// Apply Mentalist RA5L
-			if (Spell.Range>0)
+			// Apply Mentalist RA5L.
+			if (Spell.Range > 0)
 			{
 				SelectiveBlindnessEffect SelectiveBlindness = Caster.EffectList.GetOfType<SelectiveBlindnessEffect>();
 				if (SelectiveBlindness != null)
@@ -836,58 +845,43 @@ namespace DOL.GS.Spells
 					return false;
 				}
 			}
-			else if (m_caster.IsSitting) // songs can be played if sitting
+			// Songs can be played even if sitting.
+			else if (m_caster.IsSitting)
 			{
-				//Purge can be cast while sitting but only if player has negative effect that
-				//don't allow standing up (like stun or mez)
+				// Purge can be cast while sitting but only if player has negative effect that doesn't allow standing up (like stun or mez).
 				if (!quiet)
 					MessageToCaster("You can't cast while sitting!", eChatType.CT_SpellResisted);
 				return false;
 			}
 
-			if (m_caster.attackComponent.AttackState && m_spell.CastTime != 0)
-			{
-				if (m_caster.CanCastInCombat(Spell) == false)
-				{
-					if (m_caster is not GamePet)
-						m_caster.attackComponent.StopAttack(); //dont stop melee for pet (probaby look at stopping attack just for game player)
-					return false;
-				}
-			}
+			// Stop our melee attack. NPC brains will resume it automatically.
+			if (!Spell.IsInstantCast && !m_caster.CanCastWhileAttacking())
+				m_caster.attackComponent.StopAttack();
 
-			//Check Interrupts for Player
-			if (m_caster is GamePlayer)
+			// Check interrupt timer.
+			if (!m_spell.Uninterruptible && !m_spell.IsInstantCast && Caster.InterruptAction > 0 && Caster.IsBeingInterrupted)
 			{
-				if (!m_spell.Uninterruptible && m_spell.CastTime > 0 &&
-					!m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.QuickCast) &&
-					!m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.MasteryOfConcentration))
+				if (m_caster is GamePlayer)
 				{
-					if (Caster.InterruptAction > 0 && Caster.InterruptTime > GameLoop.GameLoopTime)
+					if (!m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.QuickCast) &&
+						!m_caster.effectListComponent.ContainsEffectForEffectType(eEffect.MasteryOfConcentration))
 					{
 						if (!quiet)
 							MessageToCaster($"You must wait {(Caster.InterruptTime - GameLoop.GameLoopTime) / 1000 + 1} seconds to cast a spell!", eChatType.CT_SpellResisted);
 						return false;
 					}
 				}
-			}
-			//Check Interrupts for NPC
-			else if (!m_spell.Uninterruptible && m_spell.CastTime > 0)
-			{
-				if (Caster.InterruptAction > 0 && Caster.InterruptTime > GameLoop.GameLoopTime)
+				else if (m_caster is NecromancerPet necroPet && necroPet.Brain is NecromancerPetBrain)
 				{
-					if (m_caster is NecromancerPet necroPet && necroPet.Brain is NecromancerPetBrain)
+					if (!necroPet.effectListComponent.ContainsEffectForEffectType(eEffect.FacilitatePainworking))
 					{
-						if (!necroPet.effectListComponent.ContainsEffectForEffectType(eEffect.FacilitatePainworking))
-						{
-							if (!quiet)
-								MessageToCaster($"Your {necroPet.Name} must wait {(Caster.InterruptTime - GameLoop.GameLoopTime) / 1000 + 1} seconds to cast a spell!", eChatType.CT_SpellResisted);
-
-							return false;
-						}
-					}
-					else
+						if (!quiet)
+							MessageToCaster($"Your {necroPet.Name} must wait {(Caster.InterruptTime - GameLoop.GameLoopTime) / 1000 + 1} seconds to cast a spell!", eChatType.CT_SpellResisted);
 						return false;
+					}
 				}
+				else
+					return false;
 			}
 
 			if (m_spell.RecastDelay > 0)
@@ -978,15 +972,8 @@ namespace DOL.GS.Spells
 						if (Caster is TurretPet)
 							return true;
 
-						if (m_spell.SpellType != (byte)eSpellType.PetSpell && !Caster.TargetInView)
-						{
-							if (!quiet)
-								MessageToCaster("Your target is not in view!", eChatType.CT_SpellResisted);
-							Caster.Notify(GameLivingEvent.CastFailed, new CastFailedEventArgs(this, CastFailedEventArgs.Reasons.TargetNotInView));
-							return false;
-						}
-
-						if (!m_caster.IsObjectInFront(selectedTarget, 180) || !Caster.TargetInView)
+						// Pet spells (shade) don't require the target to be in front.
+						if ((m_spell.SpellType != (byte)eSpellType.PetSpell && !m_caster.IsObjectInFront(selectedTarget, 180)) || !Caster.TargetInView)
 						{
 							if (!quiet)
 								MessageToCaster("Your target is not visible!", eChatType.CT_SpellResisted);
@@ -1097,7 +1084,7 @@ namespace DOL.GS.Spells
 		{
 			if (living == null || sourceOID == 0 || targetOID == 0)
 				return;
-			
+
 			m_caster.TargetInView = (response & 0x100) == 0x100;
 
 			if (!m_caster.TargetInView && Properties.CHECK_LOS_DURING_CAST_INTERRUPT)
@@ -1292,20 +1279,6 @@ namespace DOL.GS.Spells
 				return false;
 			}
 
-			//if (!m_spell.Uninterruptible && m_spell.CastTime > 0 && m_caster is GamePlayer &&
-			//	m_caster.EffectList.GetOfType<QuickCastEffect>() == null && m_caster.EffectList.GetOfType<MasteryofConcentrationEffect>() == null)
-			//{
-			//	if(Caster.InterruptTime > 0 && Caster.InterruptTime > m_started)
-			//	{
-			//		if (!quiet)
-			//		{
-			//			if (Caster.LastInterruptMessage != "") MessageToCaster(Caster.LastInterruptMessage, eChatType.CT_SpellResisted);
-			//			else MessageToCaster("You are interrupted and must wait " + ((Caster.InterruptTime - m_started) / 1000 + 1).ToString() + " seconds to cast a spell!", eChatType.CT_SpellResisted);
-			//		}
-			//		return false;
-			//	}
-			//}
-
 			if (m_caster.ObjectState != GameLiving.eObjectState.Active)
 			{
 				return false;
@@ -1313,15 +1286,29 @@ namespace DOL.GS.Spells
 
 			if (!m_caster.IsAlive)
 			{
-				if(!quiet) MessageToCaster("You are dead and can't cast!", eChatType.CT_System);
+				if (!quiet)
+					MessageToCaster("You are dead and can't cast!", eChatType.CT_System);
 				return false;
+			}
+
+			if (Caster is GameNPC npcOwner)
+			{
+				if (Spell.CastTime > 0)
+				{
+					if (npcOwner.IsMoving)
+						npcOwner.StopFollowing();
+				}
+
+				if (npcOwner != Target)
+					npcOwner.TurnTo(Target);
 			}
 
 			if (m_spell.InstrumentRequirement != 0)
 			{
 				if (!CheckInstrument())
 				{
-					if (!quiet) MessageToCaster("You are not wielding the right type of instrument!", eChatType.CT_SpellResisted);
+					if (!quiet)
+						MessageToCaster("You are not wielding the right type of instrument!", eChatType.CT_SpellResisted);
 					return false;
 				}
 			}
@@ -1643,25 +1630,27 @@ namespace DOL.GS.Spells
 				case eCastState.Precast:
 					if (Spell.Target == "Self")
 						// Self spells should ignore whatever we actually have selected.
-						m_spellTarget = Caster;
+						Target = Caster;
 					else if (Spell.Target == "Pet")
 					{ 
 						// Pet spells are automatically casted on the controlled NPC.
-						if (m_spellTarget == null ||!Caster.IsControlledNPC(m_spellTarget as GameNPC) || (m_spellTarget != null && m_spellTarget != Caster.ControlledBrain?.Body))
+						if (Target == null ||!Caster.IsControlledNPC(Target as GameNPC) || (Target != null && Target != Caster.ControlledBrain?.Body))
 						{
 							if (Caster.ControlledBrain != null && Caster.ControlledBrain.Body != null)
-								m_spellTarget = Caster.ControlledBrain.Body;
+								Target = Caster.ControlledBrain.Body;
 						}
 					}
 					else
 					{
-						m_spellTarget = Caster?.TargetObject as GameLiving;
+						// Get the current target if we don't have one already.
+						if (Target == null)
+							Target = Caster?.TargetObject as GameLiving;
 
-						if (m_spellTarget is null && Caster is NecromancerPet nPet)
-							m_spellTarget = (nPet.Brain as NecromancerPetBrain).GetSpellTarget();
+						if (Target == null && Caster is NecromancerPet nPet)
+							Target = (nPet.Brain as NecromancerPetBrain).GetSpellTarget();
 					}
 
-					if (CheckBeginCast(m_spellTarget))
+					if (CheckBeginCast(Target))
 					{
 						m_started = GameLoop.GameLoopTime;
 						_castStartTick = currentTick;
@@ -1670,7 +1659,7 @@ namespace DOL.GS.Spells
 							SendSpellMessages();
 						if (Spell.IsInstantCast)
 						{
-							if (!CheckEndCast(m_spellTarget))
+							if (!CheckEndCast(Target))
 								CastState = eCastState.Interrupted;
 							else
 							{
@@ -1699,20 +1688,20 @@ namespace DOL.GS.Spells
 					}
 					break;
 				case eCastState.Casting:
-					if (!CheckDuringCast(m_spellTarget))
+					if (!CheckDuringCast(Target))
 						CastState = eCastState.Interrupted;
 					if (_castStartTick + _calculatedCastTime < currentTick)
 					{
 						if (!(m_spell.IsPulsing && m_spell.SpellType == (byte)eSpellType.Mesmerize))
 						{
-							if (!CheckEndCast(m_spellTarget))
+							if (!CheckEndCast(Target))
 								CastState = eCastState.Interrupted;
 							else
 								CastState = eCastState.Finished;
 						}
 						else
 						{
-							if (CheckEndCast(m_spellTarget))
+							if (CheckEndCast(Target))
 								CastState = eCastState.Finished;
 						}
 					}
@@ -1734,7 +1723,7 @@ namespace DOL.GS.Spells
 			//Process cast on same tick if finished.
 			if (CastState == eCastState.Finished)
 			{
-				FinishSpellCast(m_spellTarget);
+				FinishSpellCast(Target);
 				if (Spell.IsFocus)
 				{
 					if (Spell.SpellType != (byte)eSpellType.GatewayPersonalBind)
@@ -1754,12 +1743,9 @@ namespace DOL.GS.Spells
 				else
 					CastState = eCastState.Cleanup;
 			}
-			if (CastState == eCastState.Cleanup)
-			{
-				CleanupSpellCast();
-			}
 
-			
+			if (CastState == eCastState.Cleanup)
+				CleanupSpellCast();
 		}
 
 		public void CleanupSpellCast()
@@ -1774,14 +1760,10 @@ namespace DOL.GS.Spells
 						p.castingComponent.queuedSpellHandler = null;
 					}
 					else
-					{
 						p.castingComponent.spellHandler = null;
-					}
 				}
 				else
-				{
 					p.castingComponent.instantSpellHandler = null;
-				}
 			}
 			else if (Caster is NecromancerPet nPet)
 			{
@@ -1790,8 +1772,9 @@ namespace DOL.GS.Spells
 					if (Spell.CastTime > 0)
 					{
 						necroBrain.RemoveSpellFromQueue();
-						if (nPet.attackComponent.AttackState)
-							necroBrain.RemoveSpellFromAttackQueue();
+
+						if (!Caster.attackComponent.AttackState)
+							necroBrain.CheckAttackSpellQueue();
 
 						if (Caster.castingComponent.queuedSpellHandler != null)
 						{
@@ -1799,9 +1782,7 @@ namespace DOL.GS.Spells
 							Caster.castingComponent.queuedSpellHandler = null;
 						}
 						else
-						{
 							Caster.castingComponent.spellHandler = null;
-						}
 
 						if (necroBrain.SpellsQueued)
 							necroBrain.CheckSpellQueue();
@@ -1823,13 +1804,9 @@ namespace DOL.GS.Spells
 					Caster.castingComponent.queuedSpellHandler = null;
 				}
 				else
-				{
 					Caster.castingComponent.spellHandler = null;
-				}
 			}
 		}
-
-		
 
 		/// <summary>
 		/// Calculates the power to cast the spell
@@ -2952,30 +2929,30 @@ namespace DOL.GS.Spells
 			}
 
 			if (Spell.SpellType != (byte)eSpellType.TurretPBAoE && (target == null || Spell.IsPBAoE))
-				m_spellTarget = Caster;
-			else if (m_spellTarget == null)
+				Target = Caster;
+			else if (Target == null)
 			{
 				if (target == null)
 					return false;
 
-				m_spellTarget = target;
+				Target = target;
 			}
 
-			if (Spell.IsFocus && (!m_spellTarget.IsAlive || !Caster.IsWithinRadius(m_spellTarget, Spell.Range)))
+			if (Spell.IsFocus && (!Target.IsAlive || !Caster.IsWithinRadius(Target, Spell.Range)))
 			{
 				Caster.CancelFocusSpell();
 				return false;
 			}
 
-			if (HasPositiveEffect && m_spellTarget is GamePlayer p && Caster is GamePlayer c && m_spellTarget != Caster && p.NoHelp)
+			if (HasPositiveEffect && Target is GamePlayer p && Caster is GamePlayer c && Target != Caster && p.NoHelp)
 			{
-				c.Out.SendMessage(m_spellTarget.Name + " has chosen to walk the path of solitude, and your spell fails.", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
+				c.Out.SendMessage(Target.Name + " has chosen to walk the path of solitude, and your spell fails.", eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
 				return false;
 			}
 
 			IList<GameLiving> targets;
 			if (Spell.Target == "Realm"
-				&& (m_spellTarget == Caster || Caster is NecromancerPet nPet && m_spellTarget == nPet.Owner)
+				&& (Target == Caster || Caster is NecromancerPet nPet && Target == nPet.Owner)
 				&& !Spell.IsConcentration
 				&& !Spell.IsHealing
 				&& Spell.IsBuff
@@ -2983,7 +2960,7 @@ namespace DOL.GS.Spells
 				&& Spell.SpellType != (byte)eSpellType.Bomber)
 				targets = GetGroupAndPets(Spell);
 			else
-				targets = SelectTargets(m_spellTarget);
+				targets = SelectTargets(Target);
 
 			double effectiveness = Caster.Effectiveness;
 
@@ -3024,8 +3001,8 @@ namespace DOL.GS.Spells
 					Caster.TempProperties.removeProperty(UninterruptableSpellHandler.WARLOCK_UNINTERRUPTABLE_SPELL);
 				}
 			}
-			
-			Parallel.ForEach(targets, t =>
+
+            Parallel.ForEach(targets, (Action<GameLiving>) (t =>
 			{
 				
 				// Aggressive NPCs will aggro on every target they hit
@@ -3054,55 +3031,55 @@ namespace DOL.GS.Spells
 					{
 						spellCaster.Out.SendMessage(
 							$"Target chance to resist: {spellResistChance} RandomNumber: {randNum}",
-							eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
+                            eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
 					}
 
-					if (m_spellTarget is GamePlayer spellTarg && spellTarg.UseDetailedCombatLog)
+					if (this.Target is GamePlayer spellTarg && spellTarg.UseDetailedCombatLog)
 					{
 						spellTarg.Out.SendMessage($"Your chance to resist: {spellResistChance} RandomNumber: {randNum}",
-							eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
+                            eChatType.CT_DamageAdd, eChatLoc.CL_SystemWindow);
 					}
 
 					if (spellResistChance > randNum)
 					{
-						OnSpellResisted(t);
+                        OnSpellResisted(t);
 						return;
 					}
 				}
                 if (Spell.Radius == 0 || HasPositiveEffect)
 				{
-					ApplyEffectOnTarget(t, effectiveness);
+                    ApplyEffectOnTarget(t, effectiveness);
 				}
 				else if (Spell.Target.ToLower() == "area")
 				{
 					int dist = t.GetDistanceTo(Caster.GroundTarget);
 					if (dist >= 0)
-						ApplyEffectOnTarget(t, (effectiveness - CalculateAreaVariance(t, dist, Spell.Radius)));
+                        ApplyEffectOnTarget(t, (effectiveness - CalculateAreaVariance(t, dist, Spell.Radius)));
 				}
 				else if (Spell.Target.ToLower() == "cone")
 				{
 					int dist = t.GetDistanceTo(Caster);
 					//Cone spells use the range for their variance!
 					if (dist >= 0)
-						ApplyEffectOnTarget(t, (effectiveness - CalculateAreaVariance(t, dist, Spell.Range)));
+                        ApplyEffectOnTarget(t, (effectiveness - CalculateAreaVariance(t, dist, Spell.Range)));
 				}
 				else
 				{
-					int dist = t.GetDistanceTo(m_spellTarget);
+					int dist = t.GetDistanceTo((IPoint3D) this.Target);
 					if (dist >= 0)
-						ApplyEffectOnTarget(t, (effectiveness - CalculateAreaVariance(t, dist, Spell.Radius)));
+                        ApplyEffectOnTarget(t, (effectiveness - CalculateAreaVariance(t, dist, Spell.Radius)));
 				}
 
 				if (Caster is GamePet pet && Spell.IsBuff)
-					pet.AddBuffedTarget(m_spellTarget);
-			});
+					pet.AddBuffedTarget((GameLiving) this.Target);
+			}));
 
 			if (Spell.Target.ToLower() == "ground")
 			{
 				ApplyEffectOnTarget(null, 1);
 			}
 
-			CastSubSpells(m_spellTarget);
+			CastSubSpells(Target);
 			return true;
 		}
 		

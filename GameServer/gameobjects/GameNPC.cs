@@ -59,10 +59,9 @@ namespace DOL.GS
 		public const int CONST_WALKTOTOLERANCE = 20;
 
 		private int m_databaseLevel;
-		
+
 		public bool NeedsBroadcastUpdate { get; set; }
 
-		
 		#region Formations/Spacing
 
 		//Space/Offsets used in formations
@@ -1622,10 +1621,7 @@ namespace DOL.GS
 			lock (m_followTimer)
 			{
 				if (m_followTimer.IsAlive)
-				{
 					m_followTimer.Stop();
-				}
-					
 
 				m_followTarget.Target = null;
 				StopMoving();
@@ -4296,24 +4292,20 @@ namespace DOL.GS
 		public void SwitchToRanged(GameObject target)
 		{
 			StopFollowing();
-            attackComponent.StopAttack();
+			attackComponent.StopAttack();
 			SwitchWeapon(eActiveWeaponSlot.Distance);
 			attackComponent.RequestStartAttack(target);
 		}
 
-		/// <summary>
-		/// Draw the weapon, but don't actually start a melee attack.
-		/// </summary>		
-		public virtual void DrawWeapon()
+		public override void StartInterruptTimer(int duration, AttackData.eAttackType attackType, GameLiving attacker)
 		{
-			if (!attackComponent.AttackState)
-			{
-                attackComponent.AttackState = true;
+			// Increase substantially the base interrupt timer duration for non player controlled NPCs
+			// so that they don't start attacking immediately after the attacker's melee swing interval.
+			// It makes repositioning them easier without having to constantly attack them.
+			if (Brain is not IControlledBrain controlledBrain || controlledBrain.GetPlayerOwner() == null)
+				duration += 2500;
 
-				BroadcastUpdate();
-
-				attackComponent.AttackState = false;
-			}
+			base.StartInterruptTimer(duration, attackType, attacker);
 		}
 
 		protected override bool CheckRangedAttackInterrupt(GameLiving attacker, AttackData.eAttackType attackType)
@@ -4325,9 +4317,14 @@ namespace DOL.GS
 			bool interrupted = base.CheckRangedAttackInterrupt(attacker, attackType);
 
 			if (interrupted)
-				attackComponent.attackAction.OnAimInterrupt(attacker);
+				attackComponent.attackAction?.OnAimInterrupt(attacker);
 
 			return interrupted;
+		}
+
+		public override bool StartInterruptTimerOnItselfOnMeleeAttack()
+		{
+			return false;
 		}
 
 		/// <summary>
@@ -4448,6 +4445,7 @@ namespace DOL.GS
 				}
 			}
 		}
+
 		/// <summary>
 		/// The callback that will respawn this mob
 		/// </summary>
@@ -5165,20 +5163,15 @@ namespace DOL.GS
 		/// <summary>
 		/// Cast a spell, with optional LOS check
 		/// </summary>
-		/// <param name="spell"></param>
-		/// <param name="line"></param>
-		/// <param name="checkLOS"></param>
-		public virtual bool CastSpell(Spell spell, SpellLine line, bool checkLOS)
+		public virtual bool CastSpell(Spell spell, SpellLine line, bool checkLos)
 		{
 			bool casted;
 
 			if (IsIncapacitated)
 				return false;
 
-			if (checkLOS)
-			{
+			if (checkLos)
 				casted = CastSpell(spell, line);
-			}
 			else
 			{
 				Spell spellToCast;
@@ -5190,20 +5183,9 @@ namespace DOL.GS
 					spellToCast.Level = Level;
 				}
 				else
-				{
 					spellToCast = spell;
-				}
 
 				casted = base.CastSpell(spellToCast, line);
-			}
-
-			if (casted && spell.CastTime > 0)
-			{
-				if (IsMoving)
-					StopFollowing();
-
-				if (TargetObject != this)
-					TurnTo(TargetObject);
 			}
 
 			return casted;
@@ -5212,8 +5194,6 @@ namespace DOL.GS
 		/// <summary>
 		/// Cast a spell with LOS check to a player
 		/// </summary>
-		/// <param name="spell"></param>
-		/// <param name="line"></param>
  		/// <returns>Whether the spellcast started successfully</returns>
 		public override bool CastSpell(Spell spell, SpellLine line)
 		{
@@ -5221,7 +5201,7 @@ namespace DOL.GS
 			// Entries older than 3 seconds are removed, so that another check can be performed in case the previous one never was.
 			for (int i = m_spellTargetLosChecks.Count - 1 ; i >= 0 ; i--)
 			{
-                var element = m_spellTargetLosChecks.ElementAt(i);
+				var element = m_spellTargetLosChecks.ElementAt(i);
 
 				if (GameLoop.GameLoopTime - element.Value.Item3 >= 3000)
 					m_spellTargetLosChecks.TryRemove(element.Key, out _);
@@ -5241,7 +5221,7 @@ namespace DOL.GS
 			else
 				spellToCast = spell;
 
-			if (TargetObject == this)
+			if (TargetObject == this || TargetObject == null)
 				return base.CastSpell(spellToCast, line);
 
 			if (spellToCast.Range > 0 && !IsWithinRadius(TargetObject, spellToCast.Range))
@@ -5249,18 +5229,8 @@ namespace DOL.GS
 
 			GamePlayer LosChecker = TargetObject as GamePlayer;
 
-			if (LosChecker == null && this is GamePet pet)
-			{
-				if (pet.Owner is GamePlayer player)
-					LosChecker = player;
-				else if (pet.Owner is CommanderPet commander && commander.Owner is GamePlayer owner)
-					LosChecker = owner;
-			}
-			else if (LosChecker == null && Brain is IControlledBrain controlledBrain) // Check for charmed pets
-			{
-				if (controlledBrain.Owner is GamePlayer player)
-					LosChecker = player;
-			}
+			if (LosChecker == null && Brain is IControlledBrain brain)
+				LosChecker = brain.GetPlayerOwner();
 
 			if (LosChecker == null)
 			{
@@ -5280,7 +5250,7 @@ namespace DOL.GS
 			{
 				if (m_spellTargetLosChecks.TryAdd(TargetObject, new Tuple<Spell, SpellLine, long>(spellToCast, line, GameLoop.GameLoopTime)))
 				{
-					LosChecker.Out.SendCheckLOS(this, TargetObject, new CheckLOSResponse(StartSpellAttackCheckLOS));
+					LosChecker.Out.SendCheckLOS(this, TargetObject, new CheckLOSResponse(StartSpellAttackCheckLos));
 					return true;
 				}
 				
@@ -5288,12 +5258,15 @@ namespace DOL.GS
 			}
 		}
 
-		public void StartSpellAttackCheckLOS(GamePlayer player, ushort response, ushort targetOID)
+		public void StartSpellAttackCheckLos(GamePlayer player, ushort response, ushort targetOID)
 		{
 			if (targetOID == 0)
 				return;
 
 			GameObject target = CurrentRegion.GetObject(targetOID);
+
+			if (target == null)
+				return;
 
 			if (m_spellTargetLosChecks.TryRemove(target, out Tuple<Spell, SpellLine, long> value))
 			{
@@ -5302,27 +5275,11 @@ namespace DOL.GS
 
 				if ((response & 0x100) == 0x100 && line != null && spell != null)
 				{
-					GameObject lasttarget = TargetObject;
-					TargetObject = target;
+					if (target is GameLiving livingTarget &&
+						livingTarget.EffectList.GetOfType<NecromancerShadeEffect>() != null)
+						target = livingTarget.ControlledBrain?.Body;
 
-					if (TargetObject is GameLiving living && living.EffectList.GetOfType<NecromancerShadeEffect>() != null)
-					{
-						if (living is GamePlayer && (living as GamePlayer).ControlledBrain != null)
-							TargetObject = (living as GamePlayer).ControlledBrain.Body;
-					}
-
-					bool casted = base.CastSpell(spell, line);
-
-					if (casted && spell.CastTime > 0)
-					{
-						if (IsMoving)
-							StopFollowing();
-
-						if (TargetObject != this)
-							TurnTo(TargetObject);
-					}
-
-					TargetObject = lasttarget;
+					CastSpellWithTarget(spell, line, target as GameLiving);
 				}
 				else
 					Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.TargetNotInView));

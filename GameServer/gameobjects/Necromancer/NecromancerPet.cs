@@ -20,20 +20,14 @@ using System;
 using System.Collections.Generic;
 using DOL.AI.Brain;
 using DOL.Database;
-using DOL.Events;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
 using DOL.GS.RealmAbilities;
-using DOL.GS.Spells;
 using DOL.GS.Styles;
 using DOL.Language;
 
 namespace DOL.GS
 {
-	/// <summary>
-	/// The necromancer pets.
-	/// </summary>
-	/// <author>Aredhel</author>
 	public class NecromancerPet : GamePet
 	{
 		public override GameObject TargetObject
@@ -49,9 +43,6 @@ namespace DOL.GS
 			}
 		}
 
-		/// <summary>
-		/// gets the DamageRvR Memory of this NecromancerPet
-		/// </summary>
 		public override long DamageRvRMemory
 		{
 			get => m_damageRvRMemory;
@@ -60,7 +51,7 @@ namespace DOL.GS
 
 		public override short MaxSpeed => (short)GetModified(eProperty.MaxSpeed);
 
-        /// <summary>
+		/// <summary>
 		/// Proc IDs for various pet weapons.
 		/// </summary>
 		private enum Procs
@@ -88,7 +79,6 @@ namespace DOL.GS
 			m_summonHitsBonus = summonHitsBonus;
 
 			// Set immunities/load equipment/etc.
-
 			switch (Name.ToLower())
 			{
 				case "lesser zombie servant":
@@ -125,17 +115,14 @@ namespace DOL.GS
 		private int m_summonHitsBonus;
 
 		/// <summary>
-		/// Get modified bonuses for the pet; some bonuses come from the shade,
-		/// some come from the pet.
+		/// Get modified bonuses for the pet; some bonuses come from the shade, some come from the pet.
 		/// </summary>
-		/// <param name="property"></param>
-		/// <returns></returns>
 		public override int GetModified(eProperty property)
 		{
 			if (Brain == null || (Brain as IControlledBrain) == null)
 				return base.GetModified(property);
 
-            GameLiving livingOwner = (Brain as IControlledBrain).GetLivingOwner();
+			GameLiving livingOwner = (Brain as IControlledBrain).GetLivingOwner();
 			GamePlayer playerOwner = livingOwner as GamePlayer;
 
 			switch (property)
@@ -244,15 +231,9 @@ namespace DOL.GS
 			return base.GetModified(property);
 		}
 
-		/// <summary>
-		/// Current health (absolute value).
-		/// </summary>
 		public override int Health
 		{
-			get
-			{
-				return base.Health;
-			}
+			get => base.Health;
 			set
 			{
 				value = Math.Min(value, MaxHealth);
@@ -260,7 +241,7 @@ namespace DOL.GS
 
 				if (Health == value)
 				{
-					base.Health = value; //needed to start regeneration
+					base.Health = value; // Needed to start regeneration.
 					return;
 				}
 
@@ -269,16 +250,14 @@ namespace DOL.GS
 				if (oldPercent != HealthPercent)
 				{
 					// Update pet health in group window.
-
-					GamePlayer owner = ((Brain as IControlledBrain).Owner) as GamePlayer;
-					if (owner.Group != null)
-						owner.Group.UpdateMember(owner, false, false);
+					GamePlayer owner = (Brain as IControlledBrain).Owner as GamePlayer;
+					owner.Group?.UpdateMember(owner, false, false);
 				}
 			}
 		}
 
 		/// <summary>
-		/// Set stats according to necro pet server properties
+		/// Set stats according to necro pet server properties.
 		/// </summary>
 		public override void AutoSetStats()
 		{
@@ -321,7 +300,7 @@ namespace DOL.GS
 			Piety = 60;
 			Charisma = 60;
 
-			// Now scale them according to NPCTemplate values
+			// Now scale them according to NPCTemplate values.
 			if (NPCTemplate != null)
 			{
 				if (NPCTemplate.Strength > 0)
@@ -355,9 +334,6 @@ namespace DOL.GS
 
 		#region Melee
 
-		/// <summary>
-		/// Toggle taunt mode on/off.
-		/// </summary>
 		private void ToggleTauntMode()
 		{
 			TauntEffect tauntEffect = EffectList.GetOfType<TauntEffect>();
@@ -365,17 +341,12 @@ namespace DOL.GS
 
 			if (tauntEffect != null)
 			{
-				// It's on, so let's switch it off.
 				tauntEffect.Stop();
-				if (owner != null)
-					owner.Out.SendMessage(string.Format("{0} seems to be less aggressive than before.", GetName(0, true)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				owner.Out.SendMessage(string.Format("{0} seems to be less aggressive than before.", GetName(0, true)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 			}
 			else
 			{
-				// It's off, so let's turn it on.
-				if (owner != null)
-					owner.Out.SendMessage(string.Format("{0} enters an aggressive stance.", GetName(0, true)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
-
+				owner.Out.SendMessage(string.Format("{0} enters an aggressive stance.", GetName(0, true)), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				new TauntEffect().Start(this);
 			}
 		}
@@ -390,7 +361,7 @@ namespace DOL.GS
 		public static string PetInstaSpellLine => "Necro Pet Insta Spells";
 
 		/// <summary>
-		/// Called when necro pet is hit to see if spellcasting is interrupted
+		/// Called when necro pet is hit to see if spellcasting is interrupted.
 		/// </summary>
 		/// <param name="ad">information about the attack</param>
 		public override void OnAttackedByEnemy(AttackData ad)
@@ -414,88 +385,10 @@ namespace DOL.GS
 			base.OnAttackedByEnemy(ad);
 		}
 
-        public override bool StartInterruptTimerOnItselfOnMeleeAttack()
-        {
-            return false;
-        }
-
-        public AttackData MakeAttack(GameObject target, InventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield, bool ignoreLOS)
+		public AttackData MakeAttack(GameObject target, InventoryItem weapon, Style style, double effectiveness, int interruptDuration, bool dualWield, bool ignoreLOS)
 		{
 			((NecromancerPetBrain)Brain).CheckAttackSpellQueue();
 			return attackComponent.LivingMakeAttack(null, target, weapon, style, effectiveness, interruptDuration, dualWield, ignoreLOS);
-		}
-
-		/// <summary>
-		/// Cast a specific spell from given spell line
-		/// </summary>
-		/// <param name="spell">spell to cast</param>
-		/// <param name="line">Spell line of the spell (for bonus calculations)</param>
-		/// <returns>Whether the spellcast started successfully</returns>
-		public override bool CastSpell(Spell spell, SpellLine line)
-		{
-			if (IsStunned || IsMezzed)
-			{
-				Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.CrowdControlled));
-				return false;
-			}
-
-			if (CurrentSpellHandler != null && spell.CastTime > 0)
-			{
-				Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.AlreadyCasting));
-				return false;
-			}
-
-			bool cast = castingComponent.StartCastSpell(spell, line);
-			ISpellHandler handler;
-
-			if (spell.IsInstantCast)
-				handler = castingComponent.instantSpellHandler;
-			else
-				handler = castingComponent.spellHandler;
-
-			if (handler != null)
-			{
-				int power = handler.PowerCost(Owner);
-
-				if (Owner.Mana < power)
-				{
-					Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.NotEnoughPower));
-					return false;
-				}
-				
-				if (!handler.Spell.IsInstantCast)
-                {
-					handler.CastingCompleteEvent += new CastingCompleteCallback(OnAfterSpellCastSequence);
-				}
-			}
-			
-            return cast;
-		}
-
-		public override void OnAfterSpellCastSequence(ISpellHandler handler)
-		{
-			if (SpellTimer != null)
-			{
-				if (this == null
-					|| ObjectState != eObjectState.Active
-					|| !IsAlive
-					|| TargetObject == null
-					|| (TargetObject is GameLiving && TargetObject.ObjectState != eObjectState.Active)
-					|| !(TargetObject as GameLiving).IsAlive)
-					SpellTimer.Stop();
-				else
-					SpellTimer.Start(1);
-			}
-			if (CurrentSpellHandler != null)
-				CurrentSpellHandler.CastingCompleteEvent -= new CastingCompleteCallback(OnAfterSpellCastSequence); // Prevent from relaunch
-
-			Brain.Notify(GameLivingEvent.CastFinished, this, new CastingEventArgs(handler));
-		}
-
-		public override bool CanCastInCombat(Spell spell)
-		{
-			// Necromancer pets can always start to cast while in combat
-			return true;
 		}
 
 		public override void ModifyAttack(AttackData attackData)
@@ -673,11 +566,11 @@ namespace DOL.GS
 				CastSpell(dexBuff, buffLine);
 		}
 
-        public override void TakeDamage(GameObject source, eDamageType damageType, int damageAmount, int criticalAmount)
-        {
+		public override void TakeDamage(GameObject source, eDamageType damageType, int damageAmount, int criticalAmount)
+		{
 			criticalAmount /= 2;
-            base.TakeDamage(source, damageType, damageAmount, criticalAmount);
-        }
+			base.TakeDamage(source, damageType, damageAmount, criticalAmount);
+		}
 
 		/// <summary>
 		/// Load equipment for the pet.
@@ -689,7 +582,7 @@ namespace DOL.GS
 			if (templateID.Length <= 0)
 				return false;
 
-			GameNpcInventoryTemplate inventoryTemplate = new GameNpcInventoryTemplate();
+			GameNpcInventoryTemplate inventoryTemplate = new();
 
 			if (inventoryTemplate.LoadFromDatabase(templateID))
 			{

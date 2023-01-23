@@ -674,22 +674,16 @@ namespace DOL.GS
 		}
 
 		/// <summary>
-		/// Can this living cast the given spell while in combat?
+		/// Can this living cast while attacking?
 		/// </summary>
-		/// <param name="spell"></param>
-		/// <returns></returns>
-		public virtual bool CanCastInCombat(Spell spell)
+		public virtual bool CanCastWhileAttacking()
 		{
-			// by default npc's can start casting spells while in combat
-			return true;
+			return false;
 		}
-
 
 		/// <summary>
 		/// Calculate how fast this living can cast a given spell
 		/// </summary>
-		/// <param name="spell"></param>
-		/// <returns></returns>
 		public virtual int CalculateCastingTime(SpellLine line, Spell spell)
 		{
 			int ticks = spell.CastTime;
@@ -1901,17 +1895,6 @@ namespace DOL.GS
 		//	//Return the result
 		//	return ad;
 		//}
-
-		/// <summary>
-		/// Starts the interrupt timer on this living.
-		/// </summary>
-		/// <param name="attack"></param>
-		/// <param name="duration"></param>
-		public virtual void StartInterruptTimer(AttackData attack, int duration)
-		{
-			if (attack != null)
-				StartInterruptTimer(duration, attack.AttackType, attack.Attacker);
-		}
 
 		/// <summary>
 		/// Starts the interrupt timer on this living.
@@ -4181,7 +4164,7 @@ namespace DOL.GS
                 {
 					((SpellHandler)pulseSpell.SpellHandler).FocusSpellAction(moving);
 					EffectService.RequestImmediateCancelEffect(pulseSpell);
-					if (((SpellHandler)pulseSpell.SpellHandler).GetTarget().effectListComponent.Effects.TryGetValue(eEffect.FocusShield, out var petEffect))
+					if (((SpellHandler)pulseSpell.SpellHandler).Target.effectListComponent.Effects.TryGetValue(eEffect.FocusShield, out var petEffect))
                     {
 						if (petEffect is not null)
                         {
@@ -7131,13 +7114,6 @@ namespace DOL.GS
 				CurrentSpellHandler.InterruptCasting();
 		}
 
-
-		/// <summary>
-		/// Cast a specific spell from given spell line
-		/// </summary>
-		/// <param name="spell">spell to cast</param>
-		/// <param name="line">Spell line of the spell (for bonus calculations)</param>
-		/// <returns>Whether the spellcast started successfully</returns>
 		public virtual bool CastSpell(Spell spell, SpellLine line)
 		{
 			if (IsStunned || IsMezzed)
@@ -7146,33 +7122,20 @@ namespace DOL.GS
 				return false;
 			}
 
-			/*
-			if ((CurrentSpellHandler != null && spell.CastTime > 0))
+			return castingComponent.StartCastSpell(spell, line);
+		}
+
+		// Should only be used when the target of the spell is different than the currenctly selected one.
+		// Which can happen during LoS checks, since we're not waiting for the check to complete to perform other actions.
+		protected bool CastSpellWithTarget(Spell spell, SpellLine line, GameLiving target)
+		{
+			if (IsStunned || IsMezzed)
 			{
-				Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.AlreadyCasting));
+				Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.CrowdControlled));
 				return false;
-			}*/
+			}
 
-			//ISpellHandler spellhandler = ScriptMgr.CreateSpellHandler(this, spell, line);
-			bool cast = castingComponent.StartCastSpell(spell, line);
-			
-			//if (spellhandler != null)
-			//{
-			//	if (spell.CastTime > 0)
-			//	{
-			//		CurrentSpellHandler = spellhandler;
-			//		spellhandler.CastingCompleteEvent += new CastingCompleteCallback(OnAfterSpellCastSequence);
-			//	}
-			//	return spellhandler.CastSpell();
-			//}
-			//else
-			//{
-			//	if (log.IsWarnEnabled)
-			//		log.Warn(Name + " wants to cast but spell " + spell.Name + " not implemented yet");
-			//}
-
-			//return false;
-			return cast;
+			return castingComponent.StartCastSpell(spell, line, null, target);
 		}
 
 		public virtual bool CastSpell(ISpellCastingAbilityHandler ab)

@@ -27,8 +27,8 @@ namespace DOL.GS.Spells
 	/// </summary>
 	public interface ISpellHandler
 	{
-		GameLiving GetTarget();
 		eCastState CastState { get; set; }
+		GameLiving Target { get; set; }
 		void CreateECSEffect(ECSGameEffectInitParams initParams);
 		/// <summary>
 		/// Called when a spell is casted
@@ -215,7 +215,6 @@ namespace DOL.GS.Spells
 		/// </summary>
 		GameLiving Caster { get; }
 
-		
 		void Tick(long currentTick);
 
 		/// <summary>
