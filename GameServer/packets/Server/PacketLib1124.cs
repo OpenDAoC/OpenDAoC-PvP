@@ -37,6 +37,7 @@ using DOL.GS.RealmAbilities;
 using DOL.GS.Spells;
 using DOL.GS.Styles;
 using log4net;
+using System.Drawing;
 
 namespace DOL.GS.PacketHandler
 {
@@ -2096,24 +2097,20 @@ namespace DOL.GS.PacketHandler
 				}
 			}
 
-			/* removed, hack fix for client spamming requests for npcupdates/ creates
-            if (_gameClient.Player.Client.Version < _gameClient.eClientVersion.Version1124) 
-            {   // Update Cache
-                _gameClient.GameObjectUpdateArray[new Tuple<ushort, ushort>(npc.CurrentRegionID, (ushort)npc.ObjectID)] = 0;
-            }*/
-
-			// Hack to make pets untargetable with tab on a PvP server. There might be a better way to do it.
+			// Hack to make NPCs untargetable with TAB on a PvP server. There might be a better way to do it.
 			// Relies on 'SendObjectGuildID' not to be called after this.
 			if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_PvP)
-				SendPetFakeFriendlyGuildID(npc);
+			{
+				if (npc.Brain is IControlledBrain npcBrain)
+					SendPetFakeFriendlyGuildID(npc, npcBrain);
+				else
+					SendNpcFakeFriendlyGuildID(npc);
+			}
 		}
 
-		private void SendPetFakeFriendlyGuildID(GameNPC pet)
+		private void SendPetFakeFriendlyGuildID(GameNPC pet, IControlledBrain petBrain)
 		{
-			if (pet.Brain is not IControlledBrain npcBrain)
-				return;
-
-			GamePlayer playerOwner = npcBrain.GetPlayerOwner();
+			GamePlayer playerOwner = petBrain.GetPlayerOwner();
 			GamePlayer player = m_gameClient.Player;
 			Guild playerGuild = player.Guild;
 
@@ -2135,6 +2132,20 @@ namespace DOL.GS.PacketHandler
 			// Use a dummy guild for guildless players.
 			SendObjectGuildID(pet, playerGuild ?? Guild.DummyGuild);
 			SendObjectGuildID(player, playerGuild ?? Guild.DummyGuild);
+		}
+
+		private void SendNpcFakeFriendlyGuildID(GameNPC npc)
+		{
+			if (npc.Flags.HasFlag(GameNPC.eFlags.PEACE) || npc.Realm != eRealm.None)
+			{
+				GamePlayer player = m_gameClient.Player;
+				Guild playerGuild = player.Guild;
+
+				// Make the client believe the NPC is in the same guild as them.
+				// Use a dummy guild for guildless players.
+				SendObjectGuildID(npc, playerGuild ?? Guild.DummyGuild);
+				SendObjectGuildID(player, playerGuild ?? Guild.DummyGuild);
+			}
 		}
 
 		public virtual void SendNPCsQuestEffect(GameNPC npc, eQuestIndicator indicator)

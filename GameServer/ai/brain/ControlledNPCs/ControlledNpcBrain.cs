@@ -66,28 +66,22 @@ namespace DOL.AI.Brain
 		/// Holds the aggression level of the brain
 		/// </summary>
 		protected eAggressionState m_aggressionState;
-		
-		/// <summary>
-		/// Allows to check if your target is stealthing - trying to escape your pet
-		/// </summary>
-		public bool previousIsStealthed;
 
 		/// <summary>
 		/// Constructs new controlled npc brain
 		/// </summary>
 		/// <param name="owner"></param>
-		public ControlledNpcBrain(GameLiving owner)
-			: base()
+		public ControlledNpcBrain(GameLiving owner) : base()
 		{
 			m_owner = owner ?? throw new ArgumentNullException("owner");
-            m_aggressionState = eAggressionState.Defensive;
-            m_walkState = eWalkState.Follow;
+			m_aggressionState = eAggressionState.Defensive;
+			m_walkState = eWalkState.Follow;
 
-            if (owner is GameNPC npcOwner && npcOwner.Brain is StandardMobBrain npcOwnerBrain)
-                AggroLevel = npcOwnerBrain.AggroLevel;
-            else
-                AggroLevel = 99;
-            AggroRange = 1500;
+			if (owner is GameNPC npcOwner && npcOwner.Brain is StandardMobBrain npcOwnerBrain)
+				AggroLevel = npcOwnerBrain.AggroLevel;
+			else
+				AggroLevel = 99;
+			AggroRange = 1500;
 
 			FSM.ClearStates();
 
@@ -264,11 +258,10 @@ namespace DOL.AI.Brain
 				AggressionState = eAggressionState.Defensive;
 				UpdatePetWindow();
 			}
+
 			m_orderAttackTarget = target as GameLiving;
-			previousIsStealthed = false;
-			if (target is GamePlayer) 
-				previousIsStealthed = (target as GamePlayer).IsStealthed;
 			FSM.SetCurrentState(eFSMStateType.AGGRO);
+
 			if (target != Body.TargetObject && Body.IsCasting)
 				Body.StopCurrentSpellcast();
 
@@ -540,37 +533,23 @@ namespace DOL.AI.Brain
 			return casted || Body.IsCasting;
 		}
 
-		/// <summary>
-		/// Checks the Positive Spells.  Handles buffs, heals, etc.
-		/// </summary>
-		protected override bool CheckDefensiveSpells(Spell spell)
-		{
-			if (spell == null || spell.IsHarmful)
-				return false;
+        /// <summary>
+        /// Checks the Positive Spells.  Handles buffs, heals, etc.
+        /// </summary>
+        protected override bool CheckDefensiveSpells(Spell spell)
+        {
+            if (!CanCastDefensiveSpell(spell))
+                return false;
 
-			// Only allow non-buff heal spells to be checked and queued while casting.
-			// Otherwise buffs will be casted twice on the same target due to the delay induced by the LoS check.
-			if (Body.IsCasting && (spell.IsBuff || !spell.IsHealing))
-				return false;
+            bool casted = false;
+            // clear current target, set target based on spell type, cast spell, return target to original target
+            Body.CachedTarget = Body.TargetObject;
+            Body.TargetObject = null;
+            GamePlayer player;
+            GameLiving owner;
 
-			// Make sure we're currently able to cast the spell
-			if (spell.CastTime > 0 && Body.IsBeingInterrupted && !spell.Uninterruptible)
-				return false;
-
-			// Make sure the spell isn't disabled
-			if (spell.HasRecastDelay && Body.GetSkillDisabledDuration(spell) > 0)
-				return false;
-
-			bool casted = false;
-
-			// clear current target, set target based on spell type, cast spell, return target to original target
-			Body.CachedTarget = Body.TargetObject;
-			Body.TargetObject = null;
-			GamePlayer player = null;
-			GameLiving owner = null;
-
-			switch (spell.SpellType)
-			{
+            switch (spell.SpellType)
+            {
                 #region Buffs
                 case (byte)eSpellType.AcuityBuff:
                 case (byte)eSpellType.AFHitsBuff:

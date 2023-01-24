@@ -640,6 +640,7 @@ namespace DOL.GS
 
 			return true;
 		}
+
 		/// <summary>
 		/// Pet stayed out of range for too long, despawn it.
 		/// </summary>
