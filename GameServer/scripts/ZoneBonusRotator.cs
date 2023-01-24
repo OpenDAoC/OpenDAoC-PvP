@@ -701,7 +701,7 @@ namespace DOL.GS.Scripts
             temp.Add("");
 
             temp.Add("Permanent Bonuses:");
-            temp.Add("All Dungeons: 25%");
+            temp.Add("All Dungeons: 50%");
             //temp.Add("RvR Dungeons: 50%");
             //temp.Add("Darkness Falls: 75%");
             
