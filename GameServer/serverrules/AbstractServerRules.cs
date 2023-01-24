@@ -1491,10 +1491,10 @@ namespace DOL.GS.ServerRules
 			long atlasBonus = 0;
 			if (player != null && player.Group != null)
 			{
-				atlasBonus = (xpReward * 3 /4) / player.Group.GetPlayersInTheGroup().Count;
+				atlasBonus = (xpReward /2) / player.Group.GetPlayersInTheGroup().Count;
 			}
 			else
-				atlasBonus = (xpReward * 3 /4);
+				atlasBonus = (xpReward /2);
 
 			#endregion
 
