@@ -2252,7 +2252,7 @@ namespace DOL.GS.Quests
 						if (long.TryParse(DBDataQuest.RewardXP, out rewardXP))
 						{
 							if(rewardXP == 0)
-								rewardXP = (player.ExperienceForNextLevel - player.ExperienceForCurrentLevel) / 50;
+								rewardXP = (player.ExperienceForNextLevel - player.ExperienceForCurrentLevel) / 70;
 							else if (lvlXP > rewardXP)
 								rewardXP = lvlXP;
 							player.ForceGainExperience(rewardXP);
@@ -2279,7 +2279,7 @@ namespace DOL.GS.Quests
 								if (long.TryParse(DBDataQuest.RewardXP, out rewardXP))
 								{
 									if(rewardXP == 0)
-										rewardXP = (player.ExperienceForNextLevel - player.ExperienceForCurrentLevel) / 50;
+										rewardXP = (player.ExperienceForNextLevel - player.ExperienceForCurrentLevel) / 70;
 									else if (lvlXP > rewardXP)
 										rewardXP = lvlXP;
 									player.ForceGainExperience(rewardXP);
@@ -2298,7 +2298,7 @@ namespace DOL.GS.Quests
 								if (long.TryParse(DBDataQuest.RewardXP, out rewardXP))
 								{
 									if(rewardXP == 0)
-										rewardXP = (player.ExperienceForNextLevel - player.ExperienceForCurrentLevel) / 50;
+										rewardXP = (player.ExperienceForNextLevel - player.ExperienceForCurrentLevel) / 70;
 									else if (lvlXP > rewardXP)
 										rewardXP = lvlXP;
 									player.ForceGainExperience(rewardXP);
