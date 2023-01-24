@@ -2,15 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using DOL.Database;
+using DOL.GS.Scripts;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DOL.GS;
 
-public static class DungeonItemHelper
+public static class DungeonHelper
 {
     private static List<DungeonItem> _availableItems;
     
-    static DungeonItemHelper()
+    static DungeonHelper()
     {
         _availableItems = InitializeList();
     }
@@ -96,6 +97,152 @@ public static class DungeonItemHelper
         }
 
         return items;
+    }
+    
+    public static void GetLevelRangeForDungeon(int regionId, out int minLevel, out int maxLevel)
+    {
+        switch (regionId)
+        {
+            case 23: //catacombs of cordova
+                minLevel = 25;
+                maxLevel = 35;
+                break;
+            case 220://coruscating mines
+                minLevel = 30;
+                maxLevel = 45;
+                break;
+            case 128://cursed tomb
+                minLevel = 15;
+                maxLevel = 30;
+                break;
+            case 22://keltoi fogue
+                minLevel = 15;
+                maxLevel = 30;
+                break;
+            case 223://koalinth caverns
+                minLevel = 15;
+                maxLevel = 30;
+                break;
+            case 21://mithra's tomb
+                minLevel = 5;
+                maxLevel = 20;
+                break;
+            case 221://muire
+                minLevel = 5;
+                maxLevel = 20;
+                break;
+            case 129://nisse's lair
+                minLevel = 5;
+                maxLevel = 20;
+                break;
+            case 125://spindelhalla
+                minLevel = 30;
+                maxLevel = 45;
+                break;
+            case 222://spraggon's den
+                minLevel = 15;
+                maxLevel = 25;
+                break;
+            case 20://stonehenge barrows
+                minLevel = 30;
+                maxLevel = 45;
+                break;
+            case 24://tepok
+                minLevel = 15;
+                maxLevel = 30;
+                break;
+            case 224://treibh cailte
+                minLevel = 25;
+                maxLevel = 40;
+                break;
+            case 127://varulvhamn
+                minLevel = 25;
+                maxLevel = 40;
+                break;
+            case 126://vendo
+                minLevel = 15;
+                maxLevel = 30;
+                break;
+            default:
+                minLevel = 1;
+                maxLevel = 50;
+                break;
+        }
+    }
+
+    public static List<string> GetDungeonLevelInfo()
+    {
+        List<string> output = new List<string>();
+
+        foreach (var id in GetDungeonZoneIds())
+        {
+            GetLevelRangeForDungeon(id, out var minLvl, out var maxLvl);
+            output.Add($"{GetNameFromId(id)} | {minLvl} - {maxLvl}");
+        }
+
+        return output;
+    }
+
+    public static List<int> GetDungeonZoneIds()
+    {
+        List<int> Ids = new List<int>();
+        Ids.Add(23); //catacombs of cordova
+        Ids.Add(220); //coruscating mines
+        Ids.Add(128); //cursed tomb
+        Ids.Add(22); //keltoi
+        Ids.Add(223); //koalinth caverns
+        Ids.Add(21); //mithra's tomb
+        Ids.Add(221); //muire
+        Ids.Add(129); //nisse
+        Ids.Add(125); //spindelhalla
+        Ids.Add(222); //spraggon den
+        Ids.Add(20); //stonehenge barrows
+        Ids.Add(24); //tepok
+        Ids.Add(224); //treibh cailte
+        Ids.Add(127); //varulvhamn
+        Ids.Add(126); //vendo
+
+        return Ids;
+    }
+
+    private static string GetNameFromId(int id)
+    {
+        switch (id)
+        {
+            case 23:
+                return "Catacombs of Cordova";
+            case 220:
+                return "Coruscating Mines";
+            case 128:
+                return "Cursed Tomb";
+            case 22:
+                return "Keltoi";
+            case 223:
+                return "Koalinth Caverns";
+            case 21:
+                return "Mithra's Tomb";
+            case 221:
+                return "Muire's Tomb";
+            case 129:
+                return "Nisse's Lair";
+            case 125:
+                return "Spindelhalla";
+            case 222:
+                return "Spraggon's Den";
+            case 20:
+                return "Stonehenge Barrows";
+            case 24:
+                return "Tepok's Mine";
+            case 224:
+                return "Treibh Cailte";
+            case 127:
+                return "Varulvhamn";
+            case 126:
+                return "Vendo Caverns";
+            default:
+                return $"{id} UNMAPPED - Talk to Fen";
+            
+        }
     }
 }
 

@@ -331,7 +331,7 @@ namespace DOL.GS
                                 ? 0
                                 : killer.CurrentZone.ID;
                             ItemTemplate drop =
-                                GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonItemHelper
+                                GameServer.Database.FindObjectByKey<ItemTemplate>(DungeonHelper
                                     .GetItemForZone(zoneToUse).Id_nb);
 
                             GamePlayer playerToUse = player;

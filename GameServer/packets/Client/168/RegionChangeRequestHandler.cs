@@ -109,10 +109,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 					return;
 			}
 
-			int minLvl = 0;
-			int maxLvl = 0;
-			GetLevelRangeForDungeon(zonePoint.TargetRegion, out minLvl, out maxLvl);
-
+			DungeonHelper.GetLevelRangeForDungeon(zonePoint.TargetRegion, out var minLvl, out var maxLvl);
 			if (client.Player.Level < minLvl)
 			{
 				client.Out.SendMessage($"You are below the minimum level ({minLvl}) for this dungeon!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
@@ -188,77 +185,6 @@ namespace DOL.GS.PacketHandler.Client.v168
 			}
 
 			new RegionChangeRequestHandler(client.Player, zonePoint, customHandler).Start(1);
-		}
-
-		private void GetLevelRangeForDungeon(int regionId, out int minLevel, out int maxLevel)
-		{
-			switch (regionId)
-			{
-				case 23: //catacombs of cordova
-					minLevel = 25;
-					maxLevel = 35;
-					break;
-				case 220://coruscating mines
-					minLevel = 30;
-					maxLevel = 45;
-					break;
-				case 128://cursed tomb
-					minLevel = 15;
-					maxLevel = 30;
-					break;
-				case 22://keltoi fogue
-					minLevel = 15;
-					maxLevel = 30;
-					break;
-				case 223://koalinth caverns
-					minLevel = 15;
-					maxLevel = 30;
-					break;
-				case 21://mithra's tomb
-					minLevel = 5;
-					maxLevel = 20;
-					break;
-				case 221://muire
-					minLevel = 5;
-					maxLevel = 20;
-					break;
-				case 129://nisse's lair
-					minLevel = 5;
-					maxLevel = 20;
-					break;
-				case 125://spindelhalla
-					minLevel = 30;
-					maxLevel = 45;
-					break;
-				case 222://spraggon's den
-					minLevel = 15;
-					maxLevel = 25;
-					break;
-				case 20://stonehenge barrows
-					minLevel = 30;
-					maxLevel = 45;
-					break;
-				case 24://tepok
-					minLevel = 15;
-					maxLevel = 30;
-					break;
-				case 224://treibh cailte
-					minLevel = 25;
-					maxLevel = 40;
-					break;
-				case 127://varulvhamn
-					minLevel = 25;
-					maxLevel = 40;
-					break;
-				case 126://vendo
-					minLevel = 15;
-					maxLevel = 30;
-					break;
-				default:
-					minLevel = 1;
-					maxLevel = 50;
-					break;
-			}
 		}
 
 		/// <summary>
