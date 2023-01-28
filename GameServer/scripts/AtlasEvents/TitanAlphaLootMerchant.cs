@@ -9,7 +9,7 @@ namespace DOL.GS.Scripts;
 
 public class TitanAlphaLootMerchant : BattlegroundEventLoot
 {
-    public override bool AddToWorld()
+	public override bool AddToWorld()
     {
 	    if (base.AddToWorld())
 	    {
@@ -47,6 +47,15 @@ public class TitanAlphaLootMerchant : BattlegroundEventLoot
                                "Additionally, I can provide you with some [weapons] and [coin].\n\n" +
                                "This is the best gear we could provide on short notice. If you want something better, you'll have to take it from your enemies on the battlefield. " + 
                                "Go forth, and do battle!", eChatType.CT_Say,eChatLoc.CL_PopupWindow);
+        
+        var lvCap = ServerProperties.Properties.EVENT_LVCAP;
+        
+        if (lvCap != 0 && player.Level < lvCap)
+		{
+			player.Out.SendMessage($"It also looks like you could use a bit of [experience] to reach level {lvCap}.", eChatType.CT_Say,eChatLoc.CL_PopupWindow);
+			return false;
+		}
+        
         return true;
     }
 
@@ -172,8 +181,6 @@ public class TitanAlphaLootMerchant : BattlegroundEventLoot
 			}
 			
 			
-			
-
 			/*
 			DOLCharactersXCustomParam charFreeEventEquip = new DOLCharactersXCustomParam();
 			charFreeEventEquip.DOLCharactersObjectId = player.ObjectId;
@@ -206,6 +213,38 @@ public class TitanAlphaLootMerchant : BattlegroundEventLoot
 		{
 			return false;
 		}
+		else if (str.Equals("experience"))
+		{
+			var lvCap = ServerProperties.Properties.EVENT_LVCAP;
+			
+			if (player.Level < lvCap)
+			{
+				string customKey = "BoostedLevel-" + lvCap;
+				var boosterKey = DOLDB<DOLCharactersXCustomParam>.SelectObject(DB.Column("DOLCharactersObjectId").IsEqualTo(player.ObjectId).And(DB.Column("KeyName").IsEqualTo(customKey)));
+                        
+				player.Out.SendMessage("I have given you enough experience to fight, now speak again with me to get a new set of equipment.", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
+				player.Boosted = true;
+				player.CanGenerateNews = false;
+				player.Level = (byte)lvCap;
+				player.Health = player.MaxHealth;
+                        
+                        
+				if (boosterKey == null)
+				{
+					DOLCharactersXCustomParam boostedLevel = new DOLCharactersXCustomParam();
+					boostedLevel.DOLCharactersObjectId = player.ObjectId;
+					boostedLevel.KeyName = customKey;
+					boostedLevel.Value = "1";
+					GameServer.Database.AddObject(boostedLevel);
+				}
+
+				return true;
+			}
+			player.Out.SendMessage("You are a veteran already, go fight for your Realm!", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
+			return false;
+		}
+
+		
 		return true;
 	}
     
