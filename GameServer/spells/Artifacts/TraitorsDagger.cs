@@ -90,7 +90,7 @@ namespace DOL.GS.Spells
             petBrain.Think();
         }
 
-        protected override GamePet GetGamePet(INpcTemplate template) { return new TraitorDaggerPet(template); }
+        protected override GameSummonedPet GetGamePet(INpcTemplate template) { return new TraitorDaggerPet(template); }
         protected override IControlledBrain GetPetBrain(GameLiving owner) { return new ProcPetBrain(owner); }
         protected override void SetBrainToOwner(IControlledBrain brain) { }
         protected override void AddHandlers() { GameEventMgr.AddHandler(m_pet, GameLivingEvent.AttackFinished, EventHandler); }
@@ -107,7 +107,7 @@ namespace DOL.GS.Spells
             }
             if(Util.Chance(50))
             {
-                _trap.CastSpell(args.AttackData.Target);
+                _trap.StartSpell(args.AttackData.Target);
             }
         }
 
@@ -143,7 +143,7 @@ namespace DOL.GS.Spells
 
 namespace DOL.GS
 {
-	public class TraitorDaggerPet : GamePet
+	public class TraitorDaggerPet : GameSummonedPet
 	{
 		public override int MaxHealth
 		{

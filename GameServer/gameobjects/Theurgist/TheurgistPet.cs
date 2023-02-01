@@ -1,58 +1,26 @@
-using DOL.AI.Brain;
-using DOL.GS.ServerProperties;
-using DOL.GS.Spells;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using DOL.GS.ServerProperties;
 
 namespace DOL.GS
 {
-	public class TheurgistPet : GamePet
+	public class TheurgistPet : GameSummonedPet
 	{
-		public TheurgistPet(INpcTemplate npcTemplate) : base(npcTemplate)
-		{
-			
-			if (npcTemplate.Name.ToLower().Contains("earth"))
-			{
-				ScalingFactor = 17;
-			}
+		public TheurgistPet(INpcTemplate npcTemplate) : base(npcTemplate) { }
 
-			if (npcTemplate.Name.ToLower().Contains("air"))
-			{
-				ScalingFactor = 11;
-			}
-		}
-
-		public override void OnAttackedByEnemy(AttackData ad) 
-		{
-			if (ad != null && (ad.CausesCombat || ad.IsSpellResisted))
-			{
-				if (castingComponent != null && castingComponent.IsCasting && castingComponent.spellHandler.CastStartTick + (CurrentSpellHandler as SpellHandler).CalculateCastingTime() / 2 < GameLoop.GameLoopTime)
-				{
-					InterruptTime = 0;
-				}
-				else
-					(Brain as TheurgistPetBrain).Melee = true;
-			}
-		}
-		
-
-		//public override int MaxHealth => Constitution * 10;
-
-        /// <summary>
-        /// not each summoned pet 'll fire ambiant sentences
-        /// let's say 10%
-        /// </summary>
-        protected override void BuildAmbientTexts()
+		protected override void BuildAmbientTexts()
 		{
 			base.BuildAmbientTexts();
-			if (ambientTexts.Count>0)
-				foreach (var at in ambientTexts)
-					at.Chance /= 10;
+
+			// Not each summoned pet will fire ambient sentences.
+			if (ambientTexts.Count > 0)
+			{
+				foreach (MobXAmbientBehaviour ambientText in ambientTexts)
+					ambientText.Chance /= 10;
+			}
 		}
 
-        public override void AutoSetStats()
-        {
+		public override void AutoSetStats()
+		{
 			Strength = Properties.PET_AUTOSET_STR_BASE;
 			if (Strength < 1)
 				Strength = 1;
@@ -77,7 +45,6 @@ namespace DOL.GS
 			Piety = 30;
 			Charisma = 30;
 
-			
 			if (Level > 1)
 			{
 				// Now add stats for levelling
@@ -90,7 +57,6 @@ namespace DOL.GS
 				Piety += (short)(Level - 1);
 				Charisma += (short)(Level - 1);
 			}
-			//base.AutoSetStats();
-        }
-    }
+		}
+	}
 }

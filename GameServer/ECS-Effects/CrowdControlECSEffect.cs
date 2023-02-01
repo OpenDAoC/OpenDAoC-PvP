@@ -76,7 +76,7 @@ namespace DOL.GS
         public StunECSGameEffect(ECSGameEffectInitParams initParams)
             : base(initParams)
         {
-            if (initParams.SpellHandler.Caster is GamePet)
+            if (initParams.SpellHandler.Caster is GameSummonedPet)
                 TriggersImmunity = false;
             else
                 TriggersImmunity = true;

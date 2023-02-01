@@ -96,15 +96,14 @@ namespace DOL.GS.Spells
 				m_pet.Spells.Add(SkillBase.GetSpellByID(Spell.SubSpellID));
 			}
 
-			(m_pet.Brain as TurretBrain).IsMainPet = false;
-			(m_pet.Brain as IOldAggressiveBrain).AddToAggroList(target, 1);
-			(m_pet.Brain as TurretBrain).Think();
-
 			if (m_pet.Spells.Count > 0)
 			{
 				//[Ganrod] Nidel: Set only one spell.
 				(m_pet as TurretPet).TurretSpell = m_pet.Spells[0] as Spell;
 			}
+
+			(m_pet.Brain as TurretBrain).IsMainPet = false;
+			(m_pet.Brain as TurretBrain).Think();
 
 			Caster.PetCount++;
 		}
@@ -121,7 +120,7 @@ namespace DOL.GS.Spells
 		/// <param name="arguments"></param>
 		protected override void OnNpcReleaseCommand(DOLEvent e, object sender, EventArgs arguments)
 		{
-			m_pet = sender as GamePet;
+			m_pet = sender as GameSummonedPet;
 			if (m_pet == null)
 				return;
 

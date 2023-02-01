@@ -891,6 +891,7 @@ namespace DOL.GS
 				if (controlledNpc == null) return false;
 				IControlledBrain[] brainlist = ControlledNpcList;
 				int i = 0;
+
 				//Try to find the minion in the list
 				for (; i < brainlist.Length; i++)
 				{
@@ -905,15 +906,10 @@ namespace DOL.GS
 				//Found it, lets remove it
 				if (found)
 				{
-					if (controlledNpc.Body is GamePet minion)
-						minion.StripBuffs();
-				
-					//First lets store the brain to kill it
-					IControlledBrain tempBrain = m_controlledBrain[i];
-					//Lets get rid of the brain asap
-					m_controlledBrain[i] = null;
+					if (controlledNpc.Body.Brain is ControlledNpcBrain controlledNpcBrain)
+						controlledNpcBrain.StripCastedBuffs();
 
-					//Only decrement, we just lost one pet
+					m_controlledBrain[i] = null;
 					PetCount--;
 
 					return base.RemoveControlledNpc(controlledNpc);

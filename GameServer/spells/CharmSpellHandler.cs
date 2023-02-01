@@ -231,7 +231,7 @@ namespace DOL.GS.Spells
 		        {
 			        var isCharmable = true;
 
-			        if (charmMob is GamePet) // Summoned pets
+			        if (charmMob is GameSummonedPet) // Summoned pets
 				        isCharmable = false;
 			        if (charmMob is GameMerchant) // Merchant NPCs
 				        isCharmable = false;

@@ -466,16 +466,16 @@ namespace DOL.GS
 		/// </summary>
 		/// <param name="template"></param>
 		/// <returns></returns>
-		public virtual GamePet CreateGamePet(INpcTemplate template)
+		public virtual GameSummonedPet CreateGamePet(INpcTemplate template)
 		{
-			return new GamePet(template);
+			return new GameSummonedPet(template);
 		}
 
 		/// <summary>
 		/// A new pet has been summoned, do we do anything?
 		/// </summary>
 		/// <param name="pet"></param>
-		public virtual void OnPetSummoned(GamePet pet)
+		public virtual void OnPetSummoned(GameSummonedPet pet)
 		{
 		}
 
@@ -1940,10 +1940,10 @@ namespace DOL.GS
 		}
 
 		protected long m_interruptTime = 0;
-		public virtual long InterruptTime
+		public long InterruptTime
 		{
-			get { return m_interruptTime; }
-			set
+			get => m_interruptTime;
+			private set
 			{
 				InterruptAction = GameLoop.GameLoopTime;
 				m_interruptTime = value;
@@ -1951,43 +1951,31 @@ namespace DOL.GS
 		}
 
 		protected long m_interruptAction = 0;
-		public virtual long InterruptAction
+		public long InterruptAction
 		{
-			get { return m_interruptAction; }
-			set { m_interruptAction = value; }
+			get => m_interruptAction;
+			private set => m_interruptAction = value;
 		}
 
 		/// <summary>
 		/// Yields true if interrupt action is running on this living.
 		/// </summary>
-		public virtual bool IsBeingInterrupted
-		{
-			get { return (m_interruptTime > GameLoop.GameLoopTime); }
-		}
+		public virtual bool IsBeingInterrupted => m_interruptTime > GameLoop.GameLoopTime;
 
 		/// <summary>
 		/// Base chance this living can be interrupted
 		/// </summary>
-		public virtual int BaseInterruptChance
-		{
-			get { return 95; }
-		}
+		public virtual int BaseInterruptChance => 95;
 
 		/// <summary>
 		/// How long does an interrupt last?
 		/// </summary>
-		public virtual int SpellInterruptDuration
-		{
-			get { return ServerProperties.Properties.SPELL_INTERRUPT_DURATION; }
-		}
+		public virtual int SpellInterruptDuration => ServerProperties.Properties.SPELL_INTERRUPT_DURATION;
 
 		/// <summary>
 		/// Additional interrupt time if interrupted again
 		/// </summary>
-		public virtual int SpellInterruptRecastAgain
-		{
-			get { return ServerProperties.Properties.SPELL_INTERRUPT_AGAIN; }
-		}
+		public virtual int SpellInterruptRecastAgain => ServerProperties.Properties.SPELL_INTERRUPT_AGAIN;
 
 		public virtual bool InterruptChance(GameLiving attacker)
 		{
@@ -2012,8 +2000,8 @@ namespace DOL.GS
 			if (rangeAttackComponent.RangedAttackType == eRangedAttackType.SureShot)
 			{
 				if (attackType is not eAttackType.MeleeOneHand
-                    and not eAttackType.MeleeTwoHand
-                    and not eAttackType.MeleeDualWield)
+					and not eAttackType.MeleeTwoHand
+					and not eAttackType.MeleeDualWield)
 					return false;
 			}
 
@@ -4446,11 +4434,11 @@ namespace DOL.GS
 				}
             }
 
-			if (this is GameNPC npc && npc.Brain is ControlledNpcBrain || this is GamePet)
+			if (this is GameNPC npc && npc.Brain is ControlledNpcBrain || this is GameSummonedPet)
             {
 				List<ECSGameSpellEffect> ownerEffects;
 				ControlledNpcBrain pBrain = (this as GameNPC).Brain as ControlledNpcBrain;
-				GamePet pet = this as GamePet;
+				GameSummonedPet pet = this as GameSummonedPet;
 
 				if (pBrain != null)
 					ownerEffects = pBrain.Owner.effectListComponent.GetSpellEffects(eEffect.MovementSpeedBuff);
@@ -5736,43 +5724,6 @@ namespace DOL.GS
         //public SingleStatBuffComponent buffComponent;
         public EffectListComponent effectListComponent;
         #endregion
-
-        public virtual GamePlayer LosChecker(GameLiving actionSource, GameObject actionTarget)
-        {
-	        if (actionSource == null || actionTarget == null)
-		        return null;
-
-	        if (actionSource is GamePlayer)
-		        return actionSource as GamePlayer;
-	        
-	        {
-		        if (actionSource is GameNPC &&
-		            (actionSource as GameNPC).Brain is IControlledBrain &&
-		            ((actionSource as GameNPC).Brain as IControlledBrain).GetPlayerOwner() != null &&
-		            ((actionSource as GameNPC).Brain as IControlledBrain).GetPlayerOwner().ObjectState == GamePlayer.eObjectState.Active)
-			        return ((actionSource as GameNPC).Brain as IControlledBrain).GetPlayerOwner();
-
-		        if (actionTarget is GamePlayer)
-			        return actionTarget as GamePlayer;
-		        
-		        {
-			        if (actionSource is GameNPC && ((actionSource as GameNPC).Brain is IControlledBrain == false))
-			        {
-				        if (actionTarget is GameNPC &&
-				            (actionTarget as GameNPC).Brain is IControlledBrain &&
-				            ((actionTarget as GameNPC).Brain as IControlledBrain).GetPlayerOwner() != null &&
-				            ((actionTarget as GameNPC).Brain as IControlledBrain).GetPlayerOwner().ObjectState == GamePlayer.eObjectState.Active)
-					        return ((actionTarget as GameNPC).Brain as IControlledBrain).GetPlayerOwner();
-			        }
-		        }
-	        }
-	        foreach (GamePlayer pl in actionSource.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-	        {
-		        if (pl != null && pl.ObjectState == GameLiving.eObjectState.Active)
-			        return pl;
-	        }
-	        return null;
-        }
 
         #region Mana/Health/Endurance/Concentration/Delete
         /// <summary>
@@ -7097,15 +7048,6 @@ namespace DOL.GS
 		}
 
 		/// <summary>
-		/// Callback after spell casting is complete and next spell can be processed
-		/// </summary>
-		/// <param name="handler"></param>
-		public virtual void OnAfterSpellCastSequence(ISpellHandler handler)
-		{
-			CurrentSpellHandler.CastingCompleteEvent -= new CastingCompleteCallback(OnAfterSpellCastSequence);
-		}
-
-		/// <summary>
 		/// Immediately stops currently casting spell
 		/// </summary>
 		public virtual void StopCurrentSpellcast()
@@ -7141,17 +7083,13 @@ namespace DOL.GS
 		public virtual bool CastSpell(ISpellCastingAbilityHandler ab)
 		{
 			ISpellHandler spellhandler = ScriptMgr.CreateSpellHandler(this, ab.Spell, ab.SpellLine);
+
 			if (spellhandler != null)
 			{
-				// Instant cast abilities should not interfere with the spell queue
-				if (spellhandler.Spell.CastTime > 0)
-				{
-					CurrentSpellHandler.CastingCompleteEvent += new CastingCompleteCallback(OnAfterSpellCastSequence);
-				}
-
 				spellhandler.Ability = ab;
-				return spellhandler.CastSpell();
+				return spellhandler.StartSpell(this);
 			}
+
 			return false;
 		}
 

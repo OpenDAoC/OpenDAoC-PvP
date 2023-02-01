@@ -77,7 +77,7 @@ namespace DOL.GS.PropertyCalc
 			if (living is GamePlayer player)
 				percent += (int)(100 * RelicMgr.GetRelicBonusModifier(living.Realm, eRelicType.Magic, player.Guild));
             
-            if(living is GamePet {Owner: GamePlayer petOwner} pet)
+            if(living is GameSummonedPet {Owner: GamePlayer petOwner})
                 percent += (int)(100 * RelicMgr.GetRelicBonusModifier(living.Realm, eRelicType.Magic, petOwner.Guild));
 
             return percent;

@@ -95,7 +95,7 @@ namespace DOL.AI.Brain
 			base.OnAttackedByEnemy(ad);
 
 			// Get help from the commander and other minions
-			if (ad.CausesCombat && Owner is GamePet own && own.Brain is CommanderBrain ownBrain)
+			if (ad.CausesCombat && Owner is GameSummonedPet own && own.Brain is CommanderBrain ownBrain)
 				ownBrain.DefendMinion(ad.Attacker);
 		}
 
@@ -213,15 +213,10 @@ namespace DOL.AI.Brain
 			FollowOwner();
 		}
 
-        /// <summary>
-        /// The interval for thinking, 1.5 seconds
-        /// </summary>
-        public override int ThinkInterval => 1500;
-
-        /// <summary>
-        /// Standard think method for all the pets
-        /// </summary>
-        public override void Think()
+		/// <summary>
+		/// Standard think method for all the pets
+		/// </summary>
+		public override void Think()
 		{
 			CheckAbilities();
 			CheckSpells(eCheckSpellType.Defensive);

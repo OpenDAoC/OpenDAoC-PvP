@@ -17,18 +17,12 @@
  *
  */
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
-
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
-using DOL.GS;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
-using DOL.GS.Spells;
-using DOL.Language;
 
 namespace DOL.GS.Spells
 {
@@ -182,7 +176,7 @@ namespace DOL.GS.Spells
             petBrain.Think();
         }
 
-        protected override GamePet GetGamePet(INpcTemplate template) { return new SummonElementalPet(template); }
+        protected override GameSummonedPet GetGamePet(INpcTemplate template) { return new SummonElementalPet(template); }
         protected override IControlledBrain GetPetBrain(GameLiving owner) { return new ProcPetBrain(owner); }
         protected override void SetBrainToOwner(IControlledBrain brain) { }
         protected override void AddHandlers() { GameEventMgr.AddHandler(m_pet, GameLivingEvent.AttackFinished, EventHandler); }
@@ -199,7 +193,7 @@ namespace DOL.GS.Spells
             }
             if (Util.Chance(99))
             {
-                _trap.CastSpell(args.AttackData.Target);
+                _trap.StartSpell(args.AttackData.Target);
             }
         }
         // Creates the trap(spell)
@@ -234,7 +228,7 @@ namespace DOL.GS.Spells
 
 namespace DOL.GS
 {
-    public class SummonHealingElementalPet : GamePet
+    public class SummonHealingElementalPet : GameSummonedPet
     {
         public override int MaxHealth
         {
@@ -244,7 +238,7 @@ namespace DOL.GS
         public SummonHealingElementalPet(INpcTemplate npcTemplate) : base(npcTemplate) { }
     }
 
-    public class SummonElementalPet : GamePet
+    public class SummonElementalPet : GameSummonedPet
     {
         public override int MaxHealth
         {
