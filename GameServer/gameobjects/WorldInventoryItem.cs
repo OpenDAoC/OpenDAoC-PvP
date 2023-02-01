@@ -38,6 +38,8 @@ namespace DOL.GS
 		/// </summary>
 		protected InventoryItem m_item;
 
+		public bool IsEthereal => m_item != null && Item.IsEthereal;
+
 		/// <summary>
 		/// Has this item been removed from the world?
 		/// </summary>

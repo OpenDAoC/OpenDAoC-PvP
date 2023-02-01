@@ -232,7 +232,9 @@ namespace DOL.GS {
             worldItem.Heading = player.Heading;
             worldItem.CurrentRegionID = player.CurrentRegionID;
 
-            worldItem.AddOwner(player);
+            if(!worldItem.IsEthereal)
+                worldItem.AddOwner(player);
+            
             worldItem.AddToWorld();
 
             return worldItem;
@@ -407,7 +409,7 @@ namespace DOL.GS {
                 delve.Add(" ");
             }
 
-            if (this is GameInventoryItemLootable)
+            if (this.IsEthereal)
             {
                 if(this.Name.ToLower().Contains("titanic power"))
                     delve.Add("This item shimmers ethereally, and is difficult to grasp. Dying with this item will cause it to fall to the ground at your death location. Changing zones will solidify the otherworldly magicks and allow you to keep it permanently.");

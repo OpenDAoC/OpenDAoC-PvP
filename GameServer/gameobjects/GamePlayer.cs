@@ -8691,7 +8691,7 @@ namespace DOL.GS
                 List<InventoryItem> itemsToRemove = new List<InventoryItem>();
                 foreach (InventoryItem item in this.Inventory.AllItems)
                 {
-                    if (item is GameInventoryItemLootable lootable)
+                    if (item is GameInventoryItem lootable && lootable.IsEthereal)
                     {
                         Out.SendMessage($"The {lootable.Name} slips from your grasp as your vision darkens.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                         Inventory.RemoveItem(lootable);
@@ -8699,7 +8699,8 @@ namespace DOL.GS
                         {
                             for (int i = 0; i < lootable.Count; i++)
                             {
-                                var lootableCopy = new GameInventoryItemLootable(lootable.Template);
+                                var lootableCopy = new GameInventoryItem(lootable.Template);
+                                lootableCopy.IsEthereal = true;
                                 lootableCopy.Drop(this);
                             }
                         }
@@ -8707,8 +8708,7 @@ namespace DOL.GS
                         {
                             lootable.Drop(this);
                         }
-                        itemsToRemove.Add(lootable); 
-                       
+                        itemsToRemove.Add(lootable);
                     }
                 }
                 Out.SendInventoryItemsUpdate(itemsToRemove); //batch our item updates so we only have to send packets once, instead of once each in the foreach
@@ -11328,7 +11328,7 @@ namespace DOL.GS
 
                 if (!rgn.IsDungeon)
                 {
-                    List<InventoryItem> itemsToSave = Inventory.AllItems.Where(item => item is GameInventoryItemLootable).ToList();
+                    List<InventoryItem> itemsToSave = Inventory.AllItems.Where(item => item.IsEthereal).ToList();
                     for (int i = 0; i < itemsToSave.Count(); i++)
                     {
                         var inventoryItem = itemsToSave[i];
@@ -13226,12 +13226,12 @@ namespace DOL.GS
                 return false;
             }
             
-            if (floorObject is WorldInventoryItem)
+            if (floorObject is WorldInventoryItem worldFloor)
             {
                 WorldInventoryItem floorItem = floorObject as WorldInventoryItem;
-                if (floorObject is WorldInventoryItemLootable lootable)
+                if (worldFloor.IsEthereal)
                 {
-                    floorItem = lootable;
+                    floorItem = worldFloor;
                     floorItem.OwnerID ??= this.InternalID;
                 }
 
@@ -13327,13 +13327,10 @@ namespace DOL.GS
                         bool good = false;
                         if (floorItem.Item.IsStackable)
                         {
-                            if (floorItem.Item is GameInventoryItemLootable)
-                            {
+                            if (floorItem.Item.IsEthereal)
                                 floorItem.Item.OwnerID = this.InternalID;
-                                good = Inventory.AddTemplate(GameInventoryItemLootable.Create(floorItem.Item), floorItem.Item.Count, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
-                            }
-                            else
-                                good = Inventory.AddTemplate(GameInventoryItem.Create(floorItem.Item), floorItem.Item.Count, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
+                              
+                            good = Inventory.AddTemplate(GameInventoryItem.Create(floorItem.Item), floorItem.Item.Count, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack);
                         }
                         else
                             good = Inventory.AddItem(eInventorySlot.FirstEmptyBackpack, floorItem.Item);

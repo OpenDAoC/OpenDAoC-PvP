@@ -19,6 +19,7 @@
 using System;
 using System.Linq;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 
 using DOL.Database;
@@ -286,6 +287,15 @@ namespace DOL.GS.PacketHandler.Client.v168
 
 				//move the player
 				player?.MoveTo(m_zonePoint.TargetRegion, m_zonePoint.TargetX, m_zonePoint.TargetY, m_zonePoint.TargetZ, m_zonePoint.TargetHeading);
+				
+				List<InventoryItem> etherealItems = player?.Inventory.AllItems.Where(item => item.IsEthereal).ToList();
+				foreach (var etherealItem in etherealItems)
+				{
+					etherealItem.IsEthereal = false;
+				}
+
+				GameServer.Database.SaveObject(etherealItems);
+				
 				return 0;
 			}
 		}

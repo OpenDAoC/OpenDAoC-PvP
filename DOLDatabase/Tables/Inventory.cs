@@ -88,6 +88,13 @@ namespace DOL.Database
 			set { Dirty = true; m_isROG = value; }
 		}
 		
+		protected bool m_isEthereal;			
+		[DataElement(AllowDbNull = false)]
+		public virtual bool IsEthereal {
+			get { return m_isEthereal; }
+			set { Dirty = true; m_isEthereal = value; }
+		}
+		
 		protected string m_creator;			// crafter or mob dropping it, but also quest, etc...
 		[DataElement(AllowDbNull = true)]
 		public virtual string Creator
@@ -304,6 +311,7 @@ namespace DOL.Database
 			m_utemplate_id = null;
 			ITWrapper = new ItemTemplate();
 			ITWrapper.AllowAdd = false;
+			m_isEthereal = false;
 		}
 
 		/// <summary>
@@ -331,6 +339,7 @@ namespace DOL.Database
 			m_poisonCharges = template.PoisonCharges;
 			m_poisonMaxCharges = template.PoisonMaxCharges;
 			m_poisonSpellID = template.PoisonSpellID;
+			m_isEthereal = template.IsEthereal;
 		}
 		
 		/// <summary>
@@ -357,6 +366,7 @@ namespace DOL.Database
 			m_poisonCharges = template.PoisonCharges;
 			m_poisonMaxCharges = template.PoisonMaxCharges;
 			m_poisonSpellID = template.PoisonSpellID;
+			m_isEthereal = template.IsEthereal;
 		}
 		
 		/// <summary>
@@ -387,6 +397,7 @@ namespace DOL.Database
 			m_poisonSpellID = template.PoisonSpellID;
 			m_experience = template.Experience;
 			m_ownerLot = template.OwnerLot;
+			m_isEthereal = template.IsEthereal;
 		}
 
 		public virtual void SetCooldown()
@@ -813,6 +824,7 @@ namespace DOL.Database
 		{
 			get{ return Template.IsStackable;}
 		}
+		
 		public virtual string GetName(int article, bool firstLetterUppercase)
 		{
 			return Template.GetName(article,firstLetterUppercase);

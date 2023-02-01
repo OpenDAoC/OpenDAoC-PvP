@@ -83,6 +83,7 @@ namespace DOL.Database
 		protected int m_weight;
 		protected bool m_isIndestructible;
 		protected bool m_isNotLosingDur;
+		protected bool m_isEthereal;
 
 		// weapon/armor
 		protected int m_dps_af;
@@ -395,6 +396,13 @@ namespace DOL.Database
 		{
 			get { return m_isNotLosingDur; }
 			set { Dirty = true; m_isNotLosingDur = value; }
+		}
+		
+		[DataElement(AllowDbNull = false)]
+		public bool IsEthereal
+		{
+			get { return m_isEthereal; }
+			set { Dirty = true; m_isEthereal = value; }
 		}
 
 		[DataElement(AllowDbNull = false)]

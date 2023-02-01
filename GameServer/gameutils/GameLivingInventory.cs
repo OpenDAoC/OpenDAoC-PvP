@@ -889,8 +889,8 @@ namespace DOL.GS
 					if (curItem.Id_nb != sourceItem.Id_nb)
 						continue;
 
-					//if we are comparing a GameInventory and a GameInventoryLootable, don't stack them
-					if (curItem.GetType() != sourceItem.GetType())
+					//only stack items of same ethereality (is that a word?)
+					if (curItem.IsEthereal != sourceItem.IsEthereal)
 						continue;
 
 					// Can't add to an already maxed-out stack.
@@ -997,17 +997,16 @@ namespace DOL.GS
 						{
 							if (sourceItem.Template is ItemUnique)
 							{
+								item = GameInventoryItem.Create(sourceItem);
 								if (sourceItem.Template.PackageID.ToLower().Contains("titan"))
-									item = GameInventoryItemLootable.Create(sourceItem);
-								else
-									item = GameInventoryItem.Create(sourceItem);
+									item.IsEthereal = true;
+
 							}
 							else
 							{
+								item = GameInventoryItem.Create(sourceItem.Template);
 								if (sourceItem.Template.PackageID.ToLower().Contains("titan"))
-									item = GameInventoryItemLootable.Create(sourceItem.Template);
-								else
-									item = GameInventoryItem.Create(sourceItem.Template);
+									item.IsEthereal = true;
 							}
 
 							item.Count = -itemCount;

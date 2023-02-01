@@ -314,7 +314,6 @@ namespace DOL.GS
 
 			bool canPersist = true;
 			GameInventoryItem gameItem = item as GameInventoryItem;
-			if (item is GameInventoryItemLootable lootable) gameItem = lootable;
 			if (gameItem != null)
 			{
 				canPersist = gameItem.CanPersist;
@@ -379,7 +378,7 @@ namespace DOL.GS
 			if (item == null)
 				return false;
 
-			if (item.OwnerID != m_player.InternalID && item is not GameInventoryItemLootable)
+			if (item.OwnerID != m_player.InternalID && !item.IsEthereal)
 			{
 				if (Log.IsErrorEnabled)
 					Log.Error(m_player.Name + ": PlayerInventory -> tried to remove item with wrong owner (" + (item.OwnerID ?? "null") +
@@ -616,8 +615,9 @@ namespace DOL.GS
 				m_items.TryGetValue(fromSlot, out fromItem);
 				m_items.TryGetValue(toSlot, out toItem);
 
-				if ((fromItem is GameInventoryItemLootable && toItem is GameInventoryItem)
-				    || toItem is GameInventoryItemLootable && fromItem is GameInventoryItem)
+				if (fromItem != null && toItem != null &&
+					((fromItem.IsEthereal && !toItem.IsEthereal)
+				    || toItem.IsEthereal && !fromItem.IsEthereal))
 				{
 					m_player.Out.SendMessage("These items are not stackable!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 					m_player.Out.SendInventorySlotsUpdate(null);
