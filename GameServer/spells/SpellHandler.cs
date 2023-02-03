@@ -3814,15 +3814,14 @@ namespace DOL.GS.Spells
 				var caster = m_caster;
 				if (m_caster is GameSummonedPet p) caster = p.Owner;
 				effectiveness += caster.GetModified(eProperty.SpellDamage) * 0.01;
-
 				
 				// Relic bonus applied to damage, does not alter effectiveness or increase cap
 				if(caster is GamePlayer casterPlayer)
 					spellDamage *= (1.0 + RelicMgr.GetRelicBonusModifier(caster.Realm, eRelicType.Magic, casterPlayer.Guild));
-
-				if (caster is GamePet {Owner: GamePlayer petOwner} pet)
+				
+				if (caster is GameSummonedPet {Owner: GamePlayer petOwner} pet)
 					spellDamage *= (1.0 + RelicMgr.GetRelicBonusModifier(caster.Realm, eRelicType.Magic, petOwner.Guild));
-
+				
 					/*
 					eProperty skillProp = SkillBase.SpecToSkill(m_spellLine.Spec);
 					if (skillProp != eProperty.Undefined)
