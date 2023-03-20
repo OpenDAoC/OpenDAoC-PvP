@@ -4,7 +4,7 @@ using DOL.GS;
 using DOL.GS.PacketHandler;
 using DOL.GS.Scripts;
 
-namespace GameServer.quests.TitanQuests.Daily;
+namespace DOL.GS.Quests;
 
 public class PlayerKillEventZone : PlayerKillAny
 {

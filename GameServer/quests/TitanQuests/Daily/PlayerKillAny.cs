@@ -7,7 +7,7 @@ using DOL.GS.PacketHandler;
 using DOL.GS.Quests;
 using log4net;
 
-namespace GameServer.quests.TitanQuests.Daily
+namespace DOL.GS.Quests
 {
 	public class PlayerKillAny : DailyQuest
 	{

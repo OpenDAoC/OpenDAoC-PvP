@@ -3,7 +3,7 @@ using DOL.Events;
 using DOL.GS;
 using DOL.GS.PacketHandler;
 
-namespace GameServer.quests.TitanQuests.Daily;
+namespace DOL.GS.Quests;
 
 public class PlayerKillDungeon : PlayerKillAny
 {
