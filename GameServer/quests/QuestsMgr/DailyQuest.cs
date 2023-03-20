@@ -31,5 +31,7 @@ public abstract class DailyQuest : BaseQuest
 
     public abstract void LoadQuestParameters();
     public abstract void SaveQuestParameters();
+    
+    
 
 }
