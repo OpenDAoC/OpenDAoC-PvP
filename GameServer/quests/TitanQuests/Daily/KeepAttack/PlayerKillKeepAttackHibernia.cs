@@ -1,13 +1,16 @@
 ﻿using System;
 using DOL.Events;
 using DOL.GS;
+using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
 
-namespace GameServer.quests.TitanQuests.Daily;
+namespace DOL.GS.Quests;
 
-public class PlayerKillHibernia : PlayerKillAny
+public class PlayerKillKeepAttackHibernia : PlayerKillKeepAttackAny
 {
-    private const string questTitle = "[Daily] Fertilize the Mushrooms";
+    private const string questTitle = "[Daily] Property Reclamation (Hibernia)";
+
+    protected new int RewardAmount = 500;
     
     public override void Notify(DOLEvent e, object sender, EventArgs args)
     {
@@ -24,6 +27,9 @@ public class PlayerKillHibernia : PlayerKillAny
 
         if (gArgs.Target.Realm != eRealm.Hibernia) return;
 
+        AbstractGameKeep keep = DOL.GS.GameServer.KeepManager.GetKeepCloseToSpot(gArgs.Target.CurrentRegionID, gArgs.Target, 3500);
+        if (keep is null || (gArgs.Target is GamePlayer targetPlayer && keep.Guild.ID != targetPlayer.Guild.ID)) return;
+
         if (gArgs.Target.Realm == 0 || gArgs.Target is not GamePlayer || (gArgs.Target.GuildName != null && gArgs.Target.GuildName.Equals(m_questPlayer.GuildName))||
             !(player.GetConLevel(gArgs.Target) > MIN_PLAYER_CON)) return;
         PlayersKilled++;
@@ -39,7 +45,7 @@ public class PlayerKillHibernia : PlayerKillAny
     
     public override string QuestPropertyKey
     {
-        get => "PlayerKillHibernia";
+        get => "PlayerKillKeepAttackHibernia";
         set { ; }
     }
 }
