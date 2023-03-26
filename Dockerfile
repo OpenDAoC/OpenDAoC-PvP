@@ -17,10 +17,10 @@ RUN apt-get update && \
 RUN unzip DummyDB.zip -d /tmp/dummy-db
 
 # Restore NuGet packages
-RUN dotnet restore "DOLLinux.sln"
+RUN dotnet restore DOLLinux.sln
 
 # Build the application in Release mode
-RUN dotnet build "DOLLinux.sln" -c Release
+RUN dotnet build DOLLinux.sln -c Release
 
 # Use the official .NET 6.0 Runtime image as the base for the final image
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS final
