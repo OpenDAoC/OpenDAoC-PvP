@@ -20,7 +20,7 @@ namespace DOL.GS.API
 
             var contentRoot = Directory.GetCurrentDirectory();
 
-            builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(Properties.ATLAS_API_PORT));
+            //builder.WebHost.ConfigureKestrel(options => options.ListenLocalhost(Properties.ATLAS_API_PORT));
 
             var webRoot = Path.Combine(contentRoot, "wwwroot", "docs");
 
