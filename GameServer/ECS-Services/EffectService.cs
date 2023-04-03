@@ -7,7 +7,6 @@ using DOL.AI.Brain;
 using DOL.Database;
 using DOL.GS.Effects;
 using DOL.GS.PacketHandler;
-using DOL.GS.PropertyCalc;
 using DOL.GS.Spells;
 using DOL.Language;
 using ECS.Debug;
@@ -18,23 +17,18 @@ namespace DOL.GS
     public static class EffectService
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private const string SERVICE_NAME = "EffectService";
 
-        private const string ServiceName = "EffectService";
-
-        static EffectService()
+        public static void Tick()
         {
-            //This should technically be the world manager
-            EntityManager.AddService(typeof(EffectService));
-        }
+            Diagnostics.StartPerfCounter(SERVICE_NAME);
 
-        public static void Tick(long tick)
-        {
-            Diagnostics.StartPerfCounter(ServiceName);
+            List<ECSGameEffect> list = EntityManager.GetAll<ECSGameEffect>(EntityManager.EntityType.Effect);
 
-            ECSGameEffect[] arr = EntityManager.GetAllEffects();
-
-            Parallel.ForEach(arr, effect =>
+            Parallel.For(0, EntityManager.GetLastNonNullIndex(EntityManager.EntityType.Effect) + 1, i =>
             {
+                ECSGameEffect effect = list[i];
+
                 if (effect == null)
                     return;
 
@@ -45,18 +39,19 @@ namespace DOL.GS
                 else
                     HandlePropertyModification(effect);
 
+                effect.EntityManagerId = EntityManager.Remove(EntityManager.EntityType.Effect, effect.EntityManagerId);
+
                 long stopTick = GameTimer.GetTickCount();
 
-                if ((stopTick - startTick)  > 25 )
+                if ((stopTick - startTick) > 25 )
                     log.Warn($"Long EffectService.Tick for Effect: {effect}  Owner: {effect.OwnerName} Time: {stopTick - startTick}ms");
             });
-            
-            Diagnostics.StopPerfCounter(ServiceName);
+
+            Diagnostics.StopPerfCounter(SERVICE_NAME);
         }
-    
+
         private static void HandlePropertyModification(ECSGameEffect e)
         {
-            EntityManager.RemoveEffect(e);
             if (e.Owner == null)
             {
                 //Console.WriteLine($"Invalid target for Effect {e}");
@@ -82,6 +77,7 @@ namespace DOL.GS
                     if (spellEffect.SpellHandler.Caster is GamePlayer playerCaster)
                         ChatUtil.SendResistMessage(playerCaster, "GamePlayer.Caster.Buff.EffectAlreadyActive", e.Owner.GetName(0, true));
                 }
+
                 return;
             }
 
@@ -145,13 +141,13 @@ namespace DOL.GS
                 e.OnStartEffect();
 
             UpdateEffectIcons(e);
-        }      
+        }
 
         private static void UpdateEffectIcons(ECSGameEffect e)
         {
             if (e.Owner is GamePlayer player)
             {
-                List<ECSGameEffect> ecsList = new List<ECSGameEffect>();
+                List<ECSGameEffect> ecsList = new();
 
                 if (e.PreviousPosition >= 0)
                 {
@@ -180,29 +176,30 @@ namespace DOL.GS
                 SendPlayerUpdates(player);
                 player.Out.SendConcentrationList();
             }
-            else if (e.Owner is GameNPC)
+            else if (e.Owner is GameNPC npc)
             {
-                IControlledBrain npc = ((GameNPC)e.Owner).Brain as IControlledBrain;
-                if (npc != null)
-                    npc.UpdatePetWindow();
-                if (npc?.Body is NecromancerPet)
-                    SendPlayerUpdates(npc.Owner as GamePlayer);
+                if (npc.Brain is IControlledBrain npcBrain)
+                {
+                    npcBrain.UpdatePetWindow();
+
+                    if (npc is NecromancerPet)
+                        SendPlayerUpdates(npcBrain.Owner as GamePlayer);
+                }
             }
         }
 
         private static void HandleCancelEffect(ECSGameEffect e)
         {
-            EntityManager.RemoveEffect(e);
             if (!e.Owner.effectListComponent.RemoveEffect(e))
                 return;
 
-            ECSGameSpellEffect spellEffect = e as ECSGameSpellEffect;
-            if (spellEffect != null)
+            if (e is ECSGameSpellEffect spellEffect)
             {
-                if (spellEffect.IsBuffActive && spellEffect.EffectType != eEffect.Pulse && !(spellEffect is ECSImmunityEffect))
+                if (spellEffect.IsBuffActive && spellEffect.EffectType != eEffect.Pulse && spellEffect is not ECSImmunityEffect)
                     e.OnStopEffect();
 
                 e.IsBuffActive = false;
+
                 // Update the Concentration List if Conc Buff/Song/Chant.
                 if (e.CancelEffect && e.ShouldBeRemovedFromConcentrationList())
                 {
@@ -213,13 +210,11 @@ namespace DOL.GS
                         lock (spellEffect.SpellHandler.Caster.effectListComponent.ConcentrationEffectsLock)
                         {
                             if (spellEffect is ECSPulseEffect)
-                            {                               
+                            {
                                 for (int i = 0; i < spellEffect.SpellHandler.Caster.effectListComponent.ConcentrationEffects.Count; i++)
                                 {
                                     if (spellEffect.SpellHandler.Caster.effectListComponent.ConcentrationEffects[i] is ECSPulseEffect)
-                                    {
                                         spellEffect.SpellHandler.Caster.effectListComponent.ConcentrationEffects.RemoveAt(i);
-                                    }
                                 }
                             }
                             else
@@ -238,7 +233,7 @@ namespace DOL.GS
 
             if (!e.IsDisabled && e.Owner.effectListComponent.Effects.ContainsKey(e.EffectType))
             {
-                var enableEffect = e.Owner.effectListComponent.GetSpellEffects(e.EffectType).OrderByDescending(e => e.SpellHandler.Spell.Value).FirstOrDefault();
+                ECSGameSpellEffect enableEffect = e.Owner.effectListComponent.GetSpellEffects(e.EffectType).OrderByDescending(e => e.SpellHandler.Spell.Value).FirstOrDefault();
                 if (enableEffect != null && enableEffect.IsDisabled)
                     RequestEnableEffect(enableEffect);
             }
@@ -246,20 +241,16 @@ namespace DOL.GS
             if (e.Owner is GamePlayer player)
             {
                 SendPlayerUpdates(player);
-                //Now update EffectList
-                List<ECSGameEffect> ecsList = new List<ECSGameEffect>();
+
+                List<ECSGameEffect> ecsList = new();
                 List<ECSGameEffect> playerEffects = e.Owner.effectListComponent.GetAllEffects();
                 ecsList.AddRange(playerEffects.Skip(playerEffects.IndexOf(e)));
 
                 player.Out.SendUpdateIcons(ecsList, ref e.Owner.effectListComponent.GetLastUpdateEffectsCount());
                 player.Out.SendConcentrationList();
             }
-            else if (e.Owner is GameNPC)
-            {
-                IControlledBrain npc = ((GameNPC)e.Owner).Brain as IControlledBrain;
-                if (npc != null)
-                    npc.UpdatePetWindow();
-            }
+            else if (e.Owner is GameNPC npc && npc.Brain is IControlledBrain npcBrain)
+                npcBrain.UpdatePetWindow();
         }
 
         /// <summary>
@@ -279,8 +270,7 @@ namespace DOL.GS
             // Player can't remove negative effect or Effect in Immunity State
             if (playerCanceled && ((!effect.HasPositiveEffect) || effect is ECSImmunityEffect))
             {
-                GamePlayer player = effect.Owner as GamePlayer;
-                if (player != null)
+                if (effect.Owner is GamePlayer player)
                     player.Out.SendMessage(LanguageMgr.GetTranslation((effect.Owner as GamePlayer).Client, "Effects.GameSpellEffect.CantRemoveEffect"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
                 return;
@@ -288,7 +278,9 @@ namespace DOL.GS
 
             effect.CancelEffect = true;
             effect.ExpireTick = GameLoop.GameLoopTime - 1;
-            EntityManager.AddEffect(effect);
+
+            if (effect.EntityManagerId == -1)
+                effect.EntityManagerId = EntityManager.Add(EntityManager.EntityType.Effect, effect);
         }
 
         /// <summary>
@@ -296,16 +288,14 @@ namespace DOL.GS
         /// </summary>
         public static void RequestCancelConcEffect(IConcentrationEffect concEffect, bool playerCanceled = false)
         {
-            ECSGameSpellEffect effect = concEffect as ECSGameSpellEffect;
-            if (effect != null)
+            if (concEffect is ECSGameSpellEffect effect)
             {
                 if (effect.SpellHandler.Spell.IsPulsing)
-                    effect.Owner.LastPulseCast = null;
+                    effect.Owner.ActivePulseSpells.TryRemove(effect.SpellHandler.Spell.SpellType, out Spell _);
 
                 RequestCancelEffect(effect, playerCanceled);
             }
         }
-
 
         /// <summary>
         /// Immediately removes an ECSGameEffect.
@@ -318,8 +308,7 @@ namespace DOL.GS
             // Player can't remove negative effect or Effect in Immunity State
             if (playerCanceled && ((!effect.HasPositiveEffect) || effect is ECSImmunityEffect))
             {
-                GamePlayer player = effect.Owner as GamePlayer;
-                if (player != null)
+                if (effect.Owner is GamePlayer player)
                     player.Out.SendMessage(LanguageMgr.GetTranslation((effect.Owner as GamePlayer).Client, "Effects.GameSpellEffect.CantRemoveEffect"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 
                 return;
@@ -331,26 +320,23 @@ namespace DOL.GS
             HandleCancelEffect(effect);
         }
 
-
         /// <summary>
         /// Immediately removes an ECSGameEffect (as a IConcentrationEffect).
         /// </summary>
         public static void RequestImmediateCancelConcEffect(IConcentrationEffect concEffect, bool playerCanceled = false)
         {
-            ECSGameSpellEffect effect = concEffect as ECSGameSpellEffect;
-            if (effect != null)
+            if (concEffect is ECSGameSpellEffect effect)
             {
                 RequestImmediateCancelEffect(effect, playerCanceled);
 
                 if (effect.SpellHandler.Spell.IsPulsing)
-                    effect.Owner.LastPulseCast = null;
+                    effect.Owner.ActivePulseSpells.TryRemove(effect.SpellHandler.Spell.SpellType, out Spell _);
             }
         }
 
         /// <summary>
         /// Immediately starts an ECSGameEffect.
         /// </summary>
-        /// <param name="effect"></param>
         public static void RequestStartEffect(ECSGameEffect effect)
         {
             HandlePropertyModification(effect);
@@ -359,8 +345,6 @@ namespace DOL.GS
         /// <summary>
         /// Immediately disables an ECSGameEffect.
         /// </summary>
-        /// <param name="effect"></param>
-        /// <param name="disable"></param>
         public static void RequestDisableEffect(ECSGameEffect effect)
         {
             effect.IsDisabled = true;
@@ -371,13 +355,11 @@ namespace DOL.GS
         /// <summary>
         /// Immediately enables a previously disabled ECSGameEffect.
         /// </summary>
-        /// <param name="effect"></param>
-        /// <param name="disable"></param>
         public static void RequestEnableEffect(ECSGameEffect effect)
         {
             if (!effect.IsDisabled)
                 return;
-            
+
             effect.IsDisabled = false;
             effect.RenewEffect = true;
             HandlePropertyModification(effect);
@@ -387,32 +369,36 @@ namespace DOL.GS
         {
             if (e != null)
             {
-                if (e.SpellHandler.Spell.IsPulsing && e.Owner != e.SpellHandler.Caster && e.SpellHandler.HasPositiveEffect && 
-                    e.SpellHandler.Spell.SpellType != (byte)eSpellType.DamageShield)
-                    return;
+                ISpellHandler spellHandler = e.SpellHandler;
+                Spell spell = spellHandler.Spell;
+                GameLiving target;
+
+                // Focus damage shield. Need to figure out why this is needed.
+                if (spell.IsPulsing && spell.SpellType == (byte)eSpellType.DamageShield)
+                    target = spellHandler.Target;
+                else
+                    target = e.Owner;
 
                 Parallel.ForEach(e.Owner.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE).OfType<GamePlayer>(), player =>
                 {
-                    player.Out.SendSpellEffectAnimation(e.SpellHandler.Caster, e.Owner, e.SpellHandler.Spell.ClientEffect, 0, false, 1);
+                    player.Out.SendSpellEffectAnimation(spellHandler.Caster, target, spell.ClientEffect, 0, false, 1);
                 });
             }
         }
 
         public static eEffect GetEffectFromSpell(Spell spell, bool isBaseLine = true)
         {
-            //Console.WriteLine("Spell of type: " + (spell.SpellType).ToString());
-
             switch (spell.SpellType)
             {
                 #region Positive Effects
-                //positive effects
+
                 case (byte)eSpellType.Bladeturn:
                     return eEffect.Bladeturn;
                 case (byte)eSpellType.DamageAdd:
                     return eEffect.DamageAdd;
                 //case (byte)eSpellType.DamageReturn:
                 //    return eEffect.DamageReturn;
-                case (byte)eSpellType.DamageShield: //FocusShield: Could be the wrong SpellType here
+                case (byte)eSpellType.DamageShield: // FocusShield: Could be the wrong SpellType here.
                     return eEffect.FocusShield;
                 case (byte)eSpellType.AblativeArmor:
                     return eEffect.AblativeArmor;
@@ -420,7 +406,7 @@ namespace DOL.GS
                     return eEffect.MeleeDamageBuff;
                 case (byte)eSpellType.CombatSpeedBuff:
                     return eEffect.MeleeHasteBuff;
-                //case (byte)eSpellType.Celerity:  //Possibly the same as CombatSpeedBuff?
+                //case (byte)eSpellType.Celerity: // Possibly the same as CombatSpeedBuff?
                 //    return eEffect.Celerity;
                 case (byte)eSpellType.SpeedOfTheRealm:
                 case (byte)eSpellType.SpeedEnhancement:
@@ -430,7 +416,7 @@ namespace DOL.GS
                 case (byte)eSpellType.CombatHeal:
                     return eEffect.CombatHeal;
 
-                //stats
+                // Stats.
                 case (byte)eSpellType.StrengthBuff:
                     return eEffect.StrengthBuff;
                 case (byte)eSpellType.DexterityBuff:
@@ -450,7 +436,7 @@ namespace DOL.GS
                 case (byte)eSpellType.ArmorFactorBuff:
                     return isBaseLine ? eEffect.BaseAFBuff : eEffect.SpecAFBuff;
 
-                //resists
+                // Resists.
                 case (byte)eSpellType.BodyResistBuff:
                     return eEffect.BodyResistBuff;
                 case (byte)eSpellType.SpiritResistBuff:
@@ -470,8 +456,7 @@ namespace DOL.GS
                 case (byte)eSpellType.AllMagicResistBuff:
                     return eEffect.AllMagicResistsBuff;
 
-
-                //regen
+                // Regens.
                 case (byte)eSpellType.HealthRegenBuff:
                     return eEffect.HealthRegenBuff;
                 case (byte)eSpellType.EnduranceRegenBuff:
@@ -479,17 +464,17 @@ namespace DOL.GS
                 case (byte)eSpellType.PowerRegenBuff:
                     return eEffect.PowerRegenBuff;
 
+                // Misc.
                 case (byte)eSpellType.OffensiveProc:
                     return eEffect.OffensiveProc;
                 case (byte)eSpellType.DefensiveProc:
                     return eEffect.DefensiveProc;
                 case (byte)eSpellType.HereticPiercingMagic:
                     return eEffect.HereticPiercingMagic;
+
                 #endregion
+                #region NEGATIVE_EFFECTS
 
-                #region Negative Effects
-
-                //persistent negative effects
                 case (byte)eSpellType.StyleBleeding:
                     return eEffect.Bleed;
                 case (byte)eSpellType.DamageOverTime:
@@ -512,28 +497,28 @@ namespace DOL.GS
                 case (byte)eSpellType.Confusion:
                     return eEffect.Confusion;
 
-                //Crowd Control Effects
+                // Crowd control.
                 case (byte)eSpellType.StyleStun:
                 case (byte)eSpellType.Stun:
                     return eEffect.Stun;
-                //case (byte)eSpellType.StunImmunity: // ImmunityEffect
-                //return eEffect.StunImmunity;
+                //case (byte)eSpellType.StunImmunity:
+                //    return eEffect.StunImmunity;
                 case (byte)eSpellType.Mesmerize:
                     return eEffect.Mez;
                 case (byte)eSpellType.MesmerizeDurationBuff:
                     return eEffect.MesmerizeDurationBuff;
-                //case (byte)eSpellType.MezImmunity: // ImmunityEffect
+                //case (byte)eSpellType.MezImmunity:
                 //    return eEffect.MezImmunity;
                 //case (byte)eSpellType.StyleSpeedDecrease:
                 //    return eEffect.MeleeSnare;
-                //case (byte)eSpellType.Snare: // May work off of SpeedDecrease
+                //case (byte)eSpellType.Snare: // May work off of SpeedDecrease.
                 //    return eEffect.Snare;
-                //case (byte)eSpellType.SnareImmunity: // Not implemented
+                //case (byte)eSpellType.SnareImmunity: // Not implemented.
                 //    return eEffect.SnareImmunity;
                 case (byte)eSpellType.Nearsight:
                     return eEffect.Nearsight;
 
-                //stat debuffs
+                // Stats.
                 case (byte)eSpellType.StrengthDebuff:
                     return eEffect.StrengthDebuff;
                 case (byte)eSpellType.DexterityDebuff:
@@ -546,14 +531,14 @@ namespace DOL.GS
                     return eEffect.DexQuiDebuff;
                 case (byte)eSpellType.WeaponSkillConstitutionDebuff:
                     return eEffect.WsConDebuff;
-                //case (byte)eSpellType.AcuityDebuff: //Not sure what this is yet
-                //return eEffect.Acuity;
+                //case (byte)eSpellType.AcuityDebuff: // Not sure what this is yet.
+                //    return eEffect.Acuity;
                 case (byte)eSpellType.ArmorAbsorptionDebuff:
                     return eEffect.ArmorAbsorptionDebuff;
                 case (byte)eSpellType.ArmorFactorDebuff:
                     return eEffect.ArmorFactorDebuff;
 
-                //resist debuffs
+                // Resists.
                 case (byte)eSpellType.BodyResistDebuff:
                     return eEffect.BodyResistDebuff;
                 case (byte)eSpellType.SpiritResistDebuff:
@@ -569,7 +554,7 @@ namespace DOL.GS
                 case (byte)eSpellType.SlashResistDebuff:
                     return eEffect.SlashResistDebuff;
 
-                //misc 
+                // Misc.
                 case (byte)eSpellType.SavageCombatSpeedBuff:
                     return eEffect.MeleeHasteBuff;
                 case (byte)eSpellType.SavageCrushResistanceBuff:
@@ -603,7 +588,10 @@ namespace DOL.GS
                     return eEffect.ResurrectionIllness;
                 case (byte)eSpellType.RvrResurrectionIllness:
                     return eEffect.RvrResurrectionIllness;
-                //pets
+
+                #endregion
+
+                // Pets.
                 case (byte)eSpellType.SummonTheurgistPet:
                 case (byte)eSpellType.SummonNoveltyPet:
                 case (byte)eSpellType.SummonAnimistPet:
@@ -618,8 +606,6 @@ namespace DOL.GS
                 case (byte)eSpellType.SummonMinion:
                     return eEffect.Pet;
 
-                #endregion
-
                 default:
                     //Console.WriteLine($"Unable to map effect for ECSGameEffect! {spell}");
                     return eEffect.Unknown;
@@ -631,9 +617,6 @@ namespace DOL.GS
             if (e is null)
                 return;
 
-            GameLiving target = e.SpellHandler.Target != null ? e.SpellHandler.Target : e.SpellHandler.Caster;
-            //foreach (GamePlayer player in e.SpellHandler.Target.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
-            // foreach (GamePlayer player in target.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE))
             Parallel.ForEach(e.Owner.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE).OfType<GamePlayer>(), player =>
             {
                 player.Out.SendSpellEffectAnimation(e.SpellHandler.Caster, e.Owner, e.SpellHandler.Spell.ClientEffect, 0, false, 0);
@@ -651,19 +634,15 @@ namespace DOL.GS
             player.UpdateEncumberance();
             player.UpdatePlayerStatus();
             player.Out.SendUpdatePlayer();
-            
-            if (player.Group != null)
-            {
-                player.Group.UpdateMember(player, true, false);
-            }
+            player.Group?.UpdateMember(player, true, false);
         }
 
         public static List<eProperty> GetPropertiesFromEffect(eEffect e)
         {
-            List<eProperty> list = new List<eProperty>();
+            List<eProperty> list = new();
+
             switch (e)
             {
-                //stats
                 case eEffect.StrengthBuff:
                 case eEffect.StrengthDebuff:
                     list.Add(eProperty.Strength);
@@ -680,7 +659,6 @@ namespace DOL.GS
                 case eEffect.AcuityDebuff:
                     list.Add(eProperty.Acuity);
                     return list;
-
                 case eEffect.StrengthConBuff:
                 case eEffect.StrConDebuff:
                     list.Add(eProperty.Strength);
@@ -709,7 +687,6 @@ namespace DOL.GS
                 case eEffect.MeleeDamageDebuff:
                     list.Add(eProperty.MeleeDamage);
                     return list;
-                //resists
                 case eEffect.NaturalResistDebuff:
                     list.Add(eProperty.Resist_Natural);
                     return list;
@@ -755,7 +732,6 @@ namespace DOL.GS
                     list.Add(eProperty.Resist_Cold);
                     list.Add(eProperty.Resist_Matter);
                     return list;
-
                 case eEffect.SlashResistBuff:
                 case eEffect.SlashResistDebuff:
                     list.Add(eProperty.Resist_Slash);
@@ -774,7 +750,6 @@ namespace DOL.GS
                     list.Add(eProperty.Resist_Thrust);
                     list.Add(eProperty.Resist_Slash);
                     return list;
-
                 case eEffect.HealthRegenBuff:
                     list.Add(eProperty.HealthRegenerationRate);
                     return list;
@@ -799,7 +774,7 @@ namespace DOL.GS
                 case eEffect.FatigueConsumptionDebuff:
                     list.Add(eProperty.FatigueConsumption);
                     return list;
-                
+
                 default:
                     //Console.WriteLine($"Unable to find property mapping for: {e}");
                     return list;
@@ -809,11 +784,11 @@ namespace DOL.GS
         public static void RestoreAllEffects(GamePlayer p)
         {
             GamePlayer player = p;
-			
+
             if (player == null || player.DBCharacter == null || GameServer.Database == null)
                 return;
 
-            var effs = DOLDB<PlayerXEffect>.SelectObjects(DB.Column("ChardID").IsEqualTo(player.ObjectId));
+            IList<PlayerXEffect> effs = DOLDB<PlayerXEffect>.SelectObjects(DB.Column("ChardID").IsEqualTo(player.ObjectId));
             if (effs == null)
                 return;
 
@@ -836,25 +811,19 @@ namespace DOL.GS
                 if (!Util.IsEmpty(eff.SpellLine))
                 {
                     line = SkillBase.GetSpellLine(eff.SpellLine, false);
+
                     if (line == null)
-                    {
                         good = false;
-                    }
                 }
                 else
-                {
                     good = false;
-                }
 
                 if (good)
                 {
                     ISpellHandler handler = ScriptMgr.CreateSpellHandler(player, spell, line);
-                    //Console.WriteLine($"Spell {spell} handler {handler}");
                     handler.Spell.Duration = eff.Duration;
                     handler.Spell.CastTime = 1;
                     handler.StartSpell(player);
-                    //ECSGameEffect e = new ECSGameSpellEffect(new ECSGameEffectInitParams(p, eff.Duration, eff.Var2, handler));
-                    //Console.WriteLine($"Created ECS effect: {e} effectiveness {e.Effectiveness} type {e.EffectType} ownerplayer {e.OwnerPlayer} spellVal {handler.Spell.Value}");
                     player.Out.SendStatusUpdate();
                 }
             }
@@ -863,41 +832,38 @@ namespace DOL.GS
         /// <summary>
         /// Save All Effect to PlayerXEffect Data Table
         /// </summary>
-        public static void SaveAllEffects(GamePlayer p)
+        public static void SaveAllEffects(GamePlayer player)
         {
-            GamePlayer player = p;
-			
             if (player == null || player.effectListComponent.GetAllEffects().Count == 0)
                 return;
-            
-            var effs = DOLDB<PlayerXEffect>.SelectObjects(DB.Column("ChardID").IsEqualTo(player.ObjectId));
+
+            IList<PlayerXEffect> effs = DOLDB<PlayerXEffect>.SelectObjects(DB.Column("ChardID").IsEqualTo(player.ObjectId));
             if (effs != null)
                 GameServer.Database.DeleteObject(effs);
 
             lock (player.effectListComponent.EffectsLock)
             {
-                foreach (var eff in player.effectListComponent.GetAllEffects())
+                foreach (ECSGameEffect eff in player.effectListComponent.GetAllEffects())
                 {
                     try
                     {
-                        var gse = eff as ECSGameSpellEffect;
-                        if (gse != null)
+                        if (eff is ECSGameSpellEffect gse)
                         {
-                            // No concentration Effect from Other Caster
+                            // No concentration Effect from other casters.
                             if (gse.SpellHandler?.Spell?.Concentration > 0 && gse.SpellHandler.Caster != player)
                                 continue;
                         }
-						
+
                         PlayerXEffect effx = eff.getSavedEffect();
-						
+
                         if (effx == null)
                             continue;
-	
+
                         if (effx.SpellLine == GlobalSpellsLines.Reserved_Spells)
                             continue;
-	
+
                         effx.ChardID = player.ObjectId;
-						
+
                         GameServer.Database.AddObject(effx);
                     }
                     catch (Exception e)
@@ -907,62 +873,6 @@ namespace DOL.GS
                     }
                 }
             }
-        }
-
-        /// <summary>
-		/// Method used to apply bonuses
-		/// </summary>
-		/// <param name="owner"></param>
-		/// <param name="BonusCat"></param>
-		/// <param name="Property"></param>
-		/// <param name="Value"></param>
-		/// <param name="IsSubstracted"></param>
-		private static void ApplyBonus(GameLiving owner, eBuffBonusCategory BonusCat, eProperty Property, double Value, double Effectiveness, bool IsSubstracted)
-        {
-            int effectiveValue = (int)(Value * Effectiveness);
-
-            IPropertyIndexer tblBonusCat;
-            if (Property != eProperty.Undefined)
-            {
-                tblBonusCat = GetBonusCategory(owner, BonusCat);
-                //Console.WriteLine($"Value before: {tblBonusCat[(int)Property]}");
-                if (IsSubstracted)
-                    tblBonusCat[(int)Property] -= effectiveValue;
-                else
-                    tblBonusCat[(int)Property] += effectiveValue;
-                //Console.WriteLine($"Value after: {tblBonusCat[(int)Property]}");
-            }
-        } 
-
-        private static IPropertyIndexer GetBonusCategory(GameLiving target, eBuffBonusCategory categoryid)
-        {
-            IPropertyIndexer bonuscat = null;
-            switch (categoryid)
-            {
-                case eBuffBonusCategory.BaseBuff:
-                    bonuscat = target.BaseBuffBonusCategory;
-                    break;
-                case eBuffBonusCategory.SpecBuff:
-                    bonuscat = target.SpecBuffBonusCategory;
-                    break;
-                case eBuffBonusCategory.Debuff:
-                    bonuscat = target.DebuffCategory;
-                    break;
-                case eBuffBonusCategory.Other:
-                    bonuscat = target.BuffBonusCategory4;
-                    break;
-                case eBuffBonusCategory.SpecDebuff:
-                    bonuscat = target.SpecDebuffCategory;
-                    break;
-                case eBuffBonusCategory.AbilityBuff:
-                    bonuscat = target.AbilityBonus;
-                    break;
-                default:
-                    //if (log.IsErrorEnabled)
-                    //Console.WriteLine("BonusCategory not found " + categoryid + "!");
-                    break;
-            }
-            return bonuscat;
         }
     }
 }

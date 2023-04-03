@@ -1,112 +1,78 @@
-﻿using DOL.AI.Brain;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using ECS.Debug;
-using System.Collections.Concurrent;
-using System.Threading;
-using System.Diagnostics;
-using System.Buffers;
-using log4net;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
+using DOL.AI;
+using DOL.AI.Brain;
+using ECS.Debug;
+using log4net;
 
 namespace DOL.GS
 {
-    public class TaskStats
-    {
-        public long CreationTime;
-        public int Name;
-        public int ThreadNum;
-        public int Completed;
-        public int Unthinking;
-    }
-
     public static class NPCThinkService
     {
-        static int _segmentsize = 5000;
-        static List<Task> _tasks = new List<Task>();
-        static int completed;
-        static int unthinking;
-        static long interval = 2000;
-        static long last_interval = 0;
-
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private const string SERVICE_NAME = "NPCThinkService";
 
-        private const string ServiceName = "NPCThinkService";
-        
-        //thinkTimer is for outputting active brain count/array size info for debug purposes
-        public static bool thinkTimer = false;
-        
-        //Number of ticks to debug the Timer
-        public static int ActiveThinkTimerTickCount = 0;
-        public static int NumOfNPCs = 0;
-        public static int NumNullSlots = 0;
-        
-        
-        //Number of ticks to debug the Timer
-        public static int debugTimerTickCount = 0;
+        // Will print active brain count/array size info for debug purposes if superior to 0.
+        public static int DebugTickCount;
+        private static int _debugRemainingTicks;
+        private static int _npcCount;
+        private static int _nullNpcCount;
 
-        static NPCThinkService()
-        {
-            EntityManager.AddService(typeof(NPCThinkService));
-        }
+        private static bool Debug => DebugTickCount > 0;
 
         public static void Tick(long tick)
         {
+            Diagnostics.StartPerfCounter(SERVICE_NAME);
 
-            Diagnostics.StartPerfCounter(ServiceName);
-
-            GameLiving[] arr = EntityManager.GetAllNpcsArrayRef();
-            
-            if (thinkTimer)
+            if (Debug)
             {
-                ActiveThinkTimerTickCount = 0;
-                NumOfNPCs = 0;
-                NumNullSlots = 0;
+                _debugRemainingTicks = 0;
+                _npcCount = 0;
+                _nullNpcCount = 0;
             }
 
-            Parallel.ForEach(arr, npc =>
+            List<GameNPC> list = EntityManager.GetAll<GameNPC>(EntityManager.EntityType.Npc);
+
+            Parallel.For(0, EntityManager.GetLastNonNullIndex(EntityManager.EntityType.Npc) + 1, i =>
             {
+                GameNPC npc = list[i];
+
                 try
                 {
                     if (npc == null)
                     {
-                        if(thinkTimer)
-                            Interlocked.Increment(ref NumNullSlots);;
-                        
+                        if (Debug)
+                            Interlocked.Increment(ref _nullNpcCount);;
+
                         return;
                     }
 
-                    if (thinkTimer)
-                    {
-                        Interlocked.Increment(ref NumOfNPCs);
-                    }
-                    
-                    
-                    if (npc is GameNPC && (npc as GameNPC).Brain != null)
-                    {
-                        var brain = (npc as GameNPC).Brain;
+                    if (Debug)
+                        Interlocked.Increment(ref _npcCount);
 
+                    ABrain brain = npc.Brain;
+
+                    if (brain != null)
+                    {
                         if (brain.IsActive && brain.LastThinkTick + brain.ThinkInterval < tick)
                         {
-                            if (thinkTimer)
-                            {
-                                Interlocked.Increment(ref ActiveThinkTimerTickCount);
-                            }
-                            
+                            if (Debug)
+                                Interlocked.Increment(ref _debugRemainingTicks);
+
                             long startTick = GameTimer.GetTickCount();
                             brain.Think();
                             long stopTick = GameTimer.GetTickCount();
                             if((stopTick - startTick)  > 25 && brain != null)
-                                log.Warn($"Long NPCThink for {brain.Body?.Name}({brain.Body?.ObjectID}) Interval: {brain.ThinkInterval} BrainType: {brain.GetType().ToString()} Time: {stopTick - startTick}ms");
+                                log.Warn($"Long NPCThink for {brain.Body?.Name}({brain.Body?.ObjectID}) Interval: {brain.ThinkInterval} BrainType: {brain.GetType()} Time: {stopTick - startTick}ms");
 
-                            //Set the LastThinkTick. Offset the LastThinkTick interval for non-controlled mobs so NPC Think ticks are not all "grouped" in one tick.
+                            // Set the LastThinkTick. Offset the LastThinkTick interval for non-controlled mobs so NPC Think ticks are not all "grouped" in one tick.
                             if(brain is ControlledNpcBrain)
-                                brain.LastThinkTick = tick; //We wamt controlled pets to keep their normal interval.
+                                brain.LastThinkTick = tick; // We wamt controlled pets to keep their normal interval.
                             else
-                                brain.LastThinkTick = tick + (Util.Random(10) * 50); //Offsets the LastThinkTick by 0-500ms
+                                brain.LastThinkTick = tick + Util.Random(10) * 50; // Offsets the LastThinkTick by 0-500ms.
 
                         }
 
@@ -122,27 +88,19 @@ namespace DOL.GS
             });
             
             //Output Debug info
-            if(thinkTimer && ActiveThinkTimerTickCount > 0)
+            if (Debug && _debugRemainingTicks > 0)
             {
-                log.Debug($"==== NPCThink Debug - Total ActiveThinkTimers: {ActiveThinkTimerTickCount} ====");
-
-                log.Debug($"==== Non-Null NPCs in EntityManager Array: {NumOfNPCs} | Null NPCs: {NumNullSlots} |  Total Size: {arr.Length}====");
-                
-             
-
+                log.Debug($"==== NPCThink Debug - Total ActiveThinkTimers: {_debugRemainingTicks} ====");
+                log.Debug($"==== Non-Null NPCs in EntityManager Array: {_npcCount} | Null NPCs: {_nullNpcCount} |  Total Size: {list.Count}====");
                 log.Debug("---------------------------------------------------------------------------");
 
-                if(debugTimerTickCount > 1)
-                    debugTimerTickCount --;
+                if (_debugRemainingTicks > 1)
+                    _debugRemainingTicks --;
                 else
-                {
-                    thinkTimer = false;
-                    debugTimerTickCount = 0;
-                }
+                    _debugRemainingTicks = 0;
             }
 
-            Diagnostics.StopPerfCounter(ServiceName);
+            Diagnostics.StopPerfCounter(SERVICE_NAME);
         }
-
     }
 }

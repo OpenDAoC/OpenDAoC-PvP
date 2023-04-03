@@ -1,104 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
+﻿using System.Collections.Generic;
 
 namespace DOL.GS
 {
     public class CraftComponent
     {
-        public GameLiving owner;
-        public CraftAction craftAction;
+        public CraftAction CraftAction { get; set; }
+        public bool CraftState { get; set; }
+        public int EntityManagerId { get; private set; } = EntityManager.UNSET_ID;
+        public List<Recipe> Recipes { get; private set; } = new();
+        private GamePlayer _owner;
+        private object _recipesLock = new();
 
-        public GamePlayer ownerPlayer;
-
-
-        /// <summary>
-        /// The objects currently being crafted by this living
-        /// 
-        /// </summary>
-        protected List<Recipe> m_recipes;
-
-
-        /// <summary>
-        /// Returns the list of recipes
-        /// </summary>
-        public List<Recipe> Recipes
+        public CraftComponent(GamePlayer owner)
         {
-            get { return m_recipes; }
+            _owner = owner;
         }
 
-        /// <summary>
-        /// Adds an attacker to the attackerlist
-        /// </summary>
-        /// <param name="attacker">the attacker to add</param>
         public void AddRecipe(Recipe recipe)
         {
-            lock (Recipes)
+            lock (_recipesLock)
             {
-                if (recipe == null) return;
-                if (m_recipes.Contains(recipe)) return;
-                m_recipes.Add(recipe);
+                if (recipe == null)
+                    return;
 
-                if (m_recipes.Count() > 0)
-                    EntityManager.AddComponent(typeof(CraftComponent), owner);
+                if (Recipes.Contains(recipe))
+                    return;
+
+                Recipes.Add(recipe);
             }
         }
 
-        /// <summary>
-        /// Removes an attacker from the list
-        /// </summary>
-        /// <param name="attacker">the attacker to remove</param>
         public void RemoveRecipe(Recipe recipe)
         {
-            //			log.Warn(Name + ": RemoveAttacker "+attacker.Name);
-            //			log.Error(Environment.StackTrace);
-            lock (Recipes)
+            lock (_recipesLock)
             {
-                if (m_recipes.Contains(recipe)) m_recipes.Remove(recipe);
+                if (Recipes.Contains(recipe))
+                    Recipes.Remove(recipe);
             }
-        }
-
-        public CraftComponent(GameLiving owner)
-        {
-            this.owner = owner;
-            ownerPlayer = owner as GamePlayer;
-            m_recipes = new List<Recipe>();
-            
-            EntityManager.AddComponent(typeof(CraftComponent), owner);
         }
 
         public void Tick(long time)
         {
-            craftAction?.Tick(time);
-            // if (craftAction is null && !owner.InCombat)
-            // {
-            //     if (EntityManager.GetLivingByComponent(typeof(AttackComponent)).ToArray().Contains(owner))
-            //         EntityManager.RemoveComponent(typeof(AttackComponent), owner);
-            // }
+            CraftAction?.Tick(time);
+
+            if (CraftAction == null)
+                EntityManagerId = EntityManager.Remove(EntityManager.EntityType.CraftComponent, EntityManagerId);
         }
 
         public void StartCraft(Recipe recipe, AbstractCraftingSkill skill, int craftingTime)
         {
-            if(craftAction == null)
-                craftAction = new CraftAction(owner, craftingTime, recipe, skill);
+            if (CraftAction == null)
+            {
+                CraftAction = new CraftAction(_owner, craftingTime, recipe, skill);
+
+                if (EntityManagerId == -1)
+                    EntityManagerId = EntityManager.Add(EntityManager.EntityType.CraftComponent, this);
+            }
         }
 
         public void StopCraft()
         {
-            if (craftAction != null)
-            {
-                craftAction.CleanupCraftAction();
-            }
-                
+            CraftAction?.CleanupCraftAction();
         }
-        
-        
-
-        /// <summary>
-        /// Gets the crafting-state of this living
-        /// </summary>
-        public virtual bool CraftState { get; set; }
-        
     }
 }

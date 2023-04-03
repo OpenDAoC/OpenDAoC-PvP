@@ -27,7 +27,6 @@ using DOL.AI;
 using DOL.AI.Brain;
 using DOL.Database;
 using DOL.Events;
-using DOL.GS.API;
 using DOL.GS.Effects;
 using DOL.GS.Housing;
 using DOL.GS.Keeps;
@@ -49,7 +48,6 @@ using log4net;
 
 namespace DOL.GS
 {
-	
     /// <summary>
     /// This class represents a player inside the game
     /// </summary>
@@ -996,7 +994,7 @@ namespace DOL.GS
 
             UpdateEquipmentAppearance();
             LeaveHouse();
-			
+
             if (m_quitTimer != null)
             {
                 m_quitTimer.Stop();
@@ -1043,26 +1041,26 @@ namespace DOL.GS
             }
         }
 
-        private static List<string> registered_temprop = null;
         /// <summary>
         /// Stop all timers, events and remove player from everywhere (group/guild/chat)
         /// </summary>
         protected virtual void CleanupOnDisconnect()
         {
             attackComponent.StopAttack();
-            // remove all stealth handlers
             Stealth(false);
+
             if (IsOnHorse)
                 IsOnHorse = false;
 
             GameEventMgr.RemoveAllHandlersForObject(m_inventory);
+            EntityManagerId = EntityManager.Remove(EntityManager.EntityType.Player, EntityManagerId);
 
             if (CraftTimer != null)
             {
                 CraftTimer.Stop();
                 CraftTimer = null;
             }
-            
+
             craftComponent?.StopCraft();
 
             if (QuestActionTimer != null)
@@ -1074,9 +1072,9 @@ namespace DOL.GS
             if (Group != null)
                 Group.RemoveMember(this);
 
-            BattleGroup mybattlegroup = (BattleGroup)this.TempProperties.getProperty<object>(BattleGroup.BATTLEGROUP_PROPERTY, null);
-            if (mybattlegroup != null)
-                mybattlegroup.RemoveBattlePlayer(this);
+            BattleGroup myBattlegroup = (BattleGroup)TempProperties.getProperty<object>(BattleGroup.BATTLEGROUP_PROPERTY, null);
+            if (myBattlegroup != null)
+                myBattlegroup.RemoveBattlePlayer(this);
 
             if (TradeWindow != null)
                 TradeWindow.CloseTrade();
@@ -1084,7 +1082,6 @@ namespace DOL.GS
             if (m_guild != null)
                 m_guild.RemoveOnlineMember(this);
 
-            // RR4: expire personal mission, if any
             if (Mission != null)
                 Mission.ExpireMission();
 
@@ -1092,7 +1089,7 @@ namespace DOL.GS
             if (mychatgroup != null)
                 mychatgroup.RemovePlayer(this);
 
-            if (this.ControlledBrain != null)
+            if (ControlledBrain != null)
                 CommandNpcRelease();
 
             if (SiegeWeapon != null)
@@ -1111,25 +1108,21 @@ namespace DOL.GS
                 DBCharacter.Zpos = BindZpos;
                 DBCharacter.Direction = BindHeading;
             }
-			
-            //check for battleground caps
+
+            // Check for battleground caps.
             Battleground bg = GameServer.KeepManager.GetBattleground(CurrentRegionID);
             if (bg != null)
             {
                 if (Level > bg.MaxLevel || RealmLevel >= bg.MaxRealmLevel)
                 {
-                    // Only kick players out
                     if (Client.Account.PrivLevel == (int)ePrivLevel.Player)
-                    {
                         GameServer.KeepManager.ExitBattleground(this);
-                    }
                 }
             }
 
-            // cancel all effects until saving of running effects is done
+            // Cancel all effects until saving of running effects is done.
             try
             {
-                //EffectList.SaveAllEffects();
                 EffectService.SaveAllEffects(this);
                 CancelAllConcentrationEffects(false);
                 EffectList.CancelAll();
@@ -1138,49 +1131,40 @@ namespace DOL.GS
             {
                 log.ErrorFormat("Cannot cancel all effects - {0}", e);
             }
-            #region TempPropertiesManager LookUp
 
-            if (ServerProperties.Properties.ACTIVATE_TEMP_PROPERTIES_MANAGER_CHECKUP)
+            if (Properties.ACTIVATE_TEMP_PROPERTIES_MANAGER_CHECKUP)
             {
                 try
                 {
-                    foreach (string p in TempProperties.getAllProperties())
-                    {
+                    List<string> registeredTempProp = null;
 
-                        if (p == "")
+                    foreach (string property in TempProperties.getAllProperties())
+                    {
+                        if (property == "")
                             continue;
 
                         int occurences = 0;
+                        registeredTempProp = Util.SplitCSV(Properties.TEMPPROPERTIES_TO_REGISTER).ToList();
+                        occurences = (from j in registeredTempProp where property.Contains(j) select j).Count();
 
-                        //List<string> registered_temprop = new List<string>;
-
-                        registered_temprop = Util.SplitCSV(ServerProperties.Properties.TEMPPROPERTIES_TO_REGISTER).ToList();
-
-                        occurences = (from j in registered_temprop
-                            where p.Contains(j)
-                            select j).Count();
                         if (occurences == 0)
                             continue;
 
-                        object v = TempProperties.getProperty<object>(p, null);
+                        object propertyValue = TempProperties.getProperty<object>(property, null);
 
-                        if (v == null)
+                        if (propertyValue == null)
                             continue;
 
-                        long longresult = 0;
-                        if (long.TryParse(v.ToString(), out longresult))
+                        if (long.TryParse(propertyValue.ToString(), out long longresult))
                         {
-                            if (ServerProperties.Properties.ACTIVATE_TEMP_PROPERTIES_MANAGER_CHECKUP_DEBUG)
-                                log.Debug("On Disconnection found and was saved: " + p + " with value: " + v.ToString() + " for player: " + Name);
+                            if (Properties.ACTIVATE_TEMP_PROPERTIES_MANAGER_CHECKUP_DEBUG)
+                                log.Debug("On Disconnection found and was saved: " + property + " with value: " + propertyValue.ToString() + " for player: " + Name);
 
-                            TempPropertiesManager.TempPropContainerList.Add(new TempPropertiesManager.TempPropContainer(DBCharacter.ObjectId, p, v.ToString()));
-                            TempProperties.removeProperty(p);
+                            TempPropertiesManager.TempPropContainerList.Add(new TempPropertiesManager.TempPropContainer(DBCharacter.ObjectId, property, propertyValue.ToString()));
+                            TempProperties.removeProperty(property);
                         }
-                        else
-                        {
-                            if (ServerProperties.Properties.ACTIVATE_TEMP_PROPERTIES_MANAGER_CHECKUP_DEBUG)
-                                log.Debug("On Disconnection found but was not saved (not a long value): " + p + " with value: " + v.ToString() + " for player: " + Name);
-                        }
+                        else if (Properties.ACTIVATE_TEMP_PROPERTIES_MANAGER_CHECKUP_DEBUG)
+                            log.Debug("On Disconnection found but was not saved (not a long value): " + property + " with value: " + propertyValue.ToString() + " for player: " + Name);
                     }
                 }
                 catch (Exception e)
@@ -1188,8 +1172,6 @@ namespace DOL.GS
                     log.Debug("Error in TempProproperties Manager when saving TempProp: " + e.ToString());
                 }
             }
-
-            #endregion TempPropertiesManager LookUp
         }
 
         /// <summary>
@@ -1256,18 +1238,11 @@ namespace DOL.GS
             }
             else
             {
-                //Notify our event handlers (if any)
                 Notify(GamePlayerEvent.Quit, this);
-
-                // log quit
                 AuditMgr.AddAuditEntry(Client, AuditType.Character, AuditSubtype.CharacterLogout, "", Name);
-
-                //Cleanup stuff
                 Delete();
-				
-                //Remove from EntityManager
-                EntityManager.RemovePlayer(this);
             }
+
             return true;
         }
 
@@ -6403,35 +6378,14 @@ namespace DOL.GS
                 StopCurrentSpellcast();
             }
 
-            ECSPulseEffect song = EffectListService.GetPulseEffectOnTarget(this);
-            if (song != null && song.SpellHandler.Spell.InstrumentRequirement != 0)
+            foreach (Spell spell in ActivePulseSpells.Values)
             {
-				Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SwitchWeapon.SpellCancelled"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
-				EffectService.RequestImmediateCancelConcEffect(song);
-			}
-
-            switch (slot)
-            {
-                //case eActiveWeaponSlot.Standard:
-                //	// remove endurance remove handler
-                //	if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
-                //		GameEventMgr.RemoveHandler(this, GameLivingEvent.AttackFinished, new DOLEventHandler(RangeAttackHandler));
-                //	break;
-
-                //case eActiveWeaponSlot.TwoHanded:
-                //	// remove endurance remove handler
-                //	if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
-                //		GameEventMgr.RemoveHandler(this, GameLivingEvent.AttackFinished, new DOLEventHandler(RangeAttackHandler));
-                //	break;
-
-                //case eActiveWeaponSlot.Distance:
-                //	// add endurance remove handler
-                //	if (ActiveWeaponSlot != eActiveWeaponSlot.Distance)
-                //		GameEventMgr.AddHandler(this, GameLivingEvent.AttackFinished, new DOLEventHandler(RangeAttackHandler));
-                //	break;
+                if (spell.InstrumentRequirement != 0)
+                {
+                    Out.SendMessage(LanguageMgr.GetTranslation(Client.Account.Language, "GamePlayer.SwitchWeapon.SpellCancelled"), eChatType.CT_SpellResisted, eChatLoc.CL_SystemWindow);
+                    EffectService.RequestImmediateCancelConcEffect(EffectListService.GetPulseEffectOnTarget(this, spell));
+                }
             }
-
-
 
             InventoryItem[] oldActiveSlots = new InventoryItem[4];
             InventoryItem[] newActiveSlots = new InventoryItem[4];
@@ -6449,11 +6403,11 @@ namespace DOL.GS
                 case 2: oldActiveSlots[2] = twoHandSlot; break;
                 case 3: oldActiveSlots[3] = distanceSlot; break;
             }
-            if ((VisibleActiveWeaponSlots & 0xF0) == 0x10) oldActiveSlots[1] = leftHandSlot;
 
+            if ((VisibleActiveWeaponSlots & 0xF0) == 0x10)
+                oldActiveSlots[1] = leftHandSlot;
 
             base.SwitchWeapon(slot);
-
 
             // save new active slots
             switch (VisibleActiveWeaponSlots & 0x0F)
@@ -6462,7 +6416,9 @@ namespace DOL.GS
                 case 2: newActiveSlots[2] = twoHandSlot; break;
                 case 3: newActiveSlots[3] = distanceSlot; break;
             }
-            if ((VisibleActiveWeaponSlots & 0xF0) == 0x10) newActiveSlots[1] = leftHandSlot;
+
+            if ((VisibleActiveWeaponSlots & 0xF0) == 0x10)
+                newActiveSlots[1] = leftHandSlot;
 
             // unequip changed items
             for (int i = 0; i < 4; i++)
@@ -16946,13 +16902,10 @@ namespace DOL.GS
         /// </summary>
         /// <param name="client">The GameClient for this player</param>
         /// <param name="dbChar">The character for this player</param>
-        public GamePlayer(GameClient client, DOLCharacters dbChar)
-            : base()
+        public GamePlayer(GameClient client, DOLCharacters dbChar) : base()
         {
             IsJumping = false;
             m_steed = new WeakRef(null);
-            //m_rangeAttackAmmo = new WeakRef(null);
-            //m_rangeAttackTarget = new WeakRef(null);
             m_client = client;
             m_dbCharacter = dbChar;
             m_controlledHorse = new ControlledHorse(this);
@@ -16976,22 +16929,10 @@ namespace DOL.GS
             m_characterClass = new DefaultCharacterClass();
             m_groupIndex = 0xFF;
             m_saveInDB = true;
+
             LoadFromDatabase(dbChar);
-			
-            //Component Initialization
-            //castingComponent = new CastingComponent(this);
-
-            //         attackComponent = new AttackComponent(this);
-
-            //         healthComponent = new HealthComponent(this);
-            //         damageComponent = new DamageComponent(this);
-			
-
-
             CreateStatistics();
-			
-            //Add to EntityManager
-            EntityManager.AddPlayer(this);
+            EntityManagerId = EntityManager.Add(EntityManager.EntityType.Player, this);
         }
 
         /// <summary>

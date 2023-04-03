@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using ECS.Debug;
 
@@ -10,29 +6,20 @@ namespace DOL.GS
 {
     public static class CraftingService
     {
-        private const string ServiceName = "CraftingService";
-
-        static CraftingService()
-        {
-            EntityManager.AddService(typeof(CraftingService));
-        }
+        private const string SERVICE_NAME = "CraftingService";
 
         public static void Tick(long tick)
         {
-            Diagnostics.StartPerfCounter(ServiceName);
+            Diagnostics.StartPerfCounter(SERVICE_NAME);
 
-            GameLiving[] arr = EntityManager.GetLivingByComponent(typeof(CraftComponent));
-            Parallel.ForEach(arr, p =>
+            List<CraftComponent> list = EntityManager.GetAll<CraftComponent>(EntityManager.EntityType.CraftComponent);
+
+            Parallel.For(0, EntityManager.GetLastNonNullIndex(EntityManager.EntityType.CraftComponent) + 1, i =>
             {
-                if (p == null || p.craftComponent == null)
-                {
-                    return;
-                }
-                p.craftComponent.Tick(tick);
+                list[i]?.Tick(tick);
             });
 
-            Diagnostics.StopPerfCounter(ServiceName);
+            Diagnostics.StopPerfCounter(SERVICE_NAME);
         }
-
     }
 }

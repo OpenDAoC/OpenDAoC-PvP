@@ -18,6 +18,7 @@
  */
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -44,23 +45,24 @@ namespace DOL.GS
 	/// </summary>
 	public abstract class GameLiving : GameObject
 	{
-		private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+		private static readonly log4net.ILog log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-		public int id;
 		public AttackComponent attackComponent;
 		public CraftComponent craftComponent;
-        public RangeAttackComponent rangeAttackComponent;
-        public StyleComponent styleComponent;
-        public Spell LastPulseCast;
+		public RangeAttackComponent rangeAttackComponent;
+		public StyleComponent styleComponent;
 		public int UsedConcentration;
 
-        #region Combat
-        /// <summary>
-        /// Holds the AttackData object of last attack
-        /// </summary>
-        public const string LAST_ATTACK_DATA = "LastAttackData";
-        
-        public bool isDeadOrDying = false;
+		public int EntityManagerId { get; protected set; } = EntityManager.UNSET_ID;
+		public ConcurrentDictionary<byte, Spell> ActivePulseSpells { get; private set; } = new();
+
+		#region Combat
+		/// <summary>
+		/// Holds the AttackData object of last attack
+		/// </summary>
+		public const string LAST_ATTACK_DATA = "LastAttackData";
+
+		public bool isDeadOrDying = false;
 
 		protected string m_lastInterruptMessage;
 		public string LastInterruptMessage
@@ -79,111 +81,6 @@ namespace DOL.GS
 		/// </summary>
 		public const string LAST_ENEMY_ATTACK_RESULT = "LastEnemyAttackResult";
 
-
-        #region enums
-
-        
-
-        ///// <summary>
-        ///// The possible states for a ranged attack
-        ///// </summary>
-        //public enum eRangedAttackState : byte
-        //{
-        //	/// <summary>
-        //	/// No ranged attack active
-        //	/// </summary>
-        //	None = 0,
-        //	/// <summary>
-        //	/// Ranged attack in aim-state
-        //	/// </summary>
-        //	Aim,
-        //	/// <summary>
-        //	/// Player wants to fire the shot/throw NOW!
-        //	/// </summary>
-        //	Fire,
-        //	/// <summary>
-        //	/// Ranged attack will fire when ready
-        //	/// </summary>
-        //	AimFire,
-        //	/// <summary>
-        //	/// Ranged attack will fire and reload when ready
-        //	/// </summary>
-        //	AimFireReload,
-        //	/// <summary>
-        //	/// Ranged attack is ready to be fired
-        //	/// </summary>
-        //	ReadyToFire,
-        //}
-
-        ///// <summary>
-        ///// The type of range attack
-        ///// </summary>
-        //public enum eRangedAttackType : byte
-        //{
-        //	/// <summary>
-        //	/// A normal ranged attack
-        //	/// </summary>
-        //	Normal = 0,
-        //	/// <summary>
-        //	/// A critical shot is attempted
-        //	/// </summary>
-        //	Critical,
-        //	/// <summary>
-        //	/// A longshot is attempted
-        //	/// </summary>
-        //	Long,
-        //	/// <summary>
-        //	/// A volley shot is attempted
-        //	/// </summary>
-        //	Volley,
-        //	/// <summary>
-        //	/// A sure shot is attempted
-        //	/// </summary>
-        //	SureShot,
-        //	/// <summary>
-        //	/// A rapid shot is attempted
-        //	/// </summary>
-        //	RapidFire,
-        //}
-
-
-
-        
-       
-		
-		
-
-		///// <summary>
-		///// Holds the possible activeQuiverSlot values
-		///// </summary>
-		//public enum eActiveQuiverSlot : byte
-		//{
-		//	/// <summary>
-		//	/// No quiver slot active
-		//	/// </summary>
-		//	None = 0x00,
-		//	/// <summary>
-		//	/// First quiver slot
-		//	/// </summary>
-		//	First = 0x10,
-		//	/// <summary>
-		//	/// Second quiver slot
-		//	/// </summary>
-		//	Second = 0x20,
-		//	/// <summary>
-		//	/// Third quiver slot
-		//	/// </summary>
-		//	Third = 0x40,
-		//	/// <summary>
-		//	/// Fourth quiver slot
-		//	/// </summary>
-		//	Fourth = 0x80,
-		//}
-
-		
-
-		#endregion
-
 		/// <summary>
 		/// Can this living accept any item regardless of tradable or droppable?
 		/// </summary>
@@ -191,7 +88,6 @@ namespace DOL.GS
 		{
 			get { return false; }
 		}
-
 
 		/// <summary>
 		/// Chance to fumble an attack.
@@ -638,14 +534,6 @@ namespace DOL.GS
 			{
 				m_damageRvRMemory = 0;
 			}
-		}
-
-		/// <summary>
-		/// Gets the swing time left
-		/// </summary>
-		public virtual int SwingTimeLeft
-		{
-            get { return attackComponent.attackAction != null ? (int)attackComponent.attackAction.TimeUntilStart : 0; }
 		}
 
         /// <summary>
@@ -1918,8 +1806,8 @@ namespace DOL.GS
 
 			InterruptTime = GameLoop.GameLoopTime + duration;
 
-			if (castingComponent?.spellHandler != null)
-				castingComponent.spellHandler.CasterIsAttacked(attacker);
+			if (castingComponent?.SpellHandler != null)
+				castingComponent.SpellHandler.CasterIsAttacked(attacker);
 			else if (ActiveWeaponSlot == eActiveWeaponSlot.Distance)
 			{
 				if (attackComponent.AttackState)
@@ -4172,12 +4060,12 @@ namespace DOL.GS
 		/// <param name="ad">information about the attack</param>
 		public virtual void OnAttackedByEnemy(AttackData ad)
 		{
-            //Console.WriteLine(string.Format("OnAttackedByEnemy called on {0}", this.Name));
+			//Console.WriteLine(string.Format("OnAttackedByEnemy called on {0}", this.Name));
 
-            // Note that this function is called whenever an attack is received, regardless of whether that attack was successful.
-            // i.e. missed melee swings and resisted spells still trigger this.
+			// Note that this function is called whenever an attack is received, regardless of whether that attack was successful.
+			// i.e. missed melee swings and resisted spells still trigger this.
 
-            if (ad == null)
+			if (ad == null)
 				return;
 
 			// Must be above the IsHit/Combat check below since things like subsequent DoT ticks don't cause combat but should still break CC.
@@ -4188,14 +4076,14 @@ namespace DOL.GS
 				//Notify(GameLivingEvent.AttackedByEnemy, this, new AttackedByEnemyEventArgs(ad));               
 				HandleMovementSpeedEffectsOnAttacked(ad);
 
-				if (this is GameNPC && ActiveWeaponSlot == eActiveWeaponSlot.Distance && this.IsWithinRadius(ad.Attacker, 150))
-					((GameNPC)this).SwitchToMelee(ad.Attacker);
+				if (this is GameNPC gameNpc && ActiveWeaponSlot == eActiveWeaponSlot.Distance && IsWithinRadius(ad.Attacker, 150))
+					gameNpc.SwitchToMelee(ad.Attacker);
 
 				attackComponent.AddAttacker( ad.Attacker );
 
-				if (ad.SpellHandler == null ||(ad.SpellHandler != null && ad.SpellHandler is not DoTSpellHandler))
+				if (ad.SpellHandler == null || (ad.SpellHandler != null && ad.SpellHandler is not DoTSpellHandler))
 				{
-					if (ad.Attacker.Realm == 0 || this.Realm == 0)
+					if (ad.Attacker.Realm == 0 || Realm == 0)
 					{
 						LastAttackedByEnemyTickPvE = GameLoop.GameLoopTime;
 						ad.Attacker.LastAttackTickPvE = GameLoop.GameLoopTime;
@@ -4206,33 +4094,35 @@ namespace DOL.GS
 						ad.Attacker.LastAttackTickPvP = GameLoop.GameLoopTime;
 					}
 				}
-				
 
 				// Melee Attack that actually caused damage.
 				if (ad.IsMeleeAttack && ad.Damage > 0)
-				{					
-					// Handle Ablatives
-					var effects = effectListComponent.GetSpellEffects(eEffect.AblativeArmor);
+				{
+					// Handle Ablatives.
+					List<ECSGameSpellEffect> effects = effectListComponent.GetSpellEffects(eEffect.AblativeArmor);
+
 					for (int i = 0; i < effects.Count; i++)
 					{
-						var effect = effects[i] as ECSGameSpellEffect;
-						if (effect is null)
+						AblativeArmorECSGameEffect effect = effects[i] as AblativeArmorECSGameEffect;
+
+						if (effect == null)
 							continue;
 
-						if (!(effect.SpellHandler as AblativeArmorSpellHandler).MatchingDamageType(ref ad)) return;
+						AblativeArmorSpellHandler ablativeArmorSpellHandler = effect.SpellHandler as AblativeArmorSpellHandler;
 
-						int ablativehp = effect.Owner.TempProperties.getProperty<int>(AblativeArmorSpellHandler.ABLATIVE_HP);
-						double absorbPercent = 25;
-						if (effect.SpellHandler.Spell.Damage > 0)
-							absorbPercent = effect.SpellHandler.Spell.Damage;
-						//because albatives can reach 100%
-						if (absorbPercent > 100)
-							absorbPercent = 100;
+						if (!ablativeArmorSpellHandler.MatchingDamageType(ref ad))
+							continue;
+
+						int ablativeHp = effect.RemainingValue;
+						double absorbPercent = AblativeArmorSpellHandler.ValidateSpellDamage((int)effect.SpellHandler.Spell.Damage);
 						int damageAbsorbed = (int)(0.01 * absorbPercent * (ad.Damage + ad.CriticalDamage));
-						if (damageAbsorbed > ablativehp)
-							damageAbsorbed = ablativehp;
-						ablativehp -= damageAbsorbed;
+
+						if (damageAbsorbed > ablativeHp)
+							damageAbsorbed = ablativeHp;
+
+						ablativeHp -= damageAbsorbed;
 						ad.Damage -= damageAbsorbed;
+
 						(effect.SpellHandler as AblativeArmorSpellHandler).OnDamageAbsorbed(ad, damageAbsorbed);
 
 						if (ad.Target is GamePlayer)
@@ -4241,33 +4131,24 @@ namespace DOL.GS
 						if (ad.Attacker is GamePlayer)
 							(ad.Attacker as GamePlayer).Out.SendMessage(LanguageMgr.GetTranslation((ad.Attacker as GamePlayer).Client, "AblativeArmor.Attacker", damageAbsorbed), eChatType.CT_Spell, eChatLoc.CL_SystemWindow);
 
-						if (ablativehp <= 0)
-						{
+						if (ablativeHp <= 0)
 							EffectService.RequestImmediateCancelEffect(effect);
-						}
 						else
-						{
-							effect.Owner.TempProperties.setProperty(AblativeArmorSpellHandler.ABLATIVE_HP, ablativehp);
-						}
+							effect.RemainingValue = ablativeHp;
 					}
 				}
 
-				var dProcEffects = effectListComponent.GetSpellEffects(eEffect.DefensiveProc);
-                // Handle DefensiveProcs
-                if (ad != null && ad.Target == this && dProcEffects != null && ad.AttackType != AttackData.eAttackType.Spell)
-                {
-                    for (int i = 0; i < dProcEffects.Count; i++)
-                    {
-                        var dProcEffect = dProcEffects[i];
+				// Handle DefensiveProcs.
+				List<ECSGameSpellEffect> dProcEffects = effectListComponent.GetSpellEffects(eEffect.DefensiveProc);
 
-                        (dProcEffect.SpellHandler as DefensiveProcSpellHandler).EventHandler(ad);
-                    }
-                }
-            }
+				if (ad != null && ad.Target == this && dProcEffects != null && ad.AttackType != eAttackType.Spell)
+				{
+					for (int i = 0; i < dProcEffects.Count; i++)
+						(dProcEffects[i].SpellHandler as DefensiveProcSpellHandler).EventHandler(ad);
+				}
+			}
 			else if (ad.IsSpellResisted && ad.Target is GameNPC npc)
-            {
 				npc.CancelWalkToSpawn();
-            }
 		}
 
 		public void HandleDamageShields(AttackData ad)
@@ -6961,7 +6842,6 @@ namespace DOL.GS
 
 			//if (m_attackAction != null) m_attackAction.Stop();
             if (attackComponent.attackAction != null) attackComponent.attackAction.CleanUp();
-			if (this is GameNPC && ((GameNPC)this).SpellTimer != null) ((GameNPC)this).SpellTimer.Stop();
 			if (m_healthRegenerationTimer != null) m_healthRegenerationTimer.Stop();
 			if (m_powerRegenerationTimer != null) m_powerRegenerationTimer.Stop();
 			if (m_enduRegenerationTimer != null) m_enduRegenerationTimer.Stop();
@@ -6987,7 +6867,7 @@ namespace DOL.GS
 
 		public virtual bool IsCasting
 		{
-			get { return castingComponent != null && castingComponent.spellHandler != null && castingComponent.spellHandler.IsCasting; }
+			get { return castingComponent != null && castingComponent.SpellHandler != null && castingComponent.SpellHandler.IsCasting; }
 		}
 
 		/// <summary>
@@ -7043,7 +6923,7 @@ namespace DOL.GS
 		public ISpellHandler CurrentSpellHandler
 		{
 			// change for warlock
-			get { return castingComponent.spellHandler; }
+			get { return castingComponent.SpellHandler; }
 			//set { CurrentSpellHandler = value; }
 		}
 
@@ -7052,8 +6932,8 @@ namespace DOL.GS
 		/// </summary>
 		public virtual void StopCurrentSpellcast()
 		{
-			if (CurrentSpellHandler != null)
-				CurrentSpellHandler.InterruptCasting();
+			castingComponent.SpellHandler?.InterruptCasting();
+			castingComponent.QueuedSpellHandler = null;
 		}
 
 		public virtual bool CastSpell(Spell spell, SpellLine line)
@@ -7064,12 +6944,12 @@ namespace DOL.GS
 				return false;
 			}
 
-			return castingComponent.StartCastSpell(spell, line);
+			return castingComponent.StartCastSpell(spell, line, null, TargetObject as GameLiving);
 		}
 
 		// Should only be used when the target of the spell is different than the currenctly selected one.
 		// Which can happen during LoS checks, since we're not waiting for the check to complete to perform other actions.
-		protected bool CastSpellWithTarget(Spell spell, SpellLine line, GameLiving target)
+		protected bool CastSpell(Spell spell, SpellLine line, GameLiving target)
 		{
 			if (IsStunned || IsMezzed)
 			{
@@ -7294,7 +7174,6 @@ namespace DOL.GS
 
             healthComponent = new HealthComponent(this);
 			// damageComponent = new DamageComponent(this);
-			id = EntityManager.AddNpc(this);
 		}
 	}
 }

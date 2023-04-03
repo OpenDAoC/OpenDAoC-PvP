@@ -1,6 +1,4 @@
-using System;
 using DOL.Database;
-using DOL.GS.Effects;
 using DOL.GS.Spells;
 
 namespace DOL.GS
@@ -44,11 +42,12 @@ namespace DOL.GS
         public int TickInterval;
         public long NextTick;
         public int PreviousPosition = -1;
-        public ISpellHandler SpellHandler { get; set; }
+        public int EntityManagerId { get; set; }= EntityManager.UNSET_ID;
+        public ISpellHandler SpellHandler { get; protected set; }
 
         /// <summary>
-		/// The icon for this effect.
-		/// </summary>
+        /// The icon for this effect.
+        /// </summary>
         public virtual ushort Icon { get { return (ushort)0; } }
 
         /// <summary>
@@ -57,9 +56,9 @@ namespace DOL.GS
         public virtual string Name { get { return "Default Effect Name"; } }
 
         /// <summary>
-		/// The name of the owner
-		/// </summary>
-		public virtual string OwnerName
+        /// The name of the owner
+        /// </summary>
+        public virtual string OwnerName
         {
             get
             {

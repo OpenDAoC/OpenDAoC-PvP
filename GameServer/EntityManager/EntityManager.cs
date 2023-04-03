@@ -1,157 +1,167 @@
-using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using log4net;
 
 namespace DOL.GS
 {
     public static class EntityManager
     {
-        public static int maxEntities = ServerProperties.Properties.MAX_ENTITIES;
-        public static int maxPlayers = ServerProperties.Properties.MAX_PLAYERS;
-        
-        private static List<GamePlayer> _players = new(maxPlayers);
-        private static object _playersLock = new();
+        public const int UNSET_ID = -1;
+        private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        private static GameLiving[] _npcsArray = new GameLiving[maxEntities];
-        private static int? _npcsLastDeleted = null;
-        private static int _npcsCount = 0;
-
-        private static List<ECSGameEffect> _effects = new(50000);
-        private static object _effectsLock = new();
-
-        private static List<Type> _services = new(100);
-        private static object _servicesLock = new();
-
-        private static ConcurrentDictionary<Type, HashSet<GameLiving>> _components = new();
-
-        public static void AddService(Type t)
+        public enum EntityType
         {
-            lock (_servicesLock)
-            {
-                _services.Add(t);
-            }
+            Player,
+            Npc,
+            Effect,
+            AttackComponent,
+            CastingComponent,
+            EffectListComponent,
+            CraftComponent
         }
 
-        public static void AddComponent(Type t, GameLiving n)
+        private static Dictionary<EntityType, dynamic> Entities = new()
         {
-            if (_components.TryGetValue(t, out var p))
+            { EntityType.Player, new EntityArrayWrapper<GamePlayer>(ServerProperties.Properties.MAX_PLAYERS) },
+            { EntityType.Npc, new EntityArrayWrapper<GameNPC>(ServerProperties.Properties.MAX_ENTITIES) },
+            { EntityType.Effect, new EntityArrayWrapper<ECSGameEffect>(250) },
+            { EntityType.AttackComponent, new EntityArrayWrapper<AttackComponent>(1250) },
+            { EntityType.CastingComponent, new EntityArrayWrapper<CastingComponent>(1250) },
+            { EntityType.EffectListComponent, new EntityArrayWrapper<EffectListComponent>(3000) },
+            { EntityType.CraftComponent, new EntityArrayWrapper<CraftComponent>(250) }
+        };
+
+        public static int Add<T>(EntityType type, T entity)
+        {
+            return Entities[type].Add(entity);
+        }
+
+        public static int Remove(EntityType type, int id)
+        {
+            Entities[type].Remove(id);
+            return UNSET_ID;
+        }
+
+        public static List<T> GetAll<T>(EntityType type)
+        {
+            return Entities[type].Elements;
+        }
+
+        public static int GetLastNonNullIndex(EntityType type)
+        {
+            return Entities[type].GetLastNonNullIndex();
+        }
+
+        private class EntityArrayWrapper<T> where T : class
+        {
+            private static Comparer<int> _descendingOrder = Comparer<int>.Create((x, y) => x < y ? 1 : x > y ? -1 : 0);
+            public List<T> Elements { get; private set; }
+            private int _lastNonNullIndex = -1;
+            private SortedSet<int> _deletedIndexes = new(_descendingOrder);
+            private object _lock = new();
+
+            public EntityArrayWrapper(int capacity)
             {
-                lock(p)
+                Elements = new List<T>(capacity);
+            }
+
+            public int Add(T element)
+            {
+                lock (_lock)
                 {
-                    p.Add(n);
+                    if (_deletedIndexes.Any())
+                    {
+                        int index = _deletedIndexes.Max;
+                        _deletedIndexes.Remove(index);
+                        Elements[index] = element;
+
+                        if (index > _lastNonNullIndex)
+                            _lastNonNullIndex = index;
+
+                        return index;
+                    }
+                    else
+                    {
+                        _lastNonNullIndex++;
+
+                        // Increase the capacity of the list in the event that it's too small. This is a costly operation.
+                        // 'Add' already does it, but we want to know when it happens and control by how much it grows (instead of doubling it).
+                        if (_lastNonNullIndex >= Elements.Capacity)
+                        {
+                            int newCapacity = Elements.Capacity + 100;
+                            log.Warn($"{typeof(T)} {nameof(Elements)} is too short. Resizing it to {newCapacity}.");
+                            ListExtras.Resize(Elements, newCapacity);
+                        }
+
+                        Elements.Add(element);
+                        return _lastNonNullIndex;
+                    }
                 }
             }
-            else
-                _components.TryAdd(t, new HashSet<GameLiving> { n });
-        }
 
-        public static GameLiving[] GetLivingByComponent(Type t)
-        {
-            if (_components.TryGetValue(t, out var p))
+            public void Remove(int id)
             {
-                lock(p)
+                if (id == -1)
+                    return;
+
+                lock (_lock)
                 {
-                    return p.ToArray();
+                    Elements[id] = null;
+                    _deletedIndexes.Add(id);
+
+                    if (id == _lastNonNullIndex)
+                    {
+                        if (_deletedIndexes.Any())
+                        {
+                            int lastIndex = _deletedIndexes.Min;
+
+                            // Find the first non-contiguous number. For example if the collection contains 7 6 3 1, we should return 5.
+                            foreach (int index in _deletedIndexes)
+                            {
+                                if (lastIndex - index > 0)
+                                    break;
+
+                                lastIndex--;
+                            }
+
+                            _lastNonNullIndex = lastIndex;
+                        }
+                        else
+                            _lastNonNullIndex--;
+                    }
                 }
             }
-            else
-                return Array.Empty<GameLiving>();
-        }
 
-        public static void RemoveComponent(Type t, GameLiving n)
-        {
-            if (_components.TryGetValue(t, out var p))
+            public int GetLastNonNullIndex()
             {
-                lock(p)
+                lock (_lock)
                 {
-                    p.Remove(n);
-                }
-            }
-        }
-
-        public static GamePlayer[] GetAllPlayers()
-        {
-            lock (_players)
-            {
-                return _players.ToArray();
-            }
-        }
-
-        public static void AddPlayer(GamePlayer p)
-        {
-            lock (_playersLock)
-            {
-                _players.Add(p);
-            }
-        }
-
-        public static void RemovePlayer(GamePlayer p)
-        {
-            lock (_playersLock)
-            {
-                _players.Remove(p);
-            }
-        }
-
-        public static ref GameLiving[] GetAllNpcsArrayRef()
-        {
-            lock (_npcsArray)
-            {
-                return ref _npcsArray;
-            }
-        }
-
-        public static int AddNpc(GameLiving o)
-        {
-            lock (_npcsArray)
-            {
-                if (_npcsLastDeleted == null)
-                {
-                    _npcsArray[_npcsCount] = o;
-                    _npcsCount++;
-                    return (_npcsCount - 1);
-                }
-                else
-                {
-                    int last_id = (int)_npcsLastDeleted;
-                    _npcsArray[(int)_npcsLastDeleted] = o;
-                    _npcsLastDeleted = null;
-                    return last_id;
+                    return _lastNonNullIndex;
                 }
             }
         }
+    }
 
-        public static void RemoveNpc(GameLiving o)
+    // Extension methods for 'List<T>' that could be moved elsewhere.
+    public static class ListExtras
+    {
+        public static void Resize<T>(this List<T> list, int size, bool fill = false, T element = default)
         {
-            lock (_npcsArray)
+            int count = list.Count;
+
+            if (size < count)
             {
-                _npcsArray[o.id] = null;
-                _npcsLastDeleted = o.id;
+                list.RemoveRange(size, count - size);
+                list.TrimExcess();
             }
-        }
-
-        public static ECSGameEffect[] GetAllEffects()
-        {
-            lock (_effectsLock)
+            else if (size > count)
             {
-                return _effects.ToArray();
-            }
-        }
+                if (size > list.Capacity)
+                    list.Capacity = size; // Creates a new internal array.
 
-        public static void AddEffect(ECSGameEffect e)
-        {
-            lock (_effectsLock)
-            {
-                _effects.Add(e);
-            }
-        }
-
-        public static void RemoveEffect(ECSGameEffect e)
-        {
-            lock (_effectsLock)
-            {
-                _effects.Remove(e);
+                if (fill)
+                    list.AddRange(Enumerable.Repeat(element, size - count));
             }
         }
     }

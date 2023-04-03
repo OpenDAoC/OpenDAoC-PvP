@@ -155,16 +155,6 @@ public class StandardMobState_AGGRO : StandardMobState
 
     public override void Enter()
     {
-        if (_brain.Body.attackComponent == null)
-            _brain.Body.attackComponent = new AttackComponent(_brain.Body);
-
-        EntityManager.AddComponent(typeof(AttackComponent), _brain.Body);
-
-        if (_brain.Body.castingComponent == null)
-            _brain.Body.castingComponent = new CastingComponent(_brain.Body);
-
-        EntityManager.AddComponent(typeof(CastingComponent), _brain.Body);
-
         if (ECS.Debug.Diagnostics.StateMachineDebugEnabled)
         {
             Console.WriteLine($"{_brain.Body} is entering AGGRO");

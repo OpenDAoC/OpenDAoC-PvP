@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using ECS.Debug;
@@ -9,31 +10,29 @@ namespace DOL.GS
     public static class CastingService
     {
         private static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        private const string ServiceName = "CastingService";
-
-        static CastingService()
-        {
-            EntityManager.AddService(typeof(CastingService));
-        }
+        private const string SERVICE_NAME = "CastingService";
 
         public static void Tick(long tick)
         {
-            Diagnostics.StartPerfCounter(ServiceName);
-            GameLiving[] arr = EntityManager.GetLivingByComponent(typeof(CastingComponent));
+            Diagnostics.StartPerfCounter(SERVICE_NAME);
 
-            Parallel.ForEach(arr, p =>
+            List<CastingComponent> list = EntityManager.GetAll<CastingComponent>(EntityManager.EntityType.CastingComponent);
+
+            Parallel.For(0, EntityManager.GetLastNonNullIndex(EntityManager.EntityType.CastingComponent) + 1, i =>
             {
                 try
                 {
-                    if (p?.castingComponent == null)
+                    CastingComponent c = list[i];
+
+                    if (c == null)
                         return;
 
                     long startTick = GameTimer.GetTickCount();
-                    p.castingComponent.Tick(tick);
+                    c.Tick(tick);
                     long stopTick = GameTimer.GetTickCount();
 
                     if ((stopTick - startTick) > 25)
-                        log.Warn($"Long CastingComponent.Tick for: {p.Name}({p.ObjectID}) Spell: {p.castingComponent?.spellHandler?.Spell?.Name} Time: {stopTick - startTick}ms");
+                        log.Warn($"Long CastingComponent.Tick for: {c.Owner.Name}({c.Owner.ObjectID}) Spell: {c.SpellHandler?.Spell?.Name} Time: {stopTick - startTick}ms");
                 }
                 catch (Exception e)
                 {
@@ -41,7 +40,7 @@ namespace DOL.GS
                 }
             });
 
-            Diagnostics.StopPerfCounter(ServiceName);
+            Diagnostics.StopPerfCounter(SERVICE_NAME);
         }
     }
 }

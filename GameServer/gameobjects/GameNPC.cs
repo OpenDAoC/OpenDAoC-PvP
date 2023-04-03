@@ -32,11 +32,10 @@ using DOL.GS.Housing;
 using DOL.GS.Movement;
 using DOL.GS.PacketHandler;
 using DOL.GS.Quests;
-using DOL.GS.Spells;
+using DOL.GS.ServerProperties;
 using DOL.GS.Styles;
 using DOL.GS.Utils;
 using DOL.Language;
-using DOL.GS.ServerProperties;
 using ECS.Debug;
 
 namespace DOL.GS
@@ -3218,6 +3217,9 @@ namespace DOL.GS
 				m_teleporterIndicator = null;
 			}
 
+			if (m_respawnInterval < 0)
+				EntityManagerId = EntityManager.Remove(EntityManager.EntityType.Npc, EntityManagerId);
+
 			return true;
 		}
 
@@ -3889,12 +3891,12 @@ namespace DOL.GS
         {
             attackComponent.RequestStartAttack(target);
 
-			if (CurrentFollowTarget!=target)
-			{
-				StopFollowing();
-				Follow(target, m_followMinDist, m_followMaxDist);
-			}
-            
+            if (CurrentFollowTarget != target)
+            {
+                StopFollowing();
+                Follow(target, m_followMinDist, m_followMaxDist);
+            }
+
             FireAmbientSentence(eAmbientTrigger.fighting, target);
         }
 
@@ -3927,18 +3929,6 @@ namespace DOL.GS
 				m_lastAttackTickPvE = GameLoop.GameLoopTime;
 			else
 				m_lastAttackTickPvP = GameLoop.GameLoopTime;
-		}
-
-		public void StartMeleeAttackTimer()
-		{
-			if (attackComponent.Attackers.Count == 0)
-			{
-				if (SpellTimer == null)
-					SpellTimer = new SpellAction(this);
-
-				if (!SpellTimer.IsAlive)
-					SpellTimer.Start(1);
-			}
 		}
 
 		/// <summary>
@@ -4141,9 +4131,7 @@ namespace DOL.GS
 
 				Delete();
 				TempProperties.removeAllProperties();
-
-				if (this is not GameSummonedPet and not SINeckBoss)
-					StartRespawn();
+				StartRespawn();
 			}
 			finally
 			{
@@ -4330,7 +4318,7 @@ namespace DOL.GS
 		/// <summary>
 		/// The time to wait before each mob respawn
 		/// </summary>
-		protected int m_respawnInterval;
+		protected int m_respawnInterval = -1;
 		/// <summary>
 		/// A timer that will respawn this mob
 		/// </summary>
@@ -4410,9 +4398,7 @@ namespace DOL.GS
 		/// </summary>
 		public virtual void StartRespawn()
 		{
-			if (IsAlive) return;
-
-			if (this.Brain is IControlledBrain)
+			if (IsAlive)
 				return;
 
 			if (m_healthRegenerationTimer != null)
@@ -4531,46 +4517,6 @@ namespace DOL.GS
 
 			return GetModified(eProperty.CriticalMeleeHitChance);
 		}
-
-		/// <summary>
-		/// Stop attacking and following, but stay in attack mode (e.g. in
-		/// order to cast a spell instead).
-		/// </summary>
-		public virtual void HoldAttack()
-		{
-			//if (m_attackAction != null)
-			//	m_attackAction.Stop();
-            if (attackComponent.attackAction != null)
-                attackComponent.attackAction.CleanUp();
-			StopFollowing();
-		}
-
-		/// <summary>
-		/// Continue a previously started attack.
-		/// </summary>
-		public virtual void ContinueAttack(GameObject target)
-		{
-			//if (m_attackAction != null && target != null)
-            if (attackComponent.attackAction != null && target != null)
-            {
-			    Follow(target, STICKMINIMUMRANGE, MaxDistance);
-			    //m_attackAction.Start(1);
-                attackComponent.attackAction.StartTime = 1;
-			}
-		}
-
-        ///// <summary>
-        ///// Stops all attack actions, including following target
-        ///// </summary>
-        //public override void StopAttack()
-        //{
-        //	base.StopAttack();
-        //	StopFollowing();
-
-        //	// Tolakram: If npc has a distance weapon it needs to be made active after attack is stopped
-        //	if (Inventory != null && Inventory.GetItem(eInventorySlot.DistanceWeapon) != null && ActiveWeaponSlot != eActiveWeaponSlot.Distance)
-        //		SwitchWeapon(eActiveWeaponSlot.Distance);
-        //}
 
 		public override void OnAttackedByEnemy(AttackData ad)
 		{
@@ -4860,7 +4806,6 @@ namespace DOL.GS
 		#region Spell
 
 		private List<Spell> m_spells = new List<Spell>(0);
-		private SpellAction m_spellaction = null;
 		private ConcurrentDictionary<GameObject, Tuple<Spell, SpellLine, long>> m_spellTargetLosChecks = new();
 
 		/// <summary>
@@ -5050,76 +4995,6 @@ namespace DOL.GS
 		}
 
 		/// <summary>
-		/// The timer that controls an npc's spell casting
-		/// </summary>
-		public SpellAction SpellTimer
-		{
-			get { return m_spellaction; }
-			set { m_spellaction = value; }
-		}
-
-		/// <summary>
-		/// The spell action of this living
-		/// </summary>
-		public class SpellAction : RegionECSAction
-		{
-			/// <summary>
-			/// Constructs a new attack action
-			/// </summary>
-			/// <param name="owner">The action source</param>
-			public SpellAction(GameLiving owner)
-				: base(owner)
-			{
-			}
-
-			/// <summary>
-			/// Called on every timer tick
-			/// </summary>
-			protected override int OnTick(ECSGameTimer timer)
-			{
-				GameNPC owner = null;
-				if (m_actionSource != null && m_actionSource is GameNPC)
-					owner = (GameNPC)m_actionSource;
-				else
-				{
-					Stop();
-					return 0;
-				}
-
-				if (owner.TargetObject == null || !owner.attackComponent.AttackState)
-				{
-					Stop();
-					return 0;
-				}
-
-				//If we started casting a spell, stop the timer and wait for
-				//GameNPC.OnAfterSpellSequenceCast to start again
-				if (owner.Brain is StandardMobBrain && ((StandardMobBrain)owner.Brain).CheckSpells(StandardMobBrain.eCheckSpellType.Offensive))
-				{
-					Stop();
-					return 0;
-				}
-				else
-				{
-					//If we aren't a distance NPC, lets make sure we are in range to attack the target!
-					if (owner.ActiveWeaponSlot != eActiveWeaponSlot.Distance && !owner.IsWithinRadius(owner.TargetObject, STICKMINIMUMRANGE))
-						((GameNPC)owner).Follow(owner.TargetObject, STICKMINIMUMRANGE, STICKMAXIMUMRANGE);
-				}
-
-				if (owner.Brain != null)
-				{
-					Interval = Math.Min(1500, owner.Brain.CastInterval);
-				}
-				else
-				{
-					Interval = 1500;
-				}
-
-				return Interval;
-			}
-		}
-
-		/// <summary>
 		/// Cast a spell, with optional LOS check
 		/// </summary>
 		public virtual bool CastSpell(Spell spell, SpellLine line, bool checkLos)
@@ -5238,7 +5113,7 @@ namespace DOL.GS
 						livingTarget.EffectList.GetOfType<NecromancerShadeEffect>() != null)
 						target = livingTarget.ControlledBrain?.Body;
 
-					CastSpellWithTarget(spell, line, target as GameLiving);
+					CastSpell(spell, line, target as GameLiving);
 				}
 				else
 					Notify(GameLivingEvent.CastFailed, this, new CastFailedEventArgs(null, CastFailedEventArgs.Reasons.TargetNotInView));
@@ -5894,6 +5769,8 @@ namespace DOL.GS
 				m_ownBrain = defaultBrain;
 				m_ownBrain.Body = this;
 			}
+
+			EntityManagerId = EntityManager.Add(EntityManager.EntityType.Npc, this);
 		}
 
 		/// <summary>

@@ -26,6 +26,7 @@ using DOL.GS.Effects;
 using DOL.GS.Keeps;
 using DOL.GS.PacketHandler;
 using DOL.GS.SkillHandler;
+using DOL.GS.Spells;
 using DOL.Language;
 
 namespace DOL.AI.Brain
@@ -575,7 +576,21 @@ namespace DOL.AI.Brain
         /// </summary>
         protected virtual GameLiving CalculateNextAttackTarget()
         {
-            return OrderAggroListByModifiedAggroAmount(FilterOutInvalidLivingsFromAggroList()).FirstOrDefault().Key;
+            // Filter out invalid entities (updates the list), then order the returned copy by (modified) aggro amount.
+            List<KeyValuePair<GameLiving, long>> aggroList = OrderAggroListByModifiedAggroAmount(FilterOutInvalidLivingsFromAggroList());
+
+            // We keep shades in aggro lists so that mobs attack them after their pet dies, but we must never return one.
+            GameLiving nextTarget = aggroList.Find(x => EffectListService.GetEffectOnTarget(x.Key, eEffect.Shade) == null).Key;
+
+            if (nextTarget != null)
+                return nextTarget;
+
+            // The list is either empty or full of shades.
+            // If it's empty, return null.
+            // If we found a shade, return the pet instead (if there's one). Ideally this should never happen.
+            // If it does, it means we added the shade to the aggro list instead of the pet.
+            // Which is currently the case due to the way 'AddToAggroList' propagates aggro to group members, and maybe other places.
+            return aggroList.FirstOrDefault().Key?.ControlledBrain?.Body;
         }
 
         public virtual bool CanAggroTarget(GameLiving target)
@@ -649,14 +664,21 @@ namespace DOL.AI.Brain
 				damage = controlledBrain.ModifyDamageWithTaunt(damage);
 
 				// Aggro is split between the owner (15%) and their pet (85%).
-				// We must ensure that the same amount of aggro isn't added for both, otherwise an out-of-combat mob could attack the owner when their pet engages it.
-				// This is one relatively fast way of doing it, and should (?) work as long as the split isn't 50 / 50.
 				int aggroForOwner = (int)(damage * 0.15);
-
-				if (aggroForOwner > 0)
+				
+				// We must ensure that the same amount of aggro isn't added for both, otherwise an out-of-combat mob could attack the owner when their pet engages it.
+				// The owner must also always generate at least 1 aggro.
+				// This works as long as the split isn't 50 / 50.
+				if (aggroForOwner == 0)
+				{
+					AddToAggroList(controlledBrain.Owner, 1);
+					AddToAggroList(NpcAttacker, Math.Max(2, damage));
+				}
+				else
+				{
 					AddToAggroList(controlledBrain.Owner, aggroForOwner);
-
-				AddToAggroList(NpcAttacker, damage - aggroForOwner);
+					AddToAggroList(NpcAttacker, damage - aggroForOwner);
+				}
 			}
 			else
 				AddToAggroList(attacker, damage);
@@ -858,7 +880,6 @@ namespace DOL.AI.Brain
         /// Checks if any spells need casting
         /// </summary>
         /// <param name="type">Which type should we go through and check for?</param>
-        /// <returns></returns>
         public virtual bool CheckSpells(eCheckSpellType type)
         {
             bool casted = false;
@@ -942,12 +963,6 @@ namespace DOL.AI.Brain
         protected bool CanCastDefensiveSpell(Spell spell)
         {
             if (spell == null || spell.IsHarmful)
-                return false;
-
-            // Only allow non-buff heal spells to be checked and queued while casting.
-            // Otherwise buffs will be casted twice on the same target due to the delay induced by the LoS check.
-            // We could add a parameter to ignore this if we aren't going to check LoS.
-            if (Body.IsCasting && (spell.IsBuff || !spell.IsHealing))
                 return false;
 
             // Make sure we're currently able to cast the spell.
@@ -1259,12 +1274,11 @@ namespace DOL.AI.Brain
         protected static SpellLine m_mobSpellLine = SkillBase.GetSpellLine(GlobalSpellsLines.Mob_Spells);
 
         /// <summary>
-        /// Checks if the living target has a spell effect
+        /// Checks if the living target has a spell effect.
+        /// Only to be used for spell casting purposes.
         /// </summary>
-        /// <param name="target">The target living object</param>
-        /// <param name="spell">The spell to check</param>
-        /// <returns>True if the living has the effect</returns>
-        public static bool LivingHasEffect(GameLiving target, Spell spell)
+        /// <returns>True if the living has the effect of will receive it by our current spell.</returns>
+        public bool LivingHasEffect(GameLiving target, Spell spell)
         {
             if (target == null)
                 return true;
@@ -1283,6 +1297,13 @@ namespace DOL.AI.Brain
                         return true;
                 }
             }*/
+
+            ISpellHandler spellHandler = Body.castingComponent.SpellHandler;
+
+            // If we're currently casting 'spell' on 'target', assume it already has the effect.
+            // This allows spell queuing while preventing casting on the same target more than once.
+            if (spellHandler != null && spellHandler.Spell.ID == spell.ID && spellHandler.Target == target)
+                return true;
 
             // May not be the right place for that, but without that check NPCs with more than one offensive or defensive proc will only buff themselves once.
             if (spell.SpellType is (byte)eSpellType.OffensiveProc or (byte)eSpellType.DefensiveProc)
