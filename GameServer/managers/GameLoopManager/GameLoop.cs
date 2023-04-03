@@ -60,7 +60,7 @@ namespace DOL.GS
             currentServiceTick = "CastingService";
             CastingService.Tick(GameLoopTime);
             currentServiceTick = "EffectService";
-            EffectService.Tick(GameLoopTime);
+            EffectService.Tick();
             currentServiceTick = "EffectListService";
             EffectListService.Tick(GameLoopTime);
             currentServiceTick = "CraftingService";
@@ -68,9 +68,9 @@ namespace DOL.GS
             currentServiceTick = "TimerService";
             TimerService.Tick(GameLoopTime);
             currentServiceTick = "DailQuestService";
-            DailyQuestService.Tick(GameLoopTime);
+            DailyQuestService.Tick();
             currentServiceTick = "WeeklyQuestService";
-            WeeklyQuestService.Tick(GameLoopTime);
+            WeeklyQuestService.Tick();
             //currentServiceTick = "ConquestService";
             //ConquestService.Tick(GameLoopTime);
             currentServiceTick = "BountyService";
@@ -78,7 +78,7 @@ namespace DOL.GS
             currentServiceTick = "PredatorService";
             PredatorService.Tick(GameLoopTime);
             currentServiceTick = "ReaperService";
-            ReaperService.Tick(GameLoopTime);
+            ReaperService.Tick();
 
             if (ZoneBonusRotator._lastPvEChangeTick == 0)
                 ZoneBonusRotator._lastPvEChangeTick = GameLoopTime;

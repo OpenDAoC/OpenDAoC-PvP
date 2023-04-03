@@ -40,7 +40,6 @@ namespace DOL.GS.Spells
 	/// </summary>
 	public class SpellHandler : ISpellHandler
 	{
-		private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 		/// <summary>
 		/// Maximum number of sub-spells to get delve info for.
 		/// </summary>
