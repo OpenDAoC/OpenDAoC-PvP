@@ -8,7 +8,7 @@ namespace DOL.GS.Scripts.discord
 {
     public static class WebhookMessage
     {
-        public static void SendMessage(String webhookId, String message, String userName = "Atlas Bot", string avatar = "https://cdn.discordapp.com/avatars/924819091028586546/656e2b335e60cb1bfaf3316d7754a8fd.webp")
+        public static void SendMessage(String webhookId, String message, String userName = "Titan Bot", string avatar = "https://cdn.discordapp.com/avatars/865566424537104386/282901fdaa488f57a95faae665a7c245.webp")
         {
             var client = new DiscordWebhookClient(webhookId);
 
@@ -22,7 +22,7 @@ namespace DOL.GS.Scripts.discord
             client.SendToDiscord(msg);
         }
         
-        public static void SendMessageWithFile(String webhookId, String message, DiscordFile file, String userName = "Atlas Bot", string avatar = "https://cdn.discordapp.com/avatars/924819091028586546/656e2b335e60cb1bfaf3316d7754a8fd.webp")
+        public static void SendMessageWithFile(String webhookId, String message, DiscordFile file, String userName = "Titan Bot", string avatar = "https://cdn.discordapp.com/avatars/865566424537104386/282901fdaa488f57a95faae665a7c245.webp")
         {
             var client = new DiscordWebhookClient(webhookId);
 
