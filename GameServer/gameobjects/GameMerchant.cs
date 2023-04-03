@@ -558,7 +558,15 @@ namespace DOL.GS
 					player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.YouNeedBP", totalValue), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 					return;
 				}
-				if (!player.Inventory.AddTemplate(GameInventoryItem.Create(template), amountToBuy, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack))
+				
+				var item = GameInventoryItem.Create(template);
+				if (this is BountyTemplateVendor)
+				{
+					item.Quality = 99;
+					template.Quality = 99;
+				}
+				
+				if (!player.Inventory.AddTemplate(item, amountToBuy, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack))
 				{
 					player.Out.SendMessage(LanguageMgr.GetTranslation(player.Client.Account.Language, "GameMerchant.OnPlayerBuy.NotInventorySpace"), eChatType.CT_System, eChatLoc.CL_SystemWindow);
 					return;
@@ -1138,5 +1146,10 @@ namespace DOL.GS
 	public class L40RewardsMerchant : GameItemCurrencyMerchant
 	{
 		public override string MoneyKey { get { return "L40RewardToken"; } }
+	}
+
+	public class BountyTemplateVendor : GameBountyMerchant
+	{
+		
 	}
 }
