@@ -564,6 +564,7 @@ namespace DOL.GS
 				{
 					item.Quality = 99;
 					template.Quality = 99;
+					totalValue = 1000;
 				}
 				
 				if (!player.Inventory.AddTemplate(item, amountToBuy, eInventorySlot.FirstBackpack, eInventorySlot.LastBackpack))
