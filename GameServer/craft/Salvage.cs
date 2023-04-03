@@ -734,7 +734,7 @@ namespace DOL.GS
                 maxCount = usureoverall;
             }
 
-            if (item.Description.Contains("Atlas ROG"))
+            if (item.Description.Contains("Titan ROG"))
 	            maxCount = 2;
 
             if (maxCount < 1)

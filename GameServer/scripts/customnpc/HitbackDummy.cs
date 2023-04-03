@@ -46,7 +46,7 @@ namespace DOL.GS
         public override bool AddToWorld()
         {
             Name = "Hitback Dummy - Right Click to Reset";
-            GuildName = "Atlas Dummy Union";
+            GuildName = "Titan Dummy Union";
             Model = 34;
             Strength = 10;
             ScalingFactor = 4;

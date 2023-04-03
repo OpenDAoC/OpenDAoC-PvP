@@ -32,7 +32,7 @@ namespace DOL.GS.Commands
 				if ((playerClient.Player.Realm == client.Player.Realm ||
 				     playerClient.Account.PrivLevel > 1) && !playerClient.Player.IsIgnoring(client.Player))
 				{
-					var name = "Atlas";
+					var name = "Titan";
 					// Message: [ADVICE {0}] {1}: {2}
 					ChatUtil.SendAdviceMessage(playerClient, "Social.SendAdvice.Msg.Channel", getRealmString(client.Player.Realm), name, msg);
 				}

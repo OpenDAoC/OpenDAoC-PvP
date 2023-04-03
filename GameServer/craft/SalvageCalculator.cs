@@ -2306,7 +2306,7 @@ namespace DOL.GS.SalvageCalc
 
                 #region AtlasROGs
                 
-                if (Description.Contains("Atlas ROG"))
+                if (Description.Contains("Titan ROG"))
                 {
                     Yield.Count = 2;
                 }

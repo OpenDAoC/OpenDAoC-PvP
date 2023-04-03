@@ -1415,7 +1415,7 @@ namespace DOL.GS
 					if ((eInventorySlot) item.SlotPosition < eInventorySlot.FirstBackpack || (eInventorySlot)item.SlotPosition > eInventorySlot.LastBackpack)
 						continue;
 					var itemWeight = item.Weight;
-					if (item.Description.Contains("Atlas ROG")) itemWeight = (int)(itemWeight * 0.75);
+					if (item.Description.Contains("Titan ROG")) itemWeight = (int)(itemWeight * 0.75);
 					weight += itemWeight;
 				}
 				
