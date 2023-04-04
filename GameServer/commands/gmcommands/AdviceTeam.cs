@@ -9,7 +9,7 @@ namespace DOL.GS.Commands
 		 new [] { "&advt" },
 		ePrivLevel.GM,
 		// Displays next to the command when '/cmd' is entered
-		"Lists all flagged Advisors, sends advisors questions, and sends messages to the Advice channel as Atlas.")]
+		"Lists all flagged Advisors, sends advisors questions, and sends messages to the Advice channel as Titan.")]
 	public class AdviceTeamCommandHandler : AbstractCommandHandler, ICommandHandler
 	{
 		public void OnCommand(GameClient client, string[] args)

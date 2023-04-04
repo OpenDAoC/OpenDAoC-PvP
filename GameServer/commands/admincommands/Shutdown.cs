@@ -528,7 +528,7 @@ namespace DOL.GS.Commands
 			if (GameServer.Instance.IsRunning)
 			{
 				GameServer.Instance.Stop();
-				log.Info("Executed Atlas server shutdown!");
+				log.Info("Executed server shutdown!");
 				Thread.Sleep(2000);
 				Environment.Exit(0);
 			}
@@ -638,7 +638,7 @@ namespace DOL.GS.Commands
 								{
 									new DiscordMessageEmbed(
 										color: 3066993,
-										description: "The server restart has been cancelled.\nPlease stand by for additional information from Atlas team.",
+										description: "The server restart has been cancelled.\nPlease stand by for additional information from the team.",
 										thumbnail: new DiscordMessageEmbedThumbnail("https://cdn.discordapp.com/emojis/865577034087923742.png")
 									)
 								}

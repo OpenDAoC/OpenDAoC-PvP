@@ -159,7 +159,7 @@ namespace DOL.GS
 			// Create your DiscordMessage with all parameters of your message.
 			var discordMessage = new DiscordMessage(
 				"",
-				username: "Atlas RvR",
+				username: "Titan RvR",
 				avatarUrl: avatarUrl,
 				tts: false,
 				embeds: new[]

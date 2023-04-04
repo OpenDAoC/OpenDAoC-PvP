@@ -8364,8 +8364,8 @@ namespace DOL.GS
             // Create your DiscordMessage with all parameters of your message.
             var discordMessage = new DiscordMessage(
                 "",
-                username: "Atlas Obituary",
-                avatarUrl: "https://cdn.discordapp.com/attachments/919610633656369214/928726197645496382/skull2.png",
+                username: "Titan Obituary",
+                avatarUrl: "https://cdn.discordapp.com/avatars/1065970430491496478/f662b65d92dcf77335fd58641e8c75cf.webp",
                 tts: false,
                 embeds: new[]
                 {
@@ -8409,8 +8409,8 @@ namespace DOL.GS
             // Create your DiscordMessage with all parameters of your message.
             var discordMessage = new DiscordMessage(
                 "",
-                username: "Atlas Obituary",
-                avatarUrl: "https://cdn.discordapp.com/attachments/919610633656369214/928726197645496382/skull2.png",
+                username: "Titan Obituary",
+                avatarUrl: "https://cdn.discordapp.com/avatars/1065970430491496478/f662b65d92dcf77335fd58641e8c75cf.webp",
                 tts: false,
                 embeds: new[]
                 {
