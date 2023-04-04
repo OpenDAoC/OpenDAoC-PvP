@@ -846,7 +846,7 @@ namespace DOL.GS
  					var message = new DiscordMessage(
  						"",
  						username: "Titan GameServer",
- 						avatarUrl: "https://cdn.discordapp.com/avatars/924819091028586546/656e2b335e60cb1bfaf3316d7754a8fd.webp",
+ 						avatarUrl: "https://cdn.discordapp.com/avatars/865566424537104386/282901fdaa488f57a95faae665a7c245.webp",
  						tts: false,
  						embeds: new[]
  						{
