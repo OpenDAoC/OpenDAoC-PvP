@@ -2677,9 +2677,9 @@ namespace DOL.GS.ServerProperties
 		public static int CRAFTING_MAX_SKILLS_AMOUNT;
 		
 		/// <summary>
-		/// Max Alchemy and Spellcrafting skill?
+		/// Max Alchemy and Spellcrafting skill? (disables the other trading skills)
 		/// </summary>
-		[ServerProperty("craft", "crafting_gems_max_skills", "Automatically set Alchemy and Spellcrafting skills to max level for all players.", true)]
+		[ServerProperty("craft", "crafting_gems_max_skills", "Automatically set Alchemy and Spellcrafting skills to max level for all players, disables the other trading skills.", true)]
 		public static bool CRAFTING_GEMS_MAX_SKILLS;
 
 		/// <summary>

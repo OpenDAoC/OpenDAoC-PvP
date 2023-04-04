@@ -15057,9 +15057,12 @@ namespace DOL.GS
                                     }
                                     else
                                     {
-                                        if (Properties.CRAFTING_GEMS_MAX_SKILLS && (i == 4 || i == 13))
+                                        if (Properties.CRAFTING_GEMS_MAX_SKILLS)
                                         {
-                                            m_craftingSkills.Add((eCraftingSkill)i, 1300);
+                                            if (i == 4 || i == 13)
+                                            {
+                                                m_craftingSkills.Add((eCraftingSkill)i, 1300);
+                                            }
                                         }
                                         else
                                         {
@@ -15084,9 +15087,12 @@ namespace DOL.GS
                                 }
                                 else
                                 {
-                                    if (Properties.CRAFTING_GEMS_MAX_SKILLS && (Convert.ToInt32(values[0]) == 4 || Convert.ToInt32(values[0]) == 13))
+                                    if (Properties.CRAFTING_GEMS_MAX_SKILLS)
                                     {
-                                        m_craftingSkills.Add((eCraftingSkill)Convert.ToInt32(values[0]), 1300);
+                                        if (Convert.ToInt32(values[0]) == 4 || Convert.ToInt32(values[0]) == 13)
+                                        {
+                                            m_craftingSkills.Add((eCraftingSkill)Convert.ToInt32(values[0]), 1300);
+                                        }
                                     }
                                     else
                                     {
