@@ -9,6 +9,8 @@ namespace DOL.GS.Scripts;
 
 public class TitanAlphaLootMerchant : BattlegroundEventLoot
 {
+	readonly int realmPointAward = 213875;
+	
 	public override bool AddToWorld()
     {
 	    if (base.AddToWorld())
@@ -16,8 +18,8 @@ public class TitanAlphaLootMerchant : BattlegroundEventLoot
 		    Model = 996;
 		    Name = "Quartermaster";
 		    GuildName = "Titan";
-		    Level = 50;
-		    Size = 80;
+		    Level = 75;
+		    Size = 100;
 		    Flags |= GameNPC.eFlags.PEACE;
 		    return true;    
 	    }
@@ -53,10 +55,14 @@ public class TitanAlphaLootMerchant : BattlegroundEventLoot
         if (lvCap != 0 && player.Level < lvCap)
 		{
 			player.Out.SendMessage($"It also looks like you could use a bit of [experience] to reach level {lvCap}.", eChatType.CT_Say,eChatLoc.CL_PopupWindow);
-			return false;
 		}
-        
-        return true;
+
+        if (lvCap == 50)
+        {
+	        player.Out.SendMessage($"The king has granted me permission to give you some [realm points] to get you started.", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
+        }
+
+	    return true;
     }
 
     
@@ -242,6 +248,18 @@ public class TitanAlphaLootMerchant : BattlegroundEventLoot
 			}
 			player.Out.SendMessage("You are a veteran already, go fight for your Realm!", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
 			return false;
+		}
+		else if (str.Equals("realm points"))
+		{
+			if (player.RealmPoints < realmPointAward && ServerProperties.Properties.EVENT_LVCAP == 50)
+			{
+				player.GainRealmPoints((long)(double)(realmPointAward - player.RealmPoints));
+				player.Out.SendMessage("A royal award to get you started.", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
+				return true;
+			}
+			player.Out.SendMessage("You have already been granted these realm points. Go slay others to earn more.", eChatType.CT_Say, eChatLoc.CL_PopupWindow);
+			return false;
+
 		}
 
 		
