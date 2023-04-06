@@ -34,6 +34,9 @@ namespace DOL.GS
 	/// </summary>
 	public class GameSiegeWeapon : GameMovingObject
 	{
+
+		public Guild OwningGuild = null;
+		
 		public GameSiegeWeapon()
 		{
 			SetOwnBrain(new BlankBrain());
@@ -239,7 +242,14 @@ namespace DOL.GS
 				return;
 			}
 
-			if (Realm == 0) Realm = player.Realm;
+			if (OwningGuild != null && player.Guild != OwningGuild)
+			{
+				player.Out.SendMessage("You can't take control of an enemy guild's siege weapon.", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+				return;
+			}
+
+			OwningGuild ??= player.Guild;
+			//if (Realm == 0) Realm = player.Realm;
 			Owner = player;
 			player.SiegeWeapon = this;
 			Owner.Out.SendSiegeWeaponInterface(this, SiegeWeaponTimer.TimeUntilElapsed / 100);
@@ -570,9 +580,9 @@ namespace DOL.GS
 				return false;
 			}
 
-			if (Owner.Realm != this.Realm)
+			if (Owner.Guild != OwningGuild)
 			{
-				Owner.Out.SendMessage($"This siege equipment is owned by an enemy realm!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+				Owner.Out.SendMessage($"This siege equipment is owned by an enemy guild!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
 				return false;
 			}
 				
@@ -629,7 +639,7 @@ namespace DOL.GS
 
 		private int ControlRangeTimerCallback(ECSGameTimer callingTimer)
 		{
-			if(Owner==null)
+			if(Owner==null || OwningGuild != Owner.Guild)
 			{
 				StopControlRangeCheck();
 				return 0;

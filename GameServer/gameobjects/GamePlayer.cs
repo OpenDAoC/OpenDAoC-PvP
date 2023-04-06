@@ -15596,9 +15596,9 @@ namespace DOL.GS
         }
         public void SalvageSiegeWeapon(GameSiegeWeapon siegeWeapon)
         {
-            if (siegeWeapon.Realm != this.Realm)
+            if (siegeWeapon.OwningGuild != this.Guild)
             {
-                this.Out.SendMessage("You cannot salvage another realm's siege weapon!", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
+                this.Out.SendMessage("You cannot salvage another guild's siege weapon!", eChatType.CT_Say, eChatLoc.CL_SystemWindow);
 				return;
             }
             Salvage.BeginWork(this, siegeWeapon);
