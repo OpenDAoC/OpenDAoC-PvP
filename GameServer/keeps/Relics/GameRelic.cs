@@ -34,7 +34,7 @@ namespace DOL.GS
 		eRelicType m_relicType;
 		ECSGameTimer m_returnRelicTimer;
 		long m_timeRelicOnGround = 0;
-		private long m_maxCaptureTime = 1000 * 60 * 2; //1000ms = 1s, 1s * 60 = 1min, 1min * 2 = 2 min capture time
+		private long m_maxCaptureTime = 1000 * 60 * 5; //1000ms = 1s, 1s * 60 = 1min, 1min * 5 = 5 min capture time
 		private long m_captureStartTick;
 		private long m_captureEndTick;
 		private long m_lastMessageTick = 0;
