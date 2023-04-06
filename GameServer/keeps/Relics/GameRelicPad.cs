@@ -239,6 +239,9 @@ namespace DOL.GS
 				}
 
 				relic.LastCaptureDate = DateTime.Now;
+				
+				if(relic.CurrentCarrier.Guild != null)
+					GameServer.KeepManager.GetKeepCloseToSpot(relic.CurrentCarrier.CurrentRegionID, relic.CurrentCarrier, WorldMgr.VISIBILITY_DISTANCE).Claim(relic.CurrentCarrier);
 
 				Notify(RelicPadEvent.RelicMounted, this, new RelicPadEventArgs(relic.CurrentCarrier, relic));
 			}

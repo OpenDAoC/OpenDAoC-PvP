@@ -51,10 +51,7 @@ namespace DOL.GS.Keeps
 		/// <returns></returns>
 		public override bool CheckForClaim(GamePlayer player)
 		{
-
-			player.Out.SendMessage("Relic keeps cannot be claimed.", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-			return false;
-
+			return true;
 		}
 
 		/// <summary>
