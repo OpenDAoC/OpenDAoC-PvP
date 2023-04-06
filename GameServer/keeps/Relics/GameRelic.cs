@@ -404,7 +404,7 @@ namespace DOL.GS
 				}
 
 				m_captureStartTick = GameLoop.GameLoopTime;
-				m_captureEndTick = m_captureStartTick + 60000; //m_maxCaptureTime;
+				m_captureEndTick = m_captureStartTick + m_maxCaptureTime;
 				m_currentCarrierTimer = new ECSGameTimer(player, new ECSGameTimer.ECSTimerCallback(CarrierTimerTick));
 				m_currentCarrierTimer.Start(RelicEffectInterval);
 
