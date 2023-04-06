@@ -186,7 +186,7 @@ namespace DOL.GS
 				foreach (GameClient cl in WorldMgr.GetAllPlayingClients())
 				{
 					if (cl.Player.ObjectState != eObjectState.Active) continue;
-                    cl.Out.SendMessage(LanguageMgr.GetTranslation(cl.Account.Language, "GameRelicPad.MountRelic.Captured", GlobalConstants.RealmToName((eRealm)relic.CurrentCarrier.Realm), relic.Name), eChatType.CT_ScreenCenterSmaller, eChatLoc.CL_SystemWindow);
+                    cl.Out.SendMessage(LanguageMgr.GetTranslation(cl.Account.Language, "GameRelicPad.MountRelic.Captured", relic.CurrentCarrier.GuildName, relic.Name), eChatType.CT_ScreenCenterSmaller, eChatLoc.CL_SystemWindow);
                     message = $"{relic.CurrentCarrier.Name} of <{relic.CurrentCarrier.GuildName}> has captured {Name} and taken control of {relic.Name}";
 					cl.Out.SendMessage(message + "\n" + message + "\n" + message, eChatType.CT_Important, eChatLoc.CL_SystemWindow);
 					relic.OwningGuild = relic.CurrentCarrier.Guild;
