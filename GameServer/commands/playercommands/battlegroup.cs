@@ -37,6 +37,7 @@ namespace DOL.GS.Commands
 
         public void OnCommand(GameClient client, string[] args)
         {
+            return;
             if (IsSpammingCommand(client.Player, "battlechat"))
                 return;
 
@@ -104,6 +105,7 @@ namespace DOL.GS.Commands
         protected static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         public void OnCommand(GameClient client, string[] args)
         {
+            return;
             if (IsSpammingCommand(client.Player, "battlegroup"))
                 return;
 
@@ -960,6 +962,7 @@ namespace DOL.GS.Commands
             /*BattleGroup mybattlegroupinvite = player.TempProperties.getProperty<BattleGroup>(JOIN_BATTLEGROUP_PROPERTY, null);
             if (mybattlegroupinvite == null) 
                 return;*/
+            return;
 
             GamePlayer leader = player.TempProperties.getProperty<GamePlayer>(PLAYER_INVITE_SENDER, null);
             if (leader == null)
