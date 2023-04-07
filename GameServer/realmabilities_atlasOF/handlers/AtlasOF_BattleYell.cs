@@ -74,16 +74,16 @@ namespace DOL.GS.RealmAbilities
         }
 
         public override void Execute(GameLiving living)
-		{
-			if (CheckPreconditions(living, DEAD | SITTING | MEZZED | STUNNED)) return;
-			var caster = living as GamePlayer;
-			if (caster == null)
-				return;
-			m_tauntValue = GetTauntValue();
+        {
+            if (CheckPreconditions(living, DEAD | SITTING | MEZZED | STUNNED))
+                return;
 
-			CreateSpell(caster);
-			
-			caster.castingComponent.StartCastSpell(m_spell, m_spellline, this);
+            if (living is not GamePlayer caster)
+                return;
+
+            m_tauntValue = GetTauntValue();
+            CreateSpell(caster);
+            caster.castingComponent.RequestStartCastSpell(m_spell, m_spellline, this);
 
 			// We do not need to handle disabling the skill here. This ability casts a spell and is linked to that spell.
             // The spell casting code will disable this ability in SpellHandler's FinishSpellcast().

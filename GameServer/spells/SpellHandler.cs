@@ -34,11 +34,11 @@ using DOL.Language;
 
 namespace DOL.GS.Spells
 {
-	/// <summary>
-	/// Default class for spell handler
-	/// should be used as a base class for spell handler
-	/// </summary>
-	public class SpellHandler : ISpellHandler
+    /// <summary>
+    /// Default class for spell handler
+    /// should be used as a base class for spell handler
+    /// </summary>
+    public class SpellHandler : ISpellHandler
 	{
 		/// <summary>
 		/// Maximum number of sub-spells to get delve info for.
@@ -176,7 +176,7 @@ namespace DOL.GS.Spells
 			get { return m_useMinVariance; }
 			set { m_useMinVariance = value; }
 		}
-		
+
 		/// <summary>
 		/// Can this SpellHandler Coexist with other Overwritable Spell Effect
 		/// </summary>
@@ -184,8 +184,7 @@ namespace DOL.GS.Spells
 		{
 			get { return Spell.AllowCoexisting; }
 		}
-		
-		
+
 		public virtual bool IsSummoningSpell
 		{
 			get
@@ -228,7 +227,6 @@ namespace DOL.GS.Spells
 			}
 		}
 
-
 		/// <summary>
 		/// spell handler constructor
 		/// <param name="caster">living that is casting that spell</param>
@@ -270,17 +268,19 @@ namespace DOL.GS.Spells
 				effect.Cancel(false);
 				return;
 			}
+
 			if (Caster.IsAlive == false)
 			{
 				effect.Cancel(false);
 				return;
 			}
+
 			if (Caster.ObjectState != GameObject.eObjectState.Active)
 				return;
+
 			if (Caster.IsStunned || Caster.IsMezzed)
 				return;
 
-			// no instrument anymore = stop the song
 			if (m_spell.InstrumentRequirement != 0 && !CheckInstrument())
 			{
 				MessageToCaster("You stop playing your song.", eChatType.CT_Spell);
@@ -291,19 +291,14 @@ namespace DOL.GS.Spells
 			if (Caster.Mana >= Spell.PulsePower)
 			{
 				Caster.Mana -= Spell.PulsePower;
+
 				if (Spell.InstrumentRequirement != 0 || !HasPositiveEffect)
-				{
-					SendEffectAnimation(Caster, 0, true, 1); // pulsing auras or songs
-				}
+					SendEffectAnimation(Caster, 0, true, 1); // Pulsing auras or songs.
 
 				StartSpell(Target);
 			}
 			else
 			{
-				if (Spell.IsFocus)
-				{
-					//FocusSpellAction(null, Caster, null);
-				}
 				MessageToCaster("You do not have enough power and your spell was canceled.", eChatType.CT_SpellExpires);
 				effect.Cancel(false);
 			}
@@ -316,11 +311,11 @@ namespace DOL.GS.Spells
 		protected bool CheckInstrument()
 		{
 			InventoryItem instrument = Caster.ActiveWeapon;
+
 			// From patch 1.97:  Flutes, Lutes, and Drums will now be able to play any song type, and will no longer be limited to specific songs.
 			if (instrument == null || instrument.Object_Type != (int)eObjectType.Instrument ) // || (instrument.DPS_AF != 4 && instrument.DPS_AF != m_spell.InstrumentRequirement))
-			{
 				return false;
-			}
+
 			return true;
 		}
 
@@ -915,7 +910,7 @@ namespace DOL.GS.Spells
 				InterruptCasting();
 			}
 		}
-		
+
 		private void CheckPetLosDuringCastCallback(GameLiving living, ushort response, ushort sourceOID, ushort targetOID)
 		{
 			if (living == null || sourceOID == 0 || targetOID == 0)
@@ -928,26 +923,8 @@ namespace DOL.GS.Spells
 		}
 
 		/// <summary>
-		/// Check the Line of Sight from you to your pet
-		/// </summary>
-		/// <param name="player">The player</param>
-		/// <param name="response">The result</param>
-		/// <param name="targetOID">The target OID</param>
-		public virtual void CheckLOSYouToPet(GamePlayer player, ushort response, ushort targetOID)
-		{
-			if (player == null) // Hmm
-				return;
-			if ((response & 0x100) == 0x100) // In view ?
-				return;
-			MessageToLiving(player, "Your pet not in view.", eChatType.CT_SpellResisted);
-			InterruptCasting(); // break;
-		}
-
-		/// <summary>
 		/// Checks after casting before spell is executed
 		/// </summary>
-		/// <param name="target"></param>
-		/// <returns></returns>
 		public virtual bool CheckEndCast(GameLiving target)
 		{
 			if (IsSummoningSpell && Caster.CurrentRegion.IsCapitalCity)
@@ -977,10 +954,9 @@ namespace DOL.GS.Spells
 					return false;
 				}
 			}
-			else if (m_caster.IsSitting) // songs can be played if sitting
+			else if (m_caster.IsSitting) // Songs can be played when sitting.
 			{
-				//Purge can be cast while sitting but only if player has negative effect that
-				//don't allow standing up (like stun or mez)
+				// Purge can be cast while sitting but only if player has negative effect that doesn't allow standing up (like stun or mez).
 				MessageToCaster("You can't cast while sitting!", eChatType.CT_SpellResisted);
 				return false;
 			}
@@ -989,7 +965,7 @@ namespace DOL.GS.Spells
 			{
 				if (!m_caster.IsWithinRadius(m_caster.GroundTarget, CalculateSpellRange()))
 				{
-					MessageToCaster("Your area target is out of range.  Select a closer target.", eChatType.CT_SpellResisted);
+					MessageToCaster("Your area target is out of range. Select a closer target.", eChatType.CT_SpellResisted);
 					return false;
 				}
 			}
@@ -997,7 +973,7 @@ namespace DOL.GS.Spells
 			{
 				if (m_spell.Target.ToLower() != "pet")
 				{
-					//all other spells that need a target
+					// All other spells that need a target.
 					if (target == null || target.ObjectState != GameObject.eObjectState.Active)
 					{
 						if (Caster is GamePlayer)
@@ -1028,7 +1004,19 @@ namespace DOL.GS.Spells
 							// We don't give a radius to IsObjectInFront. A check is already done in TargetInView
 							if (target.IsStealthed || !Caster.TargetInView || !Caster.IsObjectInFront(target, 180, 0))
 							{
+								// Avoid flute mez's chat log spam.
+								if (m_spell.IsPulsing && m_spell.SpellType == (byte)eSpellType.Mesmerize)
+								{
+									MesmerizeSpellHandler mesmerizeSpellHandler = this as MesmerizeSpellHandler;
+
+									if (GameLoop.GameLoopTime - mesmerizeSpellHandler.FluteMezLastEndOfCastMessage < MesmerizeSpellHandler.FLUTE_MEZ_END_OF_CAST_MESSAGE_INTERVAL)
+										return false;
+
+									mesmerizeSpellHandler.FluteMezLastEndOfCastMessage = GameLoop.GameLoopTime;
+								}
+								
 								MessageToCaster("You can't see your target from here!", eChatType.CT_SpellResisted);
+
 								return false;
 							}
 						}
@@ -1063,6 +1051,7 @@ namespace DOL.GS.Spells
 				MessageToCaster("You have exhausted all of your power and cannot cast spells!", eChatType.CT_SpellResisted);
 				return false;
 			}
+
 			if (Spell.Power > 0 && m_caster.Mana < PowerCost(target) && EffectListService.GetAbilityEffectOnTarget(Caster, eEffect.QuickCast) == null && Spell.SpellType != (byte)eSpellType.Archery)
 			{
 				MessageToCaster("You don't have enough power to cast that!", eChatType.CT_SpellResisted);
@@ -1094,7 +1083,7 @@ namespace DOL.GS.Spells
 			if (m_interrupted)
 				return false;
 
-			if (m_caster.ObjectState != GameLiving.eObjectState.Active)
+			if (m_caster.ObjectState != GameObject.eObjectState.Active)
 				return false;
 
 			if (!m_caster.IsAlive)
@@ -1369,69 +1358,13 @@ namespace DOL.GS.Spells
 
 						//.SetCooldown();
 					}
-				}			
+				}
 				else
 					CastState = eCastState.Cleanup;
 			}
 
 			if (CastState == eCastState.Cleanup)
-				CleanupSpellCast();
-		}
-
-		public void CleanupSpellCast()
-		{
-			if (Caster is GamePlayer p)
-			{
-				if (Spell.CastTime > 0)
-				{
-					if (p.castingComponent.QueuedSpellHandler != null && p.SpellQueue)
-					{
-						p.castingComponent.SpellHandler = p.castingComponent.QueuedSpellHandler;
-						p.castingComponent.QueuedSpellHandler = null;
-					}
-					else
-						p.castingComponent.SpellHandler = null;
-				}
-			}
-			else if (Caster is NecromancerPet nPet)
-			{
-				if (nPet.Brain is NecromancerPetBrain necroBrain)
-				{
-					if (Spell.CastTime > 0)
-					{
-						necroBrain.RemoveSpellFromQueue();
-
-						if (!Caster.attackComponent.AttackState)
-							necroBrain.CheckAttackSpellQueue();
-
-						if (Caster.castingComponent.QueuedSpellHandler != null)
-						{
-							Caster.castingComponent.SpellHandler = Caster.castingComponent.QueuedSpellHandler;
-							Caster.castingComponent.QueuedSpellHandler = null;
-						}
-						else
-							Caster.castingComponent.SpellHandler = null;
-
-						if (necroBrain.SpellsQueued)
-							necroBrain.CheckSpellQueue();
-					}
-					else
-					{
-						if (nPet.attackComponent.AttackState)
-							necroBrain.RemoveSpellFromAttackQueue();
-					}
-				}
-			}
-			else
-			{
-				if (Caster.castingComponent.QueuedSpellHandler != null)
-				{
-					Caster.castingComponent.SpellHandler = Caster.castingComponent.QueuedSpellHandler;
-					Caster.castingComponent.QueuedSpellHandler = null;
-				}
-				else
-					Caster.castingComponent.SpellHandler = null;
-			}
+				Caster.castingComponent.CleanUpSpellHandler();
 		}
 
 		/// <summary>
@@ -1550,42 +1483,12 @@ namespace DOL.GS.Spells
 		/// </summary>
 		public virtual void InterruptCasting()
 		{
-			if (m_interrupted || !IsCasting)
+			if (m_interrupted)
 				return;
 
 			m_interrupted = true;
-
-			if (IsCasting)
-			{
-				Parallel.ForEach(m_caster.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE).Cast<GamePlayer>(), player =>
-				{
-					player.Out.SendInterruptAnimation(m_caster);
-				});
-			}
-			
-			if (m_caster is GamePlayer p && p.castingComponent != null)
-			{
-				p.castingComponent.SpellHandler = null;
-				p.castingComponent.QueuedSpellHandler = null;
-			}
-
+			Caster.castingComponent.InterruptCasting();
 			CastState = eCastState.Interrupted;
-			m_startReuseTimer = false;
-		}
-
-		/// <summary>
-		/// Special use case for when Amnesia isued used against the caster
-		/// </summary>
-		public virtual void AmnesiaInterruptCasting()
-		{
-			if (m_interrupted || !IsCasting)
-				return;
-			
-			if (m_caster is GamePlayer p && p.castingComponent != null)
-			{
-				p.castingComponent.SpellHandler = null;
-			}
-
 			m_startReuseTimer = false;
 		}
 
@@ -1597,7 +1500,6 @@ namespace DOL.GS.Spells
 		{
 			return m_caster.CalculateCastingTime(m_spellLine, m_spell);
 		}
-
 
 		#region animations
 

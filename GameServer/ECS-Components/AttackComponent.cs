@@ -98,9 +98,8 @@ namespace DOL.GS
         {
             if (StartAttackRequested)
             {
-                StartAttack();
-                m_startAttackTarget = null;
                 StartAttackRequested = false;
+                StartAttack();
             }
 
             attackAction?.Tick(time);
@@ -577,8 +576,8 @@ namespace DOL.GS
         {
             if (!StartAttackRequested)
             {
-                StartAttackRequested = true;
                 m_startAttackTarget = attackTarget;
+                StartAttackRequested = true;
 
                 if (EntityManagerId == -1)
                     EntityManagerId = EntityManager.Add(EntityManager.EntityType.AttackComponent, this);
@@ -1196,9 +1195,8 @@ namespace DOL.GS
             ad.IsOffHand = weapon != null && weapon.SlotPosition == Slot.LEFTHAND;
 
             // Asp style range add.
-            int addRange = style?.Procs?.FirstOrDefault()?.Item1.SpellType == (byte) eSpellType.StyleRange
-                ? (int) style?.Procs?.FirstOrDefault()?.Item1.Value - AttackRange
-                : 0;
+            IEnumerable<(Spell, int, int)> rangeProc = style?.Procs.Where(x => x.Item1.SpellType == (byte) eSpellType.StyleRange);
+            int addRange = rangeProc?.Any() == true ? (int) (rangeProc.First().Item1.Value - AttackRange) : 0;
 
             if (dualWield && (ad.Attacker is GamePlayer gPlayer) &&
                 gPlayer.CharacterClass.ID != (int) eCharacterClass.Savage)

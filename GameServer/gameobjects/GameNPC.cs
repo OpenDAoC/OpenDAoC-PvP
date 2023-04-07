@@ -40,11 +40,11 @@ using ECS.Debug;
 
 namespace DOL.GS
 {
-	/// <summary>
-	/// This class is the baseclass for all Non Player Characters like
-	/// Monsters, Merchants, Guards, Steeds ...
-	/// </summary>
-	public class GameNPC : GameLiving, ITranslatableObject
+    /// <summary>
+    /// This class is the baseclass for all Non Player Characters like
+    /// Monsters, Merchants, Guards, Steeds ...
+    /// </summary>
+    public class GameNPC : GameLiving, ITranslatableObject
 	{
 		public static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -5080,16 +5080,11 @@ namespace DOL.GS
 
 			if (LosChecker == null)
 				return base.CastSpell(spellToCast, line);
-			else
-			{
-				if (m_spellTargetLosChecks.TryAdd(TargetObject, new Tuple<Spell, SpellLine, long>(spellToCast, line, GameLoop.GameLoopTime)))
-				{
-					LosChecker.Out.SendCheckLOS(this, TargetObject, new CheckLOSResponse(StartSpellAttackCheckLos));
-					return true;
-				}
-				
-				return false;
-			}
+
+			if (m_spellTargetLosChecks.TryAdd(TargetObject, new Tuple<Spell, SpellLine, long>(spellToCast, line, GameLoop.GameLoopTime)))
+				LosChecker.Out.SendCheckLOS(this, TargetObject, new CheckLOSResponse(StartSpellAttackCheckLos));
+
+			return false;
 		}
 
 		public void StartSpellAttackCheckLos(GamePlayer player, ushort response, ushort targetOID)
@@ -5109,8 +5104,7 @@ namespace DOL.GS
 
 				if ((response & 0x100) == 0x100 && line != null && spell != null)
 				{
-					if (target is GameLiving livingTarget &&
-						livingTarget.EffectList.GetOfType<NecromancerShadeEffect>() != null)
+					if (target is GameLiving livingTarget && livingTarget.EffectList.GetOfType<NecromancerShadeEffect>() != null)
 						target = livingTarget.ControlledBrain?.Body;
 
 					CastSpell(spell, line, target as GameLiving);
@@ -5266,10 +5260,13 @@ namespace DOL.GS
 		public bool CheckStyleStun(Style style)
 		{
 			if (TargetObject is GameLiving living && style.Procs.Count > 0)
-				foreach (Tuple<Spell, int, int> t in style.Procs)
-					if (t != null && t.Item1 is Spell spell
-						&& spell.SpellType == (byte)eSpellType.StyleStun && living.HasEffect(t.Item1))
-							return false;
+			{
+				foreach ((Spell, int, int) t in style.Procs)
+				{
+					if (t.Item1.SpellType == (byte)eSpellType.StyleStun && living.HasEffect(t.Item1))
+						return false;
+				}
+			}
 
 			return true;
 		}
