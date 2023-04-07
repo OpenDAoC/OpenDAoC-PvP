@@ -54,6 +54,8 @@ namespace DOL.GS
             Owner.Disease(false);
             Owner.BuffBonusMultCategory1.Remove((int)eProperty.MaxSpeed, EffectType);
             Owner.BuffBonusMultCategory1.Remove((int)eProperty.Strength, EffectType);
+            
+            Owner.StartHealthRegeneration();
 
             // "You look healthy."
             // "{0} looks healthy again."
