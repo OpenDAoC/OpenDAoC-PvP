@@ -486,6 +486,12 @@ namespace DOL.GS.Scripts
         /// <param name="destination"></param>
         protected virtual void OnDestinationPicked(GamePlayer player, Teleport destination)
         {
+            if (player.LastCombatTickPvP + 30000 > GameLoop.GameLoopTime)
+            {
+                SayTo(player, $"You have been in pvp combat recently and are unable to use the teleporter for another {(player.LastCombatTickPvP + 30000 - GameLoop.GameLoopTime)/1000} seconds");
+                return; 
+            }
+            
             Region region = WorldMgr.GetRegion((ushort) destination.RegionID);
 
             if (region == null || region.IsDisabled)
