@@ -1,3 +1,4 @@
+using System;
 using DOL.Database;
 using DOL.GS.Spells;
 
@@ -78,7 +79,7 @@ namespace DOL.GS
         public bool TriggersImmunity = false;
 
         /// Duration of the immunity effect, in milliseconds. Defaults to 60s.
-        public int ImmunityDuration => (int)Duration * 5;
+        public int ImmunityDuration => (int)Math.Min(Duration * 5, 60000); //adaptive immunity timer w/ a cap of 60 sec
 
         public ECSGameEffect() { }
 
