@@ -1385,7 +1385,7 @@ namespace DOL.GS
 
                     double weaponskillCalc = 1 + 
                         owner.GetWeaponSkill(weapon); //this provide level * damagetable * stats part of equation
-                    double strengthRelicCount = 1 + RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength, ownPlayer.Guild);
+                    double strengthRelicCount = 1 + RelicMgr.GetRelicBonusModifier(eRelicType.Strength, ownPlayer.Guild);
                     //Console.WriteLine($"relic count {strengthRelicCount} bonusmod {RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength)}");
                        // 0.9 + (0.1 * Math.Max(1.0, RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength)));
 
@@ -1400,7 +1400,7 @@ namespace DOL.GS
                            specModifier = lowerLimit + Util.Random(varianceRange) * 0.01;
                        }
 
-                       double playerBaseAF = ad.Target is GamePlayer ? ad.Target.Level * 30 / 50d : 2;
+                       double playerBaseAF = ad.Target is GamePlayer ? ad.Target.Level * 27 / 50d : 2;
                     if (playerBaseAF < 1)
                         playerBaseAF = 1;
 
@@ -1478,7 +1478,7 @@ namespace DOL.GS
                     //Console.WriteLine($"spec: {spec} stylespec: {styleSpec} specMod: {specModifier}");
                     int range = upperboundary - lowerboundary;
                     damage *= (lowerboundary + Util.Random(range)) * 0.01;
-                    int AFLevelScalar = 30;
+                    int AFLevelScalar = 27;
                     if (ad.Target.Level < 21) AFLevelScalar += (20 - ad.Target.Level);
                     double weaponskillCalc = (owner.GetWeaponSkill(weapon) + ad.Attacker.Level * 65/50d);
                     if (owner.Level < 10) weaponskillCalc *= 1 - (.05 * (10 - owner.Level));
