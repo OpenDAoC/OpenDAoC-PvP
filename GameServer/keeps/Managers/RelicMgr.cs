@@ -261,6 +261,20 @@ namespace DOL.GS
 			return realmTypeRelics;
 		}
 
+		public static IEnumerable GetGuildRelicsOfType(Guild guild, eRelicType relicType)
+		{
+			ArrayList realmTypeRelics = new ArrayList();
+			lock (m_relics.SyncRoot)
+			{
+				foreach (GameRelic relic in m_relics.Values)
+				{
+					if ((relic.OwningGuild != null && relic.OwningGuild == guild))
+						realmTypeRelics.Add(relic);
+				}
+			}
+			return realmTypeRelics;;
+		}
+
 		public static int GetRelicCount(Guild guild)
 		{
 			int index = 0;
@@ -303,14 +317,14 @@ namespace DOL.GS
 		/// <param name="realm"></param>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		public static double GetRelicBonusModifier(eRealm realm, eRelicType type, Guild guild)
+		public static double GetRelicBonusModifier(eRelicType type, Guild guild)
 		{
 			double bonus = 0.0;
 			bool owningSelf = false;
 			//only playerrealms can get bonus
-			foreach (GameRelic rel in getRelics(realm, type))
+			foreach (GameRelic rel in GetGuildRelicsOfType(guild, type))
 			{
-				if (rel.OwningGuild == guild)
+				if (rel.OwningGuild != null && rel.OwningGuild == guild)
 				{
 					switch (GetDaysSinceCapture(rel))
 					{

@@ -338,8 +338,8 @@ namespace DOL.GS
 			info.Add(" ");
 			info.Add(LanguageMgr.GetTranslation(player.Client.Account.Language, "PlayerBonusesListRequestHandler.HandlePacket.Relic"));
 
-			double meleeRelicBonus = RelicMgr.GetRelicBonusModifier(player.Realm, eRelicType.Strength, player.Guild);
-			double magicRelicBonus = RelicMgr.GetRelicBonusModifier(player.Realm, eRelicType.Magic, player.Guild);
+			double meleeRelicBonus = RelicMgr.GetRelicBonusModifier(eRelicType.Strength, player.Guild);
+			double magicRelicBonus = RelicMgr.GetRelicBonusModifier(eRelicType.Magic, player.Guild);
 
 			info.Add(LanguageMgr.GetTranslation(player.Client.Account.Language, "PlayerBonusesListRequestHandler.HandlePacket.Melee", (meleeRelicBonus * 100)));
 			info.Add(LanguageMgr.GetTranslation(player.Client.Account.Language, "PlayerBonusesListRequestHandler.HandlePacket.Magic", (magicRelicBonus * 100)));

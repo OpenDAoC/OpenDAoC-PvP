@@ -7968,7 +7968,7 @@ namespace DOL.GS
                 int DPS = weapon.DPS_AF;
 
                 // apply relic bonus prior to cap
-                DPS = (int)((double)DPS * (1.0 + RelicMgr.GetRelicBonusModifier(Realm, eRelicType.Strength, this.Guild)));
+                DPS = (int)((double)DPS * (1.0 + RelicMgr.GetRelicBonusModifier(eRelicType.Strength, this.Guild)));
 
                 // apply damage cap before quality
                 // http://www.classesofcamelot.com/faq.asp?mode=view&cat=10

@@ -313,7 +313,7 @@ namespace DOL.GS.Spells
 					damage = damage * effectiveness;
 					
 					if(caster is GamePlayer casterPlayer)
-						damage *= (1.0 + RelicMgr.GetRelicBonusModifier(caster.Realm, eRelicType.Magic, casterPlayer.Guild));
+						damage *= (1.0 + RelicMgr.GetRelicBonusModifier(eRelicType.Magic, casterPlayer.Guild));
 
 					if (damage < 0) damage = 0;
 					ad.Damage += (int)damage;

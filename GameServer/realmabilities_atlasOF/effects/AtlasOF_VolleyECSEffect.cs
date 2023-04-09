@@ -541,7 +541,7 @@ namespace DOL.GS.Effects
             double ClampedDamage = 1.2 + archer.Level * 0.3;
             double WeaponBonus2H = 1.1 + (0.005 * archer.WeaponSpecLevel(attackWeapon));
             double SlowWeaponBonus = 1 + ((weaponspeed - 2) * 0.03);
-            double meleeRelicBonus = 1.0 + RelicMgr.GetRelicBonusModifier(archer.Realm, eRelicType.Strength, archer.Guild);
+            double meleeRelicBonus = 1.0 + RelicMgr.GetRelicBonusModifier(eRelicType.Strength, archer.Guild);
             double WeaponDPS = attackWeapon.DPS_AF * 0.1;
             double TargetAF = 1;
             if (target is GamePlayer)

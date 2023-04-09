@@ -3702,10 +3702,10 @@ namespace DOL.GS.Spells
 				
 				// Relic bonus applied to damage, does not alter effectiveness or increase cap
 				if(caster is GamePlayer casterPlayer)
-					spellDamage *= (1.0 + RelicMgr.GetRelicBonusModifier(caster.Realm, eRelicType.Magic, casterPlayer.Guild));
+					spellDamage *= (1.0 + RelicMgr.GetRelicBonusModifier(eRelicType.Magic, casterPlayer.Guild));
 				
 				if (caster is GameSummonedPet {Owner: GamePlayer petOwner} pet)
-					spellDamage *= (1.0 + RelicMgr.GetRelicBonusModifier(caster.Realm, eRelicType.Magic, petOwner.Guild));
+					spellDamage *= (1.0 + RelicMgr.GetRelicBonusModifier(eRelicType.Magic, petOwner.Guild));
 				
 					/*
 					eProperty skillProp = SkillBase.SpecToSkill(m_spellLine.Spec);
