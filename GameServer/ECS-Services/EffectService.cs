@@ -21,6 +21,7 @@ namespace DOL.GS
 
         public static void Tick()
         {
+            GameLoop.CurrentServiceTick = SERVICE_NAME;
             Diagnostics.StartPerfCounter(SERVICE_NAME);
 
             List<ECSGameEffect> list = EntityManager.GetAll<ECSGameEffect>(EntityManager.EntityType.Effect);
@@ -279,7 +280,7 @@ namespace DOL.GS
             effect.CancelEffect = true;
             effect.ExpireTick = GameLoop.GameLoopTime - 1;
 
-            if (effect.EntityManagerId == -1)
+            if (effect.EntityManagerId == EntityManager.UNSET_ID)
                 effect.EntityManagerId = EntityManager.Add(EntityManager.EntityType.Effect, effect);
         }
 

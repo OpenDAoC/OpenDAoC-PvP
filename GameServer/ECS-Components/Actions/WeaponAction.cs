@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using DOL.Database;
 using DOL.Events;
+using DOL.GS.PacketHandler;
 using DOL.GS.Spells;
 using DOL.GS.Styles;
-using DOL.GS.PacketHandler;
 using static DOL.GS.GameLiving;
 using static DOL.GS.GameObject;
 
@@ -25,6 +26,7 @@ namespace DOL.GS
         public eRangedAttackType RangedAttackType => m_RangedAttackType;
 
         public bool AttackFinished { get; set; }
+        public eActiveWeaponSlot ActiveWeaponSlot { get; private set; }
 
         public WeaponAction(GameLiving owner, GameObject target, InventoryItem attackWeapon, InventoryItem leftWeapon, double effectiveness, int interruptDuration, Style combatStyle)
         {
@@ -35,7 +37,18 @@ namespace DOL.GS
             m_effectiveness = effectiveness;
             m_interruptDuration = interruptDuration;
             m_combatStyle = combatStyle;
-            m_RangedAttackType = owner.rangeAttackComponent.RangedAttackType;
+            ActiveWeaponSlot = owner.ActiveWeaponSlot;
+        }
+
+        public WeaponAction(GameLiving owner, GameObject target, InventoryItem attackWeapon, double effectiveness, int interruptDuration, eRangedAttackType rangedAttackType)
+        {
+            m_owner = owner;
+            m_target = target;
+            m_attackWeapon = attackWeapon;
+            m_effectiveness = effectiveness;
+            m_interruptDuration = interruptDuration;
+            m_RangedAttackType = rangedAttackType;
+            ActiveWeaponSlot = owner.ActiveWeaponSlot;
         }
 
         public void Execute()
@@ -297,9 +310,9 @@ namespace DOL.GS
 
             // Show the animation.
             if (mainHandAD.AttackResult != eAttackResult.HitUnstyled && mainHandAD.AttackResult != eAttackResult.HitStyle && leftHandAD != null)
-                m_owner.attackComponent.ShowAttackAnimation(leftHandAD, leftWeapon);
+                ShowAttackAnimation(leftHandAD, leftWeapon);
             else
-                m_owner.attackComponent.ShowAttackAnimation(mainHandAD, mainWeapon);
+                ShowAttackAnimation(mainHandAD, mainWeapon);
 
             // Start style effect after any damage.
             if (mainHandAD.StyleEffects.Count > 0 && mainHandAD.AttackResult == eAttackResult.HitStyle)
@@ -400,6 +413,110 @@ namespace DOL.GS
                 case eAttackResult.Grappled:
                 default:
                     break;
+            }
+        }
+
+        public virtual void ShowAttackAnimation(AttackData ad, InventoryItem weapon)
+        {
+            bool showAnimation = false;
+
+            switch (ad.AttackResult)
+            {
+                case eAttackResult.HitUnstyled:
+                case eAttackResult.HitStyle:
+                case eAttackResult.Evaded:
+                case eAttackResult.Parried:
+                case eAttackResult.Missed:
+                case eAttackResult.Blocked:
+                case eAttackResult.Fumbled:
+                    showAnimation = true;
+                    break;
+            }
+
+            if (!showAnimation)
+                return;
+
+            GameLiving defender = ad.Target;
+
+            if (showAnimation)
+            {
+                // http://dolserver.sourceforge.net/forum/showthread.php?s=&threadid=836
+                byte resultByte = 0;
+                int attackersWeapon = (weapon == null) ? 0 : weapon.Model;
+                int defendersWeapon = 0;
+
+                switch (ad.AttackResult)
+                {
+                    case eAttackResult.Missed:
+                        resultByte = 0;
+                        break;
+                    case eAttackResult.Evaded:
+                        resultByte = 3;
+                        break;
+                    case eAttackResult.Fumbled:
+                        resultByte = 4;
+                        break;
+                    case eAttackResult.HitUnstyled:
+                        resultByte = 10;
+                        break;
+                    case eAttackResult.HitStyle:
+                        resultByte = 11;
+                        break;
+                    case eAttackResult.Parried:
+                        resultByte = 1;
+
+                        if (defender.ActiveWeapon != null)
+                            defendersWeapon = defender.ActiveWeapon.Model;
+
+                        break;
+                    case eAttackResult.Blocked:
+                        resultByte = 2;
+
+                        if (defender.Inventory != null)
+                        {
+                            InventoryItem lefthand = defender.Inventory.GetItem(eInventorySlot.LeftHandWeapon);
+
+                            if (lefthand != null && lefthand.Object_Type == (int) eObjectType.Shield)
+                                defendersWeapon = lefthand.Model;
+                        }
+
+                        break;
+                }
+
+                IEnumerable visiblePlayers = defender.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE);
+
+                if (visiblePlayers == null)
+                    return;
+
+                foreach (GamePlayer player in visiblePlayers)
+                {
+                    if (player == null)
+                        return;
+
+                    int animationId;
+
+                    switch (ad.AnimationId)
+                    {
+                        case -1:
+                            animationId = player.Out.OneDualWeaponHit;
+                            break;
+                        case -2:
+                            animationId = player.Out.BothDualWeaponHit;
+                            break;
+                        default:
+                            animationId = ad.AnimationId;
+                            break;
+                    }
+
+                    // It only affects the attacker's client, but for some reason, the attack animation doesn't play when the defender is different than the actually selected target.
+                    // The lack of feedback makes fighting Spiritmasters very awkward because of the intercept mechanic. So until this get figured out, we'll instead play the hit animation on the attacker's selected target.
+                    // Ranged attacks can be delayed (which makes the selected target unreliable) and don't seem to be affect by this anyway, so they must be ignored.
+                    GameObject animationTarget = player != m_owner || ActiveWeaponSlot == eActiveWeaponSlot.Distance || m_owner.TargetObject == defender ? defender : m_owner.TargetObject;
+
+                    player.Out.SendCombatAnimation(m_owner, animationTarget,
+                                                   (ushort) attackersWeapon, (ushort) defendersWeapon,
+                                                   animationId, 0, resultByte, defender.HealthPercent);
+                }
             }
         }
     }

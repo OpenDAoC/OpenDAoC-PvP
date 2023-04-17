@@ -39,11 +39,11 @@ using static DOL.GS.AttackData;
 
 namespace DOL.GS
 {
-    /// <summary>
-    /// This class holds all information that each
-    /// living object in the world uses
-    /// </summary>
-    public abstract class GameLiving : GameObject
+	/// <summary>
+	/// This class holds all information that each
+	/// living object in the world uses
+	/// </summary>
+	public abstract class GameLiving : GameObject
 	{
 		private static readonly log4net.ILog log = log4net.LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -53,7 +53,6 @@ namespace DOL.GS
 		public StyleComponent styleComponent;
 		public int UsedConcentration;
 
-		public int EntityManagerId { get; protected set; } = EntityManager.UNSET_ID;
 		public ConcurrentDictionary<byte, Spell> ActivePulseSpells { get; private set; } = new();
 
 		#region Combat
@@ -373,7 +372,6 @@ namespace DOL.GS
 		{
 		}
 
-
 		/// <summary>
 		/// last attack tick in either pve or pvp
 		/// </summary>
@@ -396,18 +394,8 @@ namespace DOL.GS
 		/// </summary>
 		public virtual long LastAttackTickPvE
 		{
-			get { return m_lastAttackTickPvE; }
-			set
-			{
-				m_lastAttackTickPvE = value;
-				if (this is GameNPC)
-				{
-					if ((this as GameNPC).Brain is IControlledBrain)
-					{
-						((this as GameNPC).Brain as IControlledBrain).Owner.LastAttackTickPvE = value;
-					}
-				}
-			}
+			get => m_lastAttackTickPvE;
+			set => m_lastAttackTickPvE = value;
 		}
 
 		/// <summary>
@@ -419,18 +407,8 @@ namespace DOL.GS
 		/// </summary>
 		public virtual long LastAttackTickPvP
 		{
-			get { return m_lastAttackTickPvP; }
-			set
-			{
-				m_lastAttackTickPvP = value;
-				if (this is GameNPC)
-				{
-					if ((this as GameNPC).Brain is IControlledBrain)
-					{
-						((this as GameNPC).Brain as IControlledBrain).Owner.LastAttackTickPvP = value;
-					}
-				}
-			}
+			get => m_lastAttackTickPvP;
+			set => m_lastAttackTickPvP = value;
 		}
 
 		/// <summary>
@@ -481,18 +459,8 @@ namespace DOL.GS
 		/// </summary>
 		public virtual long LastAttackedByEnemyTickPvE
 		{
-			get { return m_lastAttackedByEnemyTickPvE; }
-			set
-			{
-				m_lastAttackedByEnemyTickPvE = value;
-				if (this is GameNPC)
-				{
-					if ((this as GameNPC).Brain is IControlledBrain)
-					{
-						((this as GameNPC).Brain as IControlledBrain).Owner.LastAttackedByEnemyTickPvE = value;
-					}
-				}
-			}
+			get => m_lastAttackedByEnemyTickPvE;
+			set => m_lastAttackedByEnemyTickPvE = value;
 		}
 
 		/// <summary>
@@ -504,18 +472,8 @@ namespace DOL.GS
 		/// </summary>
 		public virtual long LastAttackedByEnemyTickPvP
 		{
-			get { return m_lastAttackedByEnemyTickPvP; }
-			set
-			{
-				m_lastAttackedByEnemyTickPvP = value;
-				if (this is GameNPC)
-				{
-					if ((this as GameNPC).Brain is IControlledBrain)
-					{
-						((this as GameNPC).Brain as IControlledBrain).Owner.LastAttackedByEnemyTickPvP = value;
-					}
-				}
-			}
+			get => m_lastAttackedByEnemyTickPvP;
+			set => m_lastAttackedByEnemyTickPvP = value;
 		}
 
 		/// <summary>
@@ -707,8 +665,8 @@ namespace DOL.GS
 		/// </summary>
 		public virtual double GetWeaponSkill(InventoryItem weapon)
 		{
-			const double bs = 128.0 / 50.0;	// base factor (not 400)
-			return (int)((Level + 1) * bs * (1 + (GetWeaponStat(weapon) - 50) * 0.005) * Level * 2 / 50);
+			// Needs to be overriden.
+			return 0;
 		}
 
 		private (InventoryItem item, long time) m_cachedActiveWeapon;
@@ -1802,7 +1760,9 @@ namespace DOL.GS
 			if (!interrupt)
 				return;
 
-			InterruptTime = GameLoop.GameLoopTime + duration;
+			// Dont't replace the current interrut with a shorter one.
+			// Otherwise a slow melee hit's interrupt duration will be made shorter by a proc for example.
+			InterruptTime = Math.Max(InterruptTime, GameLoop.GameLoopTime + duration);
 
 			if (castingComponent?.SpellHandler != null)
 				castingComponent.SpellHandler.CasterIsAttacked(attacker);
@@ -3620,10 +3580,10 @@ namespace DOL.GS
 			return parryChance;
 		}
 
-		public virtual double TryBlock( AttackData ad, AttackData lastAD, double attackerConLevel, int attackerCount)
+		public virtual double TryBlock(AttackData ad, double attackerConLevel, int attackerCount)
 		{
 			// Block
-      
+
 			//1.Quality does not affect the chance to block at this time.  Grab Bag 3/7/03
 			//2.Condition and enchantment increases the chance to block  Grab Bag 2/27/03
 			//3.There is currently no hard cap on chance to block  Grab Bag 2/27/03 and 8/16/02
@@ -6210,7 +6170,7 @@ namespace DOL.GS
 				}
 			}
 
-			foreach (IDoor door in GetDoorsInRadius(150))
+			foreach (GameDoorBase door in GetDoorsInRadius(150))
 			{
 				if (door is GameKeepDoor && (str.Contains("enter") || str.Contains("exit")))
 				{
@@ -6742,24 +6702,21 @@ namespace DOL.GS
 		{
 			lock ((m_disabledSkills as ICollection).SyncRoot)
 			{
-				KeyValuePair<int, Type> key = new KeyValuePair<int, Type>(skill.ID, skill.GetType());
+				KeyValuePair<int, Type> key = new(skill.ID, skill.GetType());
+
 				if (duration > 0)
-				{
 					m_disabledSkills[key] = new KeyValuePair<long, Skill>(GameLoop.GameLoopTime + duration, skill);
-				}
 				else
-				{
 					m_disabledSkills.Remove(key);
-				}
 			}
 		}
-		
+
 		/// <summary>
 		/// Grey out collection of skills on client for specified duration
 		/// </summary>
 		/// <param name="skill">the skill to disable</param>
 		/// <param name="duration">duration of disable in milliseconds</param>
-		public virtual void DisableSkill(ICollection<Tuple<Skill, int>> skills)
+		public virtual void DisableSkills(ICollection<Tuple<Skill, int>> skills)
 		{
 			lock ((m_disabledSkills as ICollection).SyncRoot)
 			{
@@ -6768,19 +6725,15 @@ namespace DOL.GS
 					Skill skill = tuple.Item1;
 					int duration = tuple.Item2;
 					
-					KeyValuePair<int, Type> key = new KeyValuePair<int, Type>(skill.ID, skill.GetType());
+					KeyValuePair<int, Type> key = new(skill.ID, skill.GetType());
+
 					if (duration > 0)
-					{
 						m_disabledSkills[key] = new KeyValuePair<long, Skill>(GameLoop.GameLoopTime + duration, skill);
-					}
 					else
-					{
 						m_disabledSkills.Remove(key);
-					}
 				}
 			}
 		}
-		
 
 		/// <summary>
 		/// Removes Greyed out skills

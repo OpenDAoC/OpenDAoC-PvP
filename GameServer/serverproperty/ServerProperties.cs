@@ -818,12 +818,6 @@ namespace DOL.GS.ServerProperties
 		public static string ALLOW_PERSONNAL_MOUNT_IN_REGIONS;
 
 		/// <summary>
-		/// Immunity Timer length when a player logs into game or zones into a new region, in seconds
-		/// </summary>
-		[ServerProperty("world", "timer_player_init", "Immunity Timer length when a player logs into game or zones into a new region, in seconds", 15)]
-		public static int TIMER_PLAYER_INIT;
-
-		/// <summary>
 		/// Display the zonepoint with a choosen model
 		/// </summary>
 		[ServerProperty("world", "zonepoint_npctemplate", "Display the zonepoint with the following npctemplate. 0 for no display", 0)]
@@ -1428,18 +1422,6 @@ namespace DOL.GS.ServerProperties
 		/// </summary>
 		[ServerProperty("npc", "pet_cap_bd_minion_spell_scaling_by_spec", "When scaling BD minion spells, do we cap the level they scale do by the BD's spec level?  This provides an incentive to spec darkness and suppression and use items that boost them.", false)]
 		public static bool PET_CAP_BD_MINION_SPELL_SCALING_BY_SPEC;
-
-		/// <summary>
-		/// What level to start increasing mob damage
-		/// </summary>
-		[ServerProperty("npc", "mob_damage_increase_startlevel", "What level to start increasing mob damage.", 30)]
-		public static int MOB_DAMAGE_INCREASE_STARTLEVEL;
-
-		/// <summary>
-		/// How much damage to increase per level
-		/// </summary>
-		[ServerProperty("npc", "mob_damage_increase_perlevel", "How much damage to increase per level", 0.0)]
-		public static double MOB_DAMAGE_INCREASE_PERLEVEL;
 
 		/// <summary>
 		/// Minimum respawn time for npc's without a set respawninterval
@@ -2491,7 +2473,7 @@ namespace DOL.GS.ServerProperties
 		/// <summary>
 		/// Should we allow archers to be able to use arrows from their quiver?
 		/// </summary>
-		[ServerProperty("classes", "allow_old_archery", "Should we allow archers to be able to use arrows from their quiver?", false)]
+		[ServerProperty("classes", "allow_old_archery", "Should we allow archers to be able to use arrows from their quiver?", true)]
 		public static bool ALLOW_OLD_ARCHERY;
 
 		/// <summary>

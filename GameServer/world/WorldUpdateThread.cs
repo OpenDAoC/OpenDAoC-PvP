@@ -17,24 +17,20 @@
  *
  */
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
-using System.Linq;
-using System.Collections.Generic;
-
-using log4net;
-
-using DOL.GS.Housing;
 using DOL.AI.Brain;
-using DOL.Events;
+using DOL.GS.Housing;
+using log4net;
 
 namespace DOL.GS
 {
-	/// <summary>
-	/// Description of WorldUpdateThread.
-	/// </summary>
-	public static class WorldUpdateThread
+    /// <summary>
+    /// Description of WorldUpdateThread.
+    /// </summary>
+    public static class WorldUpdateThread
 	{
 		/// <summary>
 		/// Defines a logger for this class.
@@ -155,7 +151,7 @@ namespace DOL.GS
 		//private static void UpdatePlayerOtherPlayers(GamePlayer player, long nowTicks)
 		//{
 		//	// Get All Player in Range
-		//	var players = player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE).Cast<GamePlayer>().Where(p => p != null && p.IsVisibleTo(player) && (!p.IsStealthed || player.CanDetect(p))).ToArray();
+		//	var players = player.GetPlayersInRadius(WorldMgr.VISIBILITY_DISTANCE).Where(p => p != null && p.IsVisibleTo(player) && (!p.IsStealthed || player.CanDetect(p)));
 
 		//	try
 		//	{
@@ -225,7 +221,7 @@ namespace DOL.GS
 		private static void UpdatePlayerNPCs(GamePlayer player, long nowTicks)
 		{
 			// Get All Mobs in Range
-			var npcs = player.GetNPCsInRadius(WorldMgr.VISIBILITY_DISTANCE).Cast<GameNPC>().Where(n => n != null && n.IsVisibleTo(player)).ToArray();
+			var npcs = player.GetNPCsInRadius(WorldMgr.VISIBILITY_DISTANCE).Where(n => n != null && n.IsVisibleTo(player));
 
 			try
 			{
@@ -297,7 +293,7 @@ namespace DOL.GS
 		private static void UpdatePlayerItems(GamePlayer player, long nowTicks)
 		{
 			// Get All Static Item in Range
-			var objs = player.GetItemsInRadius(WorldMgr.OBJ_UPDATE_DISTANCE).Cast<GameStaticItem>().Where(i => i != null && i.IsVisibleTo(player)).ToArray();
+			var objs = player.GetItemsInRadius(WorldMgr.OBJ_UPDATE_DISTANCE).Where(i => i != null && i.IsVisibleTo(player));
 
 			try
 			{
@@ -358,7 +354,7 @@ namespace DOL.GS
 		private static void UpdatePlayerDoors(GamePlayer player, long nowTicks)
 		{
 			// Get All Game Doors in Range
-			var doors = player.GetDoorsInRadius(WorldMgr.OBJ_UPDATE_DISTANCE).Cast<IDoor>().OfType<GameObject>().Where(o => o.IsVisibleTo(player)).ToArray();
+			var doors = player.GetDoorsInRadius(WorldMgr.OBJ_UPDATE_DISTANCE).Where(o => o.IsVisibleTo(player));
 
 			try
 			{
@@ -368,7 +364,7 @@ namespace DOL.GS
 					var objKey = objEntry.Key;
 					GameObject obj = WorldMgr.GetRegion(objKey.Item1).GetObject(objKey.Item2);
 					// We have a Door in cache that is not in vincinity
-					if (obj is IDoor && !doors.Contains(obj) && (nowTicks - objEntry.Value) >= GetPlayerItemUpdateInterval)
+					if (obj is GameDoorBase && !doors.Contains(obj) && (nowTicks - objEntry.Value) >= GetPlayerItemUpdateInterval)
 					{
 						long dummy;
 						player.Client.GameObjectUpdateArray.TryRemove(objKey, out dummy);
@@ -384,13 +380,11 @@ namespace DOL.GS
 			try
 			{
 				// Now Send remaining doors
-				foreach (IDoor ldoor in doors)
+				foreach (GameDoorBase door in doors)
 				{
-					IDoor door = ldoor;
-
 					// Get last update time
 					long lastUpdate;
-					if (player.Client.GameObjectUpdateArray.TryGetValue(new Tuple<ushort, ushort>(((GameObject)door).CurrentRegionID, (ushort)door.ObjectID), out lastUpdate))
+					if (player.Client.GameObjectUpdateArray.TryGetValue(new Tuple<ushort, ushort>(door.CurrentRegionID, (ushort)door.ObjectID), out lastUpdate))
 					{
 						// This Door Needs Update
 						if ((nowTicks - lastUpdate) >= GetPlayerItemUpdateInterval)
@@ -426,7 +420,7 @@ namespace DOL.GS
 			// Get All House in Region
 			IDictionary<int, House> housesDict = HouseMgr.GetHouses(player.CurrentRegionID);
 			// Build Vincinity List
-			var houses = housesDict.Values.Where(h => h != null && player.IsWithinRadius(h, HousingConstants.HouseViewingDistance)).ToArray();
+			var houses = housesDict.Values.Where(h => h != null && player.IsWithinRadius(h, HousingConstants.HouseViewingDistance));
 
 			try
 			{

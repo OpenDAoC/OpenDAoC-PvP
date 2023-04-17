@@ -10,160 +10,199 @@ namespace DOL.GS.RealmAbilities
 {
     public class AtlasOF_Volley : TimedRealmAbility
     {
-        public override int MaxLevel { get { return 1; } }
-        public override int CostForUpgrade(int level) { return 8; }
-        public override int GetReUseDelay(int level) { return 15; } // 15 seconds
+        public const int DISABLE_DURATION = 15000;
+
+        public override int MaxLevel => 1;
+        public override ushort Icon => 4281;
+
+        private GamePlayer _player;
+
+        public static int GetMinAttackRange(eRealm realm)
+        {
+            double minAttackRange = 2000;
+
+            if (realm == eRealm.Albion)
+                minAttackRange = 2200;
+            if (realm == eRealm.Hibernia)
+                minAttackRange = 2100;
+            if (realm == eRealm.Midgard)
+                minAttackRange = 2000;
+
+            return (int) (minAttackRange * 0.66);
+        }
+
+        public static int GetMaxAttackRange(eRealm realm)
+        {
+            double maxAttackRange = 4000;
+
+            if (realm == eRealm.Albion)
+                maxAttackRange = 4400;
+            if (realm == eRealm.Hibernia)
+                maxAttackRange = 4300;
+            if (realm == eRealm.Midgard)
+                maxAttackRange = 4200;
+
+            return (int) maxAttackRange;
+        }
+
+        public override int CostForUpgrade(int level)
+        {
+            return 8;
+        }
+
+        public override int GetReUseDelay(int level)
+        {
+            return 15;
+        }
+
         public override bool CheckRequirement(GamePlayer player)
         {
             return AtlasRAHelpers.GetLongshotLevel(player) >= 1;
         }
-        public override ushort Icon => 4281;
-        
-        private GamePlayer m_player;
-        public const int DISABLE_DURATION = 15000; //15s to use again ability
+
         public override void Execute(GameLiving living)
-		{
-            m_player = living as GamePlayer;
-            double attackrangeMin = 2000 * 0.66;//minimum attack range
-            double attackrangeMax = 4000;//maximum attack range
-            if (m_player.Realm == eRealm.Albion)
+        {
+            _player = living as GamePlayer;
+
+            if (_player == null)
+                return;
+
+            if (CheckPreconditions(_player, DEAD | SITTING | MEZZED | STUNNED))
+                return;
+
+            if (_player.CurrentRegion.IsDungeon)
             {
-                attackrangeMin = 2200 * 0.66;//minimum attack range
-                attackrangeMax = 4400;//maximum attack range
-            }
-            if (m_player.Realm == eRealm.Hibernia)
-            {
-                attackrangeMin = 2100 * 0.66;//minimum attack range
-                attackrangeMax = 4300;//maximum attack range
-            }
-            if (m_player.Realm == eRealm.Midgard)
-            {
-                attackrangeMin = 2000 * 0.66;//minimum attack range
-                attackrangeMax = 4200;//maximum attack range
+                _player.Out.SendMessage("You can't use Volley in dungeons!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                return;
             }
 
-            Region rgn = WorldMgr.GetRegion(m_player.CurrentRegion.ID);
+            if (_player.ActiveWeaponSlot != eActiveWeaponSlot.Distance || _player.ActiveWeapon == null)
+            {
+                _player.Out.SendMessage("You need to be equipped with a bow to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                return;
+            }
 
-            if (CheckPreconditions(m_player, DEAD | SITTING | MEZZED | STUNNED))
-                return;
-            if(m_player.CurrentRegion.IsDungeon)
+            if (_player.rangeAttackComponent.UpdateAmmo(_player.ActiveWeapon) == null)
             {
-                m_player.Out.SendMessage("You can't use Volley in dungeons!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                _player.Out.SendMessage("You need arrows to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
             }
-            if (m_player.ActiveWeaponSlot != eActiveWeaponSlot.Distance || m_player.ActiveWeapon == null)
+
+            Region region = WorldMgr.GetRegion(_player.CurrentRegion.ID);
+
+            if (region == null || region.GetZone(_player.GroundTarget.X, _player.GroundTarget.Y) == null)
             {
-                m_player.Out.SendMessage("You need to be equipped with a bow to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                _player.Out.SendMessage("You must have a ground target to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
             }
-            if (m_player.rangeAttackComponent.UpdateAmmo(m_player.ActiveWeapon) == null)
+
+            if (_player.IsWithinRadius(_player.GroundTarget, GetMinAttackRange(_player.Realm)))
             {
-                m_player.Out.SendMessage("You need arrows to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                _player.Out.SendMessage("You ground target is too close to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
             }
-            if (rgn == null || rgn.GetZone(m_player.GroundTarget.X, m_player.GroundTarget.Y) == null)
+
+            if (!_player.IsWithinRadius(_player.GroundTarget, GetMaxAttackRange(_player.Realm)))
             {
-                m_player.Out.SendMessage("You must have a ground target to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);     
+                _player.Out.SendMessage("You ground target is too far away to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
             }
-            if (m_player.IsWithinRadius(m_player.GroundTarget, (int)attackrangeMin))
-            {
-                m_player.Out.SendMessage("You ground target is too close to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                return;
-            }
-            if (!m_player.IsWithinRadius(m_player.GroundTarget, (int)attackrangeMax))
-            {
-                m_player.Out.SendMessage("You ground target is too far away to use Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
-                return;
-            }
-            ECSGameEffect volley = EffectListService.GetEffectOnTarget(m_player, eEffect.Volley);
+
+            ECSGameEffect volley = EffectListService.GetEffectOnTarget(_player, eEffect.Volley);
+
             if (volley != null)
             {
-                m_player.Out.SendMessage("You are already using Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                _player.Out.SendMessage("You are already using Volley!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
             }
-            AtlasOF_VolleyECSEffect Volley = (AtlasOF_VolleyECSEffect)m_player.EffectList.GetOfType(typeof(AtlasOF_VolleyECSEffect));
+
+            AtlasOF_VolleyECSEffect Volley = (AtlasOF_VolleyECSEffect)_player.EffectList.GetOfType(typeof(AtlasOF_VolleyECSEffect));
+
             if (Volley != null)
-            {
                return;
-            }
-            TrueshotEffect trueShot = (TrueshotEffect)m_player.EffectList.GetOfType(typeof(TrueshotEffect));
+
+            TrueshotEffect trueShot = (TrueshotEffect)_player.EffectList.GetOfType(typeof(TrueshotEffect));
+
             if (trueShot != null)
             {
                 trueShot.Cancel(false);
                 return;
             }
-            RapidFireEffect rapidFire = (RapidFireEffect)m_player.EffectList.GetOfType(typeof(RapidFireEffect));
+
+            RapidFireEffect rapidFire = (RapidFireEffect)_player.EffectList.GetOfType(typeof(RapidFireEffect));
+
             if (rapidFire != null)
             {
                 rapidFire.Cancel(false);
                 return;
             }
-            if (m_player.rangeAttackComponent.RangedAttackType == eRangedAttackType.Critical)
+
+            if (_player.rangeAttackComponent.RangedAttackType == eRangedAttackType.Critical)
             {
-                m_player.Out.SendMessage("You can't use Volley while Critical-Shot is active!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                _player.Out.SendMessage("You can't use Volley while Critical-Shot is active!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
             }
-            if (m_player.rangeAttackComponent.RangedAttackType == eRangedAttackType.Long)
+            else if (_player.rangeAttackComponent.RangedAttackType == eRangedAttackType.Long)
             {
-                m_player.Out.SendMessage("You can't use Volley while Longshot is active!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                _player.Out.SendMessage("You can't use Volley while Longshot is active!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                 return;
             }
-            Region region = WorldMgr.GetRegion(m_player.CurrentRegionID);
-            foreach(AbstractArea area in region.GetAreasOfSpot(m_player.GroundTarget))//can't use volley inside border keep
+
+            // Can't use Volley inside portal and border keeps on a RvR server.
+            if (GameServer.Instance.Configuration.ServerType == eGameServerType.GST_Normal)
             {
-                if (area != null)
+                foreach (AbstractArea area in region.GetAreasOfSpot(_player.GroundTarget).Where(x => x is AbstractArea))
                 {
                     if (area is Area.Circle)
                     {
-                        if (m_player.Realm == eRealm.Albion)
+                        if (_player.Realm == eRealm.Albion)
                         {
-                            if (area.Description == "Druim Ligen" || area.Description == "Druim Cain" || area.Description == "Svasud Faste" || area.Description == "Vindsaul Faste")
+                            if (area.Description is "Druim Ligen" or "Druim Cain" or "Svasud Faste" or "Vindsaul Faste")
                             {
-                                m_player.Out.SendMessage("You can't use Volley inside enemy Border Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                                _player.Out.SendMessage("You can't use Volley inside enemy Border Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                                 return;
                             }
                         }
-                        if (m_player.Realm == eRealm.Hibernia)
+                        else if (_player.Realm == eRealm.Hibernia)
                         {
-                            if (area.Description == "Svasud Faste" || area.Description == "Vindsaul Faste" || area.Description == "Castle Sauvage" || area.Description == "Snowdonia Fortress")
+                            if (area.Description is "Svasud Faste" or "Vindsaul Faste" or "Castle Sauvage" or "Snowdonia Fortress")
                             {
-                                m_player.Out.SendMessage("You can't use Volley inside enemy Border Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                                _player.Out.SendMessage("You can't use Volley inside enemy Border Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                                 return;
                             }
                         }
-                        if (m_player.Realm == eRealm.Midgard)
+                        else if (_player.Realm == eRealm.Midgard)
                         {
-                            if (area.Description == "Druim Ligen" || area.Description == "Druim Cain" || area.Description == "Castle Sauvage" || area.Description == "Snowdonia Fortress")
+                            if (area.Description is "Druim Ligen" or "Druim Cain" or "Castle Sauvage" or "Snowdonia Fortress")
                             {
-                                m_player.Out.SendMessage("You can't use Volley inside enemy Border Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                                _player.Out.SendMessage("You can't use Volley inside enemy Border Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                                 return;
                             }
                         }
                     }
-                    if(area is KeepArea)
+                    else if (area is KeepArea)
                     {
-                        if (m_player.Realm == eRealm.Albion)
+                        if (_player.Realm == eRealm.Albion)
                         {
-                            if (area.Description == "Hibernia Portal Keep" || area.Description == "Midgard Portal Keep")
+                            if (area.Description is "Hibernia Portal Keep" or "Midgard Portal Keep")
                             {
-                                m_player.Out.SendMessage("You can't use Volley inside enemy Portal Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                                _player.Out.SendMessage("You can't use Volley inside enemy Portal Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                                 return;
                             }
                         }
-                        if (m_player.Realm == eRealm.Hibernia)
+                        else if (_player.Realm == eRealm.Hibernia)
                         {
-                            if (area.Description == "Midgard Portal Keep" || area.Description == "Albion Portal Keep")
+                            if (area.Description is "Midgard Portal Keep" or "Albion Portal Keep")
                             {
-                                m_player.Out.SendMessage("You can't use Volley inside enemy Portal Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                                _player.Out.SendMessage("You can't use Volley inside enemy Portal Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                                 return;
                             }
                         }
-                        if (m_player.Realm == eRealm.Midgard)
+                        else if (_player.Realm == eRealm.Midgard)
                         {
-                            if (area.Description == "Albion Portal Keep" || area.Description == "Hibernia Portal Keep")
+                            if (area.Description is "Albion Portal Keep" or "Hibernia Portal Keep")
                             {
-                                m_player.Out.SendMessage("You can't use Volley inside enemy Portal Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
+                                _player.Out.SendMessage("You can't use Volley inside enemy Portal Keep!", eChatType.CT_System, eChatLoc.CL_SystemWindow);
                                 return;
                             }
                         }
@@ -171,21 +210,21 @@ namespace DOL.GS.RealmAbilities
                 }
             }
 
-            if (m_player.attackComponent.Attackers.Count > 0 && m_player.IsBeingInterrupted)
+            if (_player.attackComponent.Attackers.Count > 0 && _player.IsBeingInterrupted)
             {
-                string attackTypeMsg;
-                GameObject attacker = m_player.attackComponent.Attackers.Last();
+                GameObject attacker = _player.attackComponent.Attackers.Last();
 
                 if (attacker is GameNPC npcAttacker)
-                    m_player.Out.SendMessage(LanguageMgr.GetTranslation(m_player.Client.Account.Language, "GamePlayer.Attack.Interrupted", attacker.GetName(0, true, m_player.Client.Account.Language, npcAttacker), "volley"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
+                    _player.Out.SendMessage(LanguageMgr.GetTranslation(_player.Client.Account.Language, "GamePlayer.Attack.Interrupted", attacker.GetName(0, true, _player.Client.Account.Language, npcAttacker), "volley"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
                 else
-                    m_player.Out.SendMessage(LanguageMgr.GetTranslation(m_player.Client.Account.Language, "GamePlayer.Attack.Interrupted", attacker.GetName(0, true), "volley"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
+                    _player.Out.SendMessage(LanguageMgr.GetTranslation(_player.Client.Account.Language, "GamePlayer.Attack.Interrupted", attacker.GetName(0, true), "volley"), eChatType.CT_YouHit, eChatLoc.CL_SystemWindow);
 
                 return;
             }
 
-            new AtlasOF_VolleyECSEffect(new ECSGameEffectInitParams(m_player, 0, 1));
-		}
+            new AtlasOF_VolleyECSEffect(new ECSGameEffectInitParams(_player, 0, 1));
+        }
+
         public override void AddEffectsInfo(IList<string> list)
         {
             list.Add("Ground-targetted archery attack that fires successive arrows at a random target in a given area. To use this ability, choose a ground target. This target must be at least 66% of your bow's normal max range away from you.");
@@ -193,8 +232,7 @@ namespace DOL.GS.RealmAbilities
             list.Add("\nTarget: Ground");
             list.Add("Range: Minimum 66% of player range.");
         }
-        public AtlasOF_Volley(DBAbility ability, int level) : base(ability, level)
-        {
-        }
+
+        public AtlasOF_Volley(DBAbility ability, int level) : base(ability, level) { }
     }
 }

@@ -19,15 +19,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Linq;
-using System.Net.Http;
+using System.Reflection;
 using DOL.Events;
 using DOL.GS.Housing;
 using DOL.GS.Keeps;
+using DOL.GS.Utils;
 using DOL.Language;
 using log4net;
-using DOL.GS.Utils;
 
 namespace DOL.GS.PacketHandler.Client.v168
 {
@@ -112,7 +111,6 @@ namespace DOL.GS.PacketHandler.Client.v168
 				player.StartHealthRegeneration();
 				player.StartPowerRegeneration();
 				player.StartEnduranceRegeneration();
-				player.StartInvulnerabilityTimer(ServerProperties.Properties.TIMER_PLAYER_INIT * 1000, null);
 
 				if (player.Guild != null)
 				{
@@ -393,7 +391,7 @@ namespace DOL.GS.PacketHandler.Client.v168
 
 				if (player.CurrentRegion != null)
 				{
-					var npcs = player.GetNPCsInRadius(WorldMgr.VISIBILITY_DISTANCE).Cast<GameNPC>().ToArray();
+					var npcs = player.GetNPCsInRadius(WorldMgr.VISIBILITY_DISTANCE);
 					foreach (GameNPC npc in npcs)
 					{
 						player.Out.SendNPCCreate(npc);
