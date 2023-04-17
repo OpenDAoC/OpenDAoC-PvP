@@ -319,6 +319,7 @@ namespace DOL.GS
 		/// <returns></returns>
 		public static double GetRelicBonusModifier(eRelicType type, Guild guild)
 		{
+			if (guild == null) return 0.0;
 			double bonus = 0.0;
 			bool owningSelf = false;
 			//only playerrealms can get bonus

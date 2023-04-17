@@ -1813,7 +1813,11 @@ namespace DOL.GS
 
         public double CalculateModifiedWeaponSkill(GameLiving target, InventoryItem weapon, double specModifier)
         {
-            return CalculateModifiedWeaponSkill(target, 1 + owner.GetWeaponSkill(weapon), 1 + RelicMgr.GetRelicBonusModifier(owner.Realm, eRelicType.Strength), specModifier);
+            Guild guild = null;
+            if (owner is GamePlayer ownPlayer)
+                guild = ownPlayer.Guild;
+            
+            return CalculateModifiedWeaponSkill(target, 1 + owner.GetWeaponSkill(weapon), 1 + RelicMgr.GetRelicBonusModifier(eRelicType.Strength, guild), specModifier);
         }
 
         public double CalculateModifiedWeaponSkill(GameLiving target, double weaponSkill, double relicBonus, double specModifier)
